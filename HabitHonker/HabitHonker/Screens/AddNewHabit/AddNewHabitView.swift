@@ -43,3 +43,9 @@ struct AddNewHabitView: View {
         }
     }
 }
+
+
+#Preview {
+    AddNewHabitView()
+        .modelContainer(for: Item.self, inMemory: true)
+}
