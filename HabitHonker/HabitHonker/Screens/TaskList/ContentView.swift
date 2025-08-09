@@ -37,6 +37,21 @@ struct ContentView: View {
             List {
                 ForEach(items) { item in
                     HabitCell(item: item)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                if let i = items.firstIndex(where: { $0.id == item.id }) {
+                                    let deleted = items.remove(at: i)
+                                    items.append(deleted)
+                                }
+                            } label: {
+                                Image(systemName: "checkmark")
+//                                    .font(.system(size: 180))
+//                                    .frame(width: 180, height: 180)
+                            }
+//                            .foregroundColor(.blue.opacity(0.8))
+//                            .font(.system(size: 60, weight: .bold))
+                            .tint(.clear)
+                        }
                 }
                 .onDelete(perform: deleteItems)
                 .listRowBackground(Color.clear)
