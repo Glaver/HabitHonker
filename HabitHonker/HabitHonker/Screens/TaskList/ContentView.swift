@@ -26,7 +26,7 @@ struct ContentView: View {
                     Image(systemName: "plus")
                         .foregroundColor(.black)
                         .padding() // space around icon
-                        .background(.ultraThinMaterial)
+//                        .background(.ultraThinMaterial)
                         .clipShape(Circle()) // makes it perfectly round
                 }
                 .buttonStyle(.plain)
@@ -86,8 +86,9 @@ struct HabitCell: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(item.iconColor?.opacity(0.6) ?? Color.clear)
-                    .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
+//                    .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
                     .frame(width: 56)
+                    .glassEffect()
                 
                 Image(systemName: item.icon)
                     .foregroundColor(.white)
@@ -124,27 +125,30 @@ struct HabitCell: View {
                                 .fill(.white.opacity(0.6))
                                 .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
                                 .frame(width: 98, height: 31)
+                                .glassEffect()
                             Text("8:00 AM")
                                 .font(.subheadline)
                                 .padding(.horizontal, 13)
                         }
                     }
-                    .background(.ultraThinMaterial)
+//                    .background(.ultraThinMaterial)
+                    
                     .clipShape(Capsule())
+                    .glassEffect()
                     
                 }
             }
             .padding(.leading, 5)
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 15)
         .padding(.horizontal, 10)
-        .background(.ultraThinMaterial)
+//        .background(.ultraThinMaterial)
         .cornerRadius(26)
         .listRowInsets(EdgeInsets(top: 10, leading: 5, bottom: 10, trailing: 5))
-        .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
-        .frame(maxWidth: .infinity) // fill full width
+//        .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
+//        .frame(maxWidth: .infinity) // fill full width
         .listRowInsets(EdgeInsets()) // remove extra padding
         .listRowSeparator(.hidden)   // hide divider
-
+        .glassEffect()
     }
 }
