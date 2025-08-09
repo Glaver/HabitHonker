@@ -16,10 +16,10 @@ struct ContentView: View {
         VStack (spacing: -10) {
             HStack {
                 Text("Thrusday 16, July")
-                    .font(.title3)
+                    .font(.title)
                 
                 Spacer()
-
+                
                 Button(action: {
                     print("Button tapped")
                 }) {
@@ -27,7 +27,6 @@ struct ContentView: View {
                         .foregroundColor(.black)
                         .padding() // space around icon
                         .background(.ultraThinMaterial)
-                    
                         .clipShape(Circle()) // makes it perfectly round
                 }
                 .buttonStyle(.plain)
@@ -37,16 +36,14 @@ struct ContentView: View {
             
             List {
                 ForEach(items) { item in
-//                    Text("1")
                     HabitCell(item: item)
-                        
                 }
+                .onDelete(perform: deleteItems)
                 .listRowBackground(Color.clear)
                 .listStyle(.plain)
-                .scrollContentBackground(.hidden)   // iOS 15+
+                .scrollContentBackground(.hidden)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(.clear)
-                
             }
             .scrollContentBackground(.hidden)
         }
@@ -55,21 +52,10 @@ struct ContentView: View {
                         .scaledToFill()
                         .edgesIgnoringSafeArea(.all))
     }
-
-//    private func addItem() {
-//        withAnimation {
-//            let newItem = Item(timestamp: Date())
-//            modelContext.insert(newItem)
-//        }
-//    }
-//
-//    private func deleteItems(offsets: IndexSet) {
-//        withAnimation {
-//            for index in offsets {
-//                modelContext.delete(items[index])
-//            }
-//        }
-//    }
+    
+    private func deleteItems(at offsets: IndexSet) {
+        items.remove(atOffsets: offsets)
+    }
 }
 
 #Preview {
@@ -83,7 +69,7 @@ struct HabitCell: View {
     var body: some View {
         HStack {
             ZStack {
-                RoundedRectangle(cornerRadius: 25, style: .continuous)
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(item.iconColor?.opacity(0.6) ?? Color.clear)
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
                     .frame(width: 56)
@@ -111,7 +97,7 @@ struct HabitCell: View {
                     .foregroundColor(.secondary)
                 
                 if let remindTime = item.notificationActivated {
-//                    Spacer()
+                    Spacer()
                     
                     HStack {
                         Text("Remind me at")
@@ -147,4 +133,3 @@ struct HabitCell: View {
 
     }
 }
-

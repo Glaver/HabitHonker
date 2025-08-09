@@ -55,10 +55,9 @@ extension ListHabitItem {
         ),
          .init(icon: "archivebox",
                iconColor: .cyan,
-               title: "Wash dishes",
+               title: "Wash dishes, vacuum floor, laundry, etc",
                priority: .notUrgentAndNotImportant,
-               type: .dueDate,
-               notificationActivated: Date()
+               type: .dueDate
         ),
          .init(icon: "archivebox",
                iconColor: .gray,
@@ -78,7 +77,7 @@ extension ListHabitItem {
                iconColor: .green,
                title: "Candle puring",
                priority: .notUrgentAndNotImportant,
-               type: .dueDate,
+               type: .repeating,
                notificationActivated: Date()
         ),
          .init(icon: "archivebox",
