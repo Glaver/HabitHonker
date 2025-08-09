@@ -13,11 +13,47 @@ struct ContentView: View {
     @State private var items: [ListHabitItem] = ListHabitItem.mock()
 
     var body: some View {
-        List {
-            ForEach(items) { item in
-                HabitCell(item: item)
+        VStack (spacing: -10) {
+            HStack {
+                Text("Thrusday 16, July")
+                    .font(.title3)
+                
+                Spacer()
+
+                Button(action: {
+                    print("Button tapped")
+                }) {
+                    Image(systemName: "plus")
+                        .foregroundColor(.black)
+                        .padding() // space around icon
+                        .background(.ultraThinMaterial)
+                    
+                        .clipShape(Circle()) // makes it perfectly round
+                }
+                .buttonStyle(.plain)
             }
+            .padding()
+            .background(.clear)
+            
+            List {
+                ForEach(items) { item in
+//                    Text("1")
+                    HabitCell(item: item)
+                        
+                }
+                .listRowBackground(Color.clear)
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)   // iOS 15+
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.clear)
+                
+            }
+            .scrollContentBackground(.hidden)
         }
+        .background(Image("Wallpaper")
+                        .resizable()
+                        .scaledToFill()
+                        .edgesIgnoringSafeArea(.all))
     }
 
 //    private func addItem() {
@@ -47,50 +83,68 @@ struct HabitCell: View {
     var body: some View {
         HStack {
             ZStack {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(item.iconColor ?? Color.clear)
-                //.fill(LinearGradient(gradient: Gradient(colors: [item.iconColor]),
-                      //                   startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 50, height: 50)
+                RoundedRectangle(cornerRadius: 25, style: .continuous)
+                    .fill(item.iconColor?.opacity(0.6) ?? Color.clear)
+                    .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
+                    .frame(width: 56)
                 
                 Image(systemName: item.icon)
                     .foregroundColor(.white)
                     .font(.system(size: 20))
             }
             
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
-                    .font(.headline)
+            VStack(alignment: .leading, spacing: 4) {
+                ZStack {
+                    HStack {
+                        Text(item.title)
+                            .font(.headline)
+                        Spacer()
+                        if item.type == .repeating {
+                            Image(systemName: "arrow.clockwise")
+                                .foregroundColor(.gray)
+                                .padding(.trailing, 15)
+                        }
+                    }
+                }
                 Text(item.priority.text)
                     .font(.caption)
                     .foregroundColor(.secondary)
-            }
-            .padding(.leading, 5)
-            
-            Spacer()
-            
-            //if let remindTime = "item.notificationActivated" {
-                Text("remindTime")
-                    .font(.subheadline.bold())
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                
+                if let remindTime = item.notificationActivated {
+//                    Spacer()
+                    
+                    HStack {
+                        Text("Remind me at")
+                            .font(.subheadline)
+                            .padding(.horizontal, 12)
+                        Spacer()
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 25, style: .continuous)
+                                .fill(.white.opacity(0.6))
+                                .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
+                                .frame(width: 98, height: 31)
+                            Text("8:00 AM")
+                                .font(.subheadline)
+                                .padding(.horizontal, 13)
+                        }
+                    }
                     .background(.ultraThinMaterial)
                     .clipShape(Capsule())
-            //}
-            if item.type == .repeating {
-                Image(systemName: "arrow.clockwise")
-                    .foregroundColor(.gray)
-                    .padding(.leading, 5)
+                    
+                }
             }
-            
+            .padding(.leading, 5)
         }
-        .padding()
+        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
         .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 25, style: .continuous)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
-        )
-        .padding(.horizontal)
+        .cornerRadius(26)
+        .listRowInsets(EdgeInsets(top: 10, leading: 5, bottom: 10, trailing: 5))
+        .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
+        .frame(maxWidth: .infinity) // fill full width
+        .listRowInsets(EdgeInsets()) // remove extra padding
+        .listRowSeparator(.hidden)   // hide divider
+
     }
 }
+

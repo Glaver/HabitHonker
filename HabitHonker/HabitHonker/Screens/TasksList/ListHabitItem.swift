@@ -27,13 +27,13 @@ extension ListHabitItem {
         var text: String {
             switch self {
             case .importantAndUrgent:
-                return " Important & Urgent"
+                return " Important / Urgent"
             case .importantButNotUrgent:
-                return "Important not Urgent"
+                return "Important / Not Urgent"
             case .urgentButNotImportant:
-                return "Urgent not Important"
+                return "Urgent / Not Important"
             case .notUrgentAndNotImportant:
-                return "Not Urgent and not Important"
+                return "Not Urgent / Not Important"
             }
         }
     }
@@ -47,20 +47,48 @@ extension ListHabitItem {
 extension ListHabitItem {
     static func mock() -> [ListHabitItem] {
         [.init(
-            icon: "􁔴",
+            icon: "person.crop.circle",
             iconColor: .blue,
             title: "Meditation",
             priority: .importantButNotUrgent,
             type: .repeating
         ),
-         .init(icon: "􁐢",
+         .init(icon: "archivebox",
                iconColor: .cyan,
                title: "Wash dishes",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
                notificationActivated: Date()
         ),
-         .init(icon: "􀥺",
+         .init(icon: "archivebox",
+               iconColor: .gray,
+               title: "Learn System Design",
+               priority: .notUrgentAndNotImportant,
+               type: .dueDate,
+               notificationActivated: Date()
+        ),
+         .init(icon: "archivebox",
+               iconColor: .cyan,
+               title: "Swift 6.2",
+               priority: .notUrgentAndNotImportant,
+               type: .dueDate,
+               notificationActivated: Date()
+        ),
+         .init(icon: "archivebox",
+               iconColor: .green,
+               title: "Candle puring",
+               priority: .notUrgentAndNotImportant,
+               type: .dueDate,
+               notificationActivated: Date()
+        ),
+         .init(icon: "archivebox",
+               iconColor: .yellow,
+               title: "Balance board",
+               priority: .notUrgentAndNotImportant,
+               type: .dueDate,
+               notificationActivated: Date()
+        ),
+         .init(icon: "square.3.layers.3d.top.filled",
                iconColor: .brown,
                title: "Algorithms",
                priority: .importantAndUrgent,
