@@ -11,61 +11,71 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var items: [ListHabitItem] = ListHabitItem.mock()
+    @State private var path = NavigationPath()
 
     var body: some View {
-        VStack (spacing: -10) {
-            HStack {
-                Text("Thrusday 16, July")
-                    .font(.title)
-                
-                Spacer()
-                
-                Button(action: {
-                    print("Button tapped")
-                }) {
-                    Image(systemName: "plus")
-                        .foregroundColor(.black)
-                        .padding() // space around icon
-//                        .background(.ultraThinMaterial)
-                        .clipShape(Circle()) // makes it perfectly round
-                }
-                .buttonStyle(.plain)
-            }
-            .padding()
-            .background(.clear)
-            
-            List {
-                ForEach(items) { item in
-                    HabitCell(item: item)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                if let i = items.firstIndex(where: { $0.id == item.id }) {
-                                    let deleted = items.remove(at: i)
-                                    items.append(deleted)
+        NavigationStack(path: $path) {
+            VStack (spacing: -10) {
+                List {
+                    ForEach(items) { item in
+//                        NavigationLink(value: Route.detailHabit) {
+                            HabitCell(item: item)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        if let i = items.firstIndex(where: { $0.id == item.id }) {
+                                            let deleted = items.remove(at: i)
+                                            items.append(deleted)
+                                        }
+                                    } label: {
+                                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                                        Image(systemName: "checkmark")
+                                    }
+                                    .tint(.clear)
                                 }
-                            } label: {
-                                Image(systemName: "checkmark")
-//                                    .font(.system(size: 180))
-//                                    .frame(width: 180, height: 180)
-                            }
-//                            .foregroundColor(.blue.opacity(0.8))
-//                            .font(.system(size: 60, weight: .bold))
-                            .tint(.clear)
-                        }
+//                        }
+                    }
+                    .onDelete(perform: deleteItems)
+                    .listRowBackground(Color.clear)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.clear)
                 }
-                .onDelete(perform: deleteItems)
-                .listRowBackground(Color.clear)
-                .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.clear)
+                
             }
-            .scrollContentBackground(.hidden)
+            .listStyle(.insetGrouped)
+            .navigationTitle("Thrusday 16, July")
+            .navigationBarTitleDisplayMode(.large)
+            
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        path.append(Route.addNewHabit)
+                    } label: {
+                        Image(systemName: "plus")
+                            .foregroundColor(.black)
+                            .padding()
+                            .glassEffect()
+                    }
+                }
+            }
+            
+            // Map each Route to a destination view
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .detailHabit:
+                    AddNewHabitView()
+                case .addNewHabit:
+                    AddNewHabitView()
+                }
+            }
+            // Refactor: background on change custom
+            .background(Image("Wallpaper")
+                .resizable()
+                .scaledToFill()
+                .edgesIgnoringSafeArea(.all))
         }
-        .background(Image("Wallpaper")
-                        .resizable()
-                        .scaledToFill()
-                        .edgesIgnoringSafeArea(.all))
     }
     
     private func deleteItems(at offsets: IndexSet) {

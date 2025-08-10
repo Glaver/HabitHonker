@@ -25,7 +25,7 @@ struct HabitHonkerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootTabsView()
         }
         .modelContainer(sharedModelContainer)
     }
