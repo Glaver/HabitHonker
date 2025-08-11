@@ -18,21 +18,21 @@ struct ContentView: View {
             VStack (spacing: -10) {
                 List {
                     ForEach(items) { item in
-//                        NavigationLink(value: Route.detailHabit) {
-                            HabitCell(item: item)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        if let i = items.firstIndex(where: { $0.id == item.id }) {
-                                            let deleted = items.remove(at: i)
-                                            items.append(deleted)
-                                        }
-                                    } label: {
-                                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-                                        Image(systemName: "checkmark")
+                        //                        NavigationLink(value: Route.detailHabit) {
+                        HabitCell(item: item)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    if let i = items.firstIndex(where: { $0.id == item.id }) {
+                                        let deleted = items.remove(at: i)
+                                        items.append(deleted)
                                     }
-                                    .tint(.clear)
+                                } label: {
+                                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                                    Image(systemName: "checkmark")
                                 }
-//                        }
+                                .tint(.clear)
+                            }
+                        //                        }
                     }
                     .onDelete(perform: deleteItems)
                     .listRowBackground(Color.clear)
@@ -65,9 +65,9 @@ struct ContentView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .detailHabit:
-                    AddNewHabitView()
+                    AddNewHabitView(item: ListHabitItem.mock())
                 case .addNewHabit:
-                    AddNewHabitView()
+                    AddNewHabitView(item: ListHabitItem.mock())
                 }
             }
             // Refactor: background on change custom

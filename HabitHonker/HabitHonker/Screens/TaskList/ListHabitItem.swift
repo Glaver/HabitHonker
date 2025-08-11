@@ -12,13 +12,15 @@ struct ListHabitItem: Identifiable {
     var icon: String
     var iconColor: Color?
     var title: String
+    var description: String
     var priority: PriorityEisenhower
     var type: HabitType
-    var notificationActivated: Date?
+    var dueDate: Date?
+    var notificationActivated: Bool?
 }
 
 extension ListHabitItem {
-    enum PriorityEisenhower {
+    enum PriorityEisenhower: CaseIterable {
         case importantAndUrgent
         case importantButNotUrgent
         case urgentButNotImportant
@@ -36,11 +38,58 @@ extension ListHabitItem {
                 return "Not Urgent / Not Important"
             }
         }
+        
+//        var color: Color {
+//            switch self {
+//            case .importantAndUrgent:
+//                return .red
+//            case .importantButNotUrgent:
+//                return .blue
+//            case .urgentButNotImportant:
+//                return .yellow
+//            case .notUrgentAndNotImportant:
+//                return .green
+//            }
+//        }
+        
+        var color: Color {
+            switch self {
+            case .importantAndUrgent:
+                return Color.honkerRed
+            case .importantButNotUrgent:
+                return Color.goldenGooseYellow
+            case .urgentButNotImportant:
+                return Color.charcoalWingGray
+            case .notUrgentAndNotImportant:
+                return Color.warmFeatherBeige
+            }
+        }
     }
     
-    enum HabitType {
+    enum HabitType: CaseIterable {
         case dueDate
         case repeating
+        
+        var text: String {
+            switch self {
+            case .dueDate:
+                return "Due Date"
+            case .repeating:
+                return "Repeating"
+            }
+        }
+    }
+}
+
+extension ListHabitItem {
+    static func mock() -> ListHabitItem {
+        .init(
+            icon: "person.crop.circle",
+            iconColor: .blue,
+            title: "Meditation",
+            description: "",
+            priority: .importantButNotUrgent,
+            type: .repeating)
     }
 }
 
@@ -48,48 +97,55 @@ extension ListHabitItem {
     static func mock() -> [ListHabitItem] {
         [.init(
             icon: "person.crop.circle",
-            iconColor: .blue,
+            iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
             title: "Meditation",
+            description: "",
             priority: .importantButNotUrgent,
             type: .repeating
         ),
          .init(icon: "archivebox",
-               iconColor: .cyan,
+               iconColor: ListHabitItem.PriorityEisenhower.notUrgentAndNotImportant.color,
                title: "Wash dishes, vacuum floor, laundry, etc",
+               description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate
         ),
          .init(icon: "archivebox",
-               iconColor: .gray,
+               iconColor: ListHabitItem.PriorityEisenhower.notUrgentAndNotImportant.color,
                title: "Learn System Design",
+               description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
-               notificationActivated: Date()
+               notificationActivated: false
         ),
          .init(icon: "archivebox",
-               iconColor: .cyan,
+               iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
                title: "Swift 6.2",
+               description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
-               notificationActivated: Date()
+               notificationActivated: false
         ),
          .init(icon: "archivebox",
-               iconColor: .green,
+               iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
                title: "Candle puring",
+               description: "",
                priority: .notUrgentAndNotImportant,
                type: .repeating,
-               notificationActivated: Date()
+               notificationActivated: false
         ),
          .init(icon: "archivebox",
-               iconColor: .yellow,
+               iconColor: ListHabitItem.PriorityEisenhower.notUrgentAndNotImportant.color,
                title: "Balance board",
+               description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
-               notificationActivated: Date()
+               notificationActivated: false
         ),
          .init(icon: "square.3.layers.3d.top.filled",
-               iconColor: .brown,
+               iconColor: ListHabitItem.PriorityEisenhower.importantAndUrgent.color,
                title: "Algorithms",
+               description: "",
                priority: .importantAndUrgent,
                type: .repeating
         )]

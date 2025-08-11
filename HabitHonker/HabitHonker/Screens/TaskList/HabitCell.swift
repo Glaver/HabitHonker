@@ -16,7 +16,7 @@ struct HabitCell: View {
         HStack {
             ZStack {
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(item.iconColor?.opacity(0.6) ?? Color.clear)
+                    .fill(item.iconColor?.opacity(0.99) ?? Color.clear)
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
                     .frame(width: 60, height: 60)
                     .glassEffect()
