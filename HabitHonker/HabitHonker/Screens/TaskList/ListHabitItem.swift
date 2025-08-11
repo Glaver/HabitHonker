@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ListHabitItem: Identifiable {
     let id = UUID()
-    var icon: String
+    var icon: String?
     var iconColor: Color?
     var title: String
     var description: String

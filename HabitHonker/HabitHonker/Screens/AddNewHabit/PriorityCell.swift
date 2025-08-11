@@ -8,26 +8,27 @@
 import SwiftUI
 
 struct PriorityCell: View {
-    var title: String = "Important / Urgent"
-    var priorityColor: Color = .red
-//    @Binding var isSelected: Bool
-
-    var isSelected: Bool
+    @Binding var selectedType: ListHabitItem.PriorityEisenhower
+    var type: ListHabitItem.PriorityEisenhower
     
+    var isSelected: Bool {
+        selectedType == type
+    }
+
     var body: some View {
         Button {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
-//                self.isSelected.toggle()
+                selectedType = type
             }
-        } label: {
+        } label: {                       
             HStack() {
                 Capsule()
-                    .fill(priorityColor.opacity(0.8))
+                    .fill(isSelected ? type.color.opacity(0.7) : .clear)
                     .frame(width: 15, height: 38)
                     .glassEffect()
-                    .shadow(color: priorityColor.opacity(0.7), radius: 1, x: 0, y: 3)
+                    .shadow(color: isSelected ? type.color.opacity(0.7) : .clear, radius: 1, x: 0, y: 3)
                 
-                Text(title)
+                Text(type.text)
                     .font(.subheadline)
                     .foregroundColor(.primary)
                     .lineLimit(2)
@@ -40,31 +41,31 @@ struct PriorityCell: View {
         .glassEffect()
         .overlay(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .stroke(priorityColor.opacity(0.8), lineWidth: 0.2)
+                .stroke(isSelected ? type.color.opacity(0.8) : .clear, lineWidth: 0.2)
         )
-        .shadow(color: priorityColor.opacity(0.8), radius: 5, x: 0, y: 0)
+        .shadow(color: isSelected ? type.color.opacity(0.8) : .clear, radius: 5, x: 0, y: 0)
     }
 }
 
-struct PriorityCell_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            StatefulPreviewWrapper(false) { isOn in
-                PriorityCell(isSelected: true)//isOn
-                    .padding()
-                    .previewLayout(.sizeThatFits)
-            }
-            .preferredColorScheme(.light)
-
-            StatefulPreviewWrapper(true) { isOn in
-                PriorityCell(title: "Urgen and Important", isSelected: true)//isOn)
-                    .padding()
-                    .previewLayout(.sizeThatFits)
-            }
-            .preferredColorScheme(.dark)
-        }
-    }
-}
+//struct PriorityCell_Previews: PreviewProvider {
+//    static var previews: some View {
+//        Group {
+//            StatefulPreviewWrapper(false) { isOn in
+//                PriorityCell(type: <#Binding<ListHabitItem.PriorityEisenhower>#>, isSelected: true)//isOn
+//                    .padding()
+//                    .previewLayout(.sizeThatFits)
+//            }
+//            .preferredColorScheme(.light)
+//
+//            StatefulPreviewWrapper(true) { isOn in
+//                PriorityCell(title: "Urgen and Important", isSelected: true)//isOn)
+//                    .padding()
+//                    .previewLayout(.sizeThatFits)
+//            }
+//            .preferredColorScheme(.dark)
+//        }
+//    }
+//}
 
 /// Helper to preview @Binding
 struct StatefulPreviewWrapper<Value, Content: View>: View {

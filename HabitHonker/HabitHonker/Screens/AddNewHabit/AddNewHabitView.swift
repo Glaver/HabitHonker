@@ -27,8 +27,7 @@ struct AddNewHabitView: View {
                 TextField("Name", text: $item.title)
                 TextField("Description", text: $item.description)
             }
-            
-            
+        
                 Section() {
                     HStack{
                         Button("Icon") {
@@ -38,8 +37,14 @@ struct AddNewHabitView: View {
                         
                         Spacer()
                         ZStack {
-                            Image(item.icon != "" ? "empty_icon" : item.icon)//item.icon ??
-                                .font(Font.title)
+//                            if Image(item.icon) == nil {
+                                Image(systemName: item.icon ?? "")
+                                    .font(Font.title)
+//                            } else {
+//                                Image("empty_icon")
+//                                    .font(Font.title)
+//                            }
+                        
                             RoundedRectangle(cornerRadius: 26, style: .continuous)
                                 .fill(Color.gray.opacity(0.2))
                                 .shadow(color: .black.opacity(0.45), radius: 3, x: 1, y: 1)
@@ -55,11 +60,7 @@ struct AddNewHabitView: View {
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .multilineTextAlignment(.leading)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
-                        ForEach(ListHabitItem.PriorityEisenhower.allCases, id: \.self) { index in
-                            PriorityCell(title: index.text, priorityColor: index.color, isSelected: true)
-                        }
-                    }
+                    PriorityPicker(priorityEisenhower: $item.priority)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -99,6 +100,20 @@ struct AddNewHabitView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            
+            Section() {
+            Button("Duck!") {
+                print("Duck Duck we have new habit")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding()
+            .foregroundColor(.black)
+            .background(Color.blue.opacity(0.3))
+            .cornerRadius(30)
+            .shadow(color:Color.accentColor.opacity(0.8), radius: 5, x: 0, y: 0)
+            .glassEffect()
+            .buttonStyle(.plain)
+            }
         }
         .sheet(isPresented: $isIconsSheetPresented) {
             
@@ -110,7 +125,8 @@ struct AddNewHabitView: View {
                         .frame(maxWidth: .infinity, minHeight: 80)
                         .cornerRadius(10)
                         .onTapGesture {
-                            print(icon)
+                            item.icon = icon
+                            isIconsSheetPresented = false
                         }
                 }
             }

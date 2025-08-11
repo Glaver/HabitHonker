@@ -21,7 +21,7 @@ struct HabitCell: View {
                     .frame(width: 60, height: 60)
                     .glassEffect()
                 
-                Image(systemName: item.icon)
+                Image(systemName: item.icon ?? "empty_icon")
                     .foregroundColor(.white)
                     .font(.system(size: 20))
             }
