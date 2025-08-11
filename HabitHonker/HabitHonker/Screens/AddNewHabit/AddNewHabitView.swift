@@ -14,13 +14,12 @@ struct AddNewHabitView: View {
     @State private var repeatHabit = RepeatHabit(weekdays: [.monday, .wednesday, .friday])
     @State var dueDate: Date = Date()
     @State var isScheduled: Bool = false
+    @State private var isIconsSheetPresented: Bool = false
+    @State var isPresented: String? = nil
     
     @Environment(\.presentationMode) var presentationMode
     
-    let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
+    let icons = ["checkmark","checkmark.circle","checkmark.circle.fill","checkmark.square","checkmark.square.fill","checkmark.seal","checkmark.seal.fill","circle","square","list.bullet","list.number","list.bullet.rectangle","calendar","calendar.badge.clock","bell","bell.fill","bell.badge","alarm","alarm.fill","clock","stopwatch","timer","hourglass","hourglass.bottomhalf.filled","pencil","square.and.pencil","note.text","flag","bookmark","repeat"]
     
     var body: some View {
         List {
@@ -29,13 +28,17 @@ struct AddNewHabitView: View {
                 TextField("Description", text: $item.description)
             }
             
-            NavigationLink(value: Route.detailHabit) {
+            
                 Section() {
                     HStack{
-                        Text("Icon")
+                        Button("Icon") {
+                            isIconsSheetPresented.toggle()
+                        }
+                        .foregroundColor(.gray)
+                        
                         Spacer()
                         ZStack {
-                            Image("empty_icon")//item.icon ??
+                            Image(item.icon != "" ? "empty_icon" : item.icon)//item.icon ??
                                 .font(Font.title)
                             RoundedRectangle(cornerRadius: 26, style: .continuous)
                                 .fill(Color.gray.opacity(0.2))
@@ -44,7 +47,7 @@ struct AddNewHabitView: View {
                         }
                     }
                 }
-            }
+            
             
             Section() {
                 VStack() {
@@ -52,16 +55,14 @@ struct AddNewHabitView: View {
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .multilineTextAlignment(.leading)
-                    LazyVGrid(columns: columns, spacing: 20) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
                         ForEach(ListHabitItem.PriorityEisenhower.allCases, id: \.self) { index in
                             PriorityCell(title: index.text, priorityColor: index.color, isSelected: true)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
             }
-            
             
             Section(header: Text("Advanced Options")) {
                 VStack {
@@ -98,7 +99,24 @@ struct AddNewHabitView: View {
                 }
             }
             .listStyle(.insetGrouped)
-        }}
+        }
+        .sheet(isPresented: $isIconsSheetPresented) {
+            
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(icons, id: \.self) { icon in
+                    Image(systemName: icon)
+                        .font(.system(size: 35))
+                        .font(.largeTitle)
+                        .frame(maxWidth: .infinity, minHeight: 80)
+                        .cornerRadius(10)
+                        .onTapGesture {
+                            print(icon)
+                        }
+                }
+            }
+            .presentationDetents([.large])
+        }
+    }
 }
 
 #Preview {

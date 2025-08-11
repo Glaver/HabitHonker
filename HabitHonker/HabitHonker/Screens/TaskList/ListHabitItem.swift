@@ -29,7 +29,7 @@ extension ListHabitItem {
         var text: String {
             switch self {
             case .importantAndUrgent:
-                return " Important / Urgent"
+                return "Important / Urgent"
             case .importantButNotUrgent:
                 return "Important / Not Urgent"
             case .urgentButNotImportant:
@@ -122,7 +122,7 @@ extension ListHabitItem {
                priority: .notUrgentAndNotImportant,
                type: .dueDate
         ),
-         .init(icon: "archivebox",
+         .init(icon: "bell",
                iconColor: ListHabitItem.PriorityEisenhower.importantAndUrgent.color,
                title: "Learn System Design",
                description: "",
