@@ -32,34 +32,12 @@ struct PriorityCell: View {
                     .foregroundColor(.primary)
                     .lineLimit(2)
                     .padding(.leading, 10)
-                
-                
-                
-                
-                // Right circular selector
-                
-                //                    Circle()
-//                        .stroke(Color.gray.opacity(0.35), lineWidth: 2)
-//                    if isSelected {
-//                        Circle()
-//                            .fill(.blue)
-//                            .padding(4)
-//                        Image(systemName: "checkmark")
-//                            .font(.system(size: 12, weight: .bold))
-//                            .foregroundColor(.white)
-//                    }
-                
             }
             .padding(10)
-//            .contentShape(RoundedRectangle(cornerRadius: 16))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .buttonStyle(.plain)
         .glassEffect()
-//        .background(
-//            RoundedRectangle(cornerRadius: 16, style: .continuous)
-//                .fill(.ultraThinMaterial)
-//        )
         .overlay(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .stroke(priorityColor.opacity(0.8), lineWidth: 0.2)

@@ -51,6 +51,18 @@ extension ListHabitItem {
 //                return .green
 //            }
 //        }
+        var colorsNasty: Color {
+            switch self {
+            case .importantAndUrgent:
+                return Color.honkerRed
+            case .importantButNotUrgent:
+                return Color.goldenGooseYellow
+            case .urgentButNotImportant:
+                return Color.charcoalWingGray
+            case .notUrgentAndNotImportant:
+                return Color.warmFeatherBeige
+            }
+        }
         
         var color: Color {
             switch self {
@@ -104,14 +116,14 @@ extension ListHabitItem {
             type: .repeating
         ),
          .init(icon: "archivebox",
-               iconColor: ListHabitItem.PriorityEisenhower.notUrgentAndNotImportant.color,
+               iconColor: ListHabitItem.PriorityEisenhower.urgentButNotImportant.color,
                title: "Wash dishes, vacuum floor, laundry, etc",
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate
         ),
          .init(icon: "archivebox",
-               iconColor: ListHabitItem.PriorityEisenhower.notUrgentAndNotImportant.color,
+               iconColor: ListHabitItem.PriorityEisenhower.importantAndUrgent.color,
                title: "Learn System Design",
                description: "",
                priority: .notUrgentAndNotImportant,
