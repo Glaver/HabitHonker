@@ -74,7 +74,6 @@ struct HabitCell: View {
         }
         .padding(.vertical, 15)
         .padding(.horizontal, 10)
-//        .background(.ultraThinMaterial)
 //        .cornerRadius(26)
         .listRowInsets(EdgeInsets(top: 0, leading: 10, bottom: 15, trailing: 10))
 //        .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
