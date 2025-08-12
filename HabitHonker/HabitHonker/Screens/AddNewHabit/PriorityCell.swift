@@ -47,26 +47,6 @@ struct PriorityCell: View {
     }
 }
 
-//struct PriorityCell_Previews: PreviewProvider {
-//    static var previews: some View {
-//        Group {
-//            StatefulPreviewWrapper(false) { isOn in
-//                PriorityCell(type: <#Binding<ListHabitItem.PriorityEisenhower>#>, isSelected: true)//isOn
-//                    .padding()
-//                    .previewLayout(.sizeThatFits)
-//            }
-//            .preferredColorScheme(.light)
-//
-//            StatefulPreviewWrapper(true) { isOn in
-//                PriorityCell(title: "Urgen and Important", isSelected: true)//isOn)
-//                    .padding()
-//                    .previewLayout(.sizeThatFits)
-//            }
-//            .preferredColorScheme(.dark)
-//        }
-//    }
-//}
-
 /// Helper to preview @Binding
 struct StatefulPreviewWrapper<Value, Content: View>: View {
     @State var value: Value

@@ -33,9 +33,10 @@ struct HabitCell: View {
                             .font(.headline)
                         Spacer()
                         if item.type == .repeating {
-                            Image(systemName: "arrow.clockwise")
-                                .foregroundColor(.gray)
+                            Image(systemName: "infinity")
+                                .foregroundColor(.black)
                                 .padding(.trailing, 15)
+                            
                         }
                     }
                 }
@@ -62,8 +63,7 @@ struct HabitCell: View {
                                 .padding(.horizontal, 5)
                         }
                     }
-//                    .background(.ultraThinMaterial)
-//                    .clipShape(Capsule())
+
                     .glassEffect()
                     
                 }
@@ -74,9 +74,7 @@ struct HabitCell: View {
         }
         .padding(.vertical, 15)
         .padding(.horizontal, 10)
-//        .cornerRadius(26)
         .listRowInsets(EdgeInsets(top: 0, leading: 10, bottom: 15, trailing: 10))
-//        .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
         .frame(maxWidth: .infinity) // fill full width
         .listRowInsets(EdgeInsets()) // remove extra padding
         .listRowSeparator(.hidden)   // hide divider

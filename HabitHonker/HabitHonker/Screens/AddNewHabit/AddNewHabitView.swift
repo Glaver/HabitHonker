@@ -89,7 +89,7 @@ struct AddNewHabitView: View {
                         displayedComponents: [.hourAndMinute]
                     )
                     .datePickerStyle(.graphical)
-                    .disabled(item.notificationActivated)
+                    .disabled(!item.notificationActivated)
                     
                 }
             }
@@ -108,6 +108,8 @@ struct AddNewHabitView: View {
             .shadow(color:Color.accentColor.opacity(0.8), radius: 5, x: 0, y: 0)
             .glassEffect()
             .buttonStyle(.plain)
+                
+            
             }
         }
         .sheet(isPresented: $isIconsSheetPresented) {

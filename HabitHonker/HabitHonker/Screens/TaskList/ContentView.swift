@@ -18,24 +18,25 @@ struct ContentView: View {
             VStack (spacing: -10) {
                 List {
                     ForEach(items) { item in
-                        NavigationLink(value: Route.detailHabit(item.id)) {
-                            HabitCell(item: item)
-//                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-//                                    Button(role: .destructive) {
-//                                        if let i = items.firstIndex(where: { $0.id == item.id }) {
-//                                            let deleted = items.remove(at: i)
-//                                            items.append(deleted)
-//                                        }
-//                                    } label: {
-//                                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-//                                        Image(systemName: "checkmark")
-//                                    }
-//                                    .tint(.clear)
-//                                }
-                                .tint(.clear)
-                        }
+                        HabitCell(item: item)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                path.append(Route.detailHabit(item.id))
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    if let i = items.firstIndex(where: { $0.id == item.id }) {
+                                        let deleted = items.remove(at: i)
+                                        items.append(deleted)
+                                    }
+                                } label: {
+                                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                     }
                     .onDelete(perform: deleteItems)
+                    .onMove(perform: move)
                     .listRowBackground(Color.clear)
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -93,6 +94,10 @@ struct ContentView: View {
     
     private func deleteItems(at offsets: IndexSet) {
         items.remove(atOffsets: offsets)
+    }
+    
+    private func move(from source: IndexSet, to destination: Int) {
+        items.move(fromOffsets: source, toOffset: destination) // updates array order
     }
 }
 
