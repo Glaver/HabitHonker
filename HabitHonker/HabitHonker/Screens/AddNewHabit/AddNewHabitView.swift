@@ -10,16 +10,13 @@ import SwiftData
 
 struct AddNewHabitView: View {
     @State var item: ListHabitItem
-    @State var advancedOptions: ListHabitItem.HabitType = .repeating
-    @State private var repeatHabit = RepeatHabit(weekdays: [.monday, .wednesday, .friday])
-    @State var dueDate: Date = Date()
-    @State var isScheduled: Bool = false
     @State private var isIconsSheetPresented: Bool = false
-    @State var isPresented: String? = nil
+    let onSave: (ListHabitItem) -> Void
     
     @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
-    let icons = ["checkmark","checkmark.circle","checkmark.circle.fill","checkmark.square","checkmark.square.fill","checkmark.seal","checkmark.seal.fill","circle","square","list.bullet","list.number","list.bullet.rectangle","calendar","calendar.badge.clock","bell","bell.fill","bell.badge","alarm","alarm.fill","clock","stopwatch","timer","hourglass","hourglass.bottomhalf.filled","pencil","square.and.pencil","note.text","flag","bookmark","repeat"]
+    let icons = ["axe", "cheers", "dna", "campfire", "cyclist"]
     
     var body: some View {
         List {
@@ -27,31 +24,27 @@ struct AddNewHabitView: View {
                 TextField("Name", text: $item.title)
                 TextField("Description", text: $item.description)
             }
-        
-                Section() {
-                    HStack{
-                        Button("Icon") {
-                            isIconsSheetPresented.toggle()
-                        }
-                        .foregroundColor(.gray)
+            
+            Section() {
+                HStack{
+                    Button("Icon") {
+                        isIconsSheetPresented.toggle()
+                    }
+                    .foregroundColor(.gray)
+                    
+                    Spacer()
+                    ZStack {
+                        Image(item.icon ?? "")
+                            .font(Font.title)
+                            .frame(width: 20, height: 20)
                         
-                        Spacer()
-                        ZStack {
-//                            if Image(item.icon) == nil {
-                                Image(systemName: item.icon ?? "")
-                                    .font(Font.title)
-//                            } else {
-//                                Image("empty_icon")
-//                                    .font(Font.title)
-//                            }
-                        
-                            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                                .fill(Color.gray.opacity(0.2))
-                                .shadow(color: .black.opacity(0.45), radius: 3, x: 1, y: 1)
-                                .frame(width: 42, height: 42)
-                        }
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .fill(Color.gray.opacity(0.2))
+                            .shadow(color: .black.opacity(0.45), radius: 3, x: 1, y: 1)
+                            .frame(width: 42, height: 42)
                     }
                 }
+            }
             
             
             Section() {
@@ -67,35 +60,36 @@ struct AddNewHabitView: View {
             
             Section(header: Text("Advanced Options")) {
                 VStack {
-                    Picker("Priority", selection: $advancedOptions) {
+                    Picker("Priority", selection: $item.type) {
                         ForEach(ListHabitItem.HabitType.allCases, id: \.self) { type in
                             Text(type.text)
+                            
                         }
                     }
                     .pickerStyle(.palette)
-                    if advancedOptions == .dueDate {
+                    if item.type == .dueDate {
                         DatePicker(
                             "Start Date",
-                            selection: $dueDate,
+                            selection: $item.dueDate,
                             displayedComponents: [.date, .hourAndMinute]
                         )
                         .datePickerStyle(.graphical)
                     } else {
-                        WeekdayPicker(selection: $repeatHabit.weekdays)
+                        WeekdayPicker(selection: $item.repeting)
                     }
                 }
             }
             
             Section() {
-                Toggle("Schedule notification", isOn: $isScheduled)
-                if advancedOptions != .dueDate {
+                Toggle("Schedule notification", isOn: $item.notificationActivated)
+                if item.type != .dueDate {
                     DatePicker(
                         "Time",
-                        selection: $dueDate,
+                        selection: $item.dueDate,
                         displayedComponents: [.hourAndMinute]
                     )
                     .datePickerStyle(.graphical)
-                    .disabled(!isScheduled)
+                    .disabled(item.notificationActivated)
                     
                 }
             }
@@ -103,7 +97,8 @@ struct AddNewHabitView: View {
             
             Section() {
             Button("Duck!") {
-                print("Duck Duck we have new habit")
+                onSave(item)
+                dismiss()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding()
@@ -119,7 +114,7 @@ struct AddNewHabitView: View {
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(icons, id: \.self) { icon in
-                    Image(systemName: icon)
+                    Image(icon)
                         .font(.system(size: 35))
                         .font(.largeTitle)
                         .frame(maxWidth: .infinity, minHeight: 80)
@@ -136,11 +131,12 @@ struct AddNewHabitView: View {
 }
 
 #Preview {
-    AddNewHabitView(item: ListHabitItem(icon: "person.crop.circle",
+    AddNewHabitView(item: ListHabitItem(icon: "circle",
                                         title: "",
                                         description: "",
                                         priority: .notUrgentAndNotImportant,
-                                        type: .repeating),
-                                        dueDate: Date())
+                                        type: .repeating,
+                                        repeting: Set<Weekday>(),
+                                        dueDate: Date())) { _ in }
         .modelContainer(for: Item.self, inMemory: true)
 }

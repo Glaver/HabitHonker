@@ -15,8 +15,9 @@ struct ListHabitItem: Identifiable {
     var description: String
     var priority: PriorityEisenhower
     var type: HabitType
-    var dueDate: Date?
-    var notificationActivated: Bool?
+    var repeting: Set<Weekday>
+    var dueDate: Date
+    var notificationActivated: Bool = false
 }
 
 extension ListHabitItem {
@@ -96,70 +97,86 @@ extension ListHabitItem {
 extension ListHabitItem {
     static func mock() -> ListHabitItem {
         .init(
-            icon: "person.crop.circle",
-            iconColor: .blue,
-            title: "Meditation",
+            icon: "empty_icon",
+            iconColor: .clear,
+            title: "",
             description: "",
-            priority: .importantButNotUrgent,
-            type: .repeating)
+            priority: .notUrgentAndNotImportant,
+            type: .repeating,
+            repeting: .init(Weekday.all),
+            dueDate: Date())
     }
 }
 
 extension ListHabitItem {
     static func mock() -> [ListHabitItem] {
         [.init(
-            icon: "person.crop.circle",
+            icon: "axe",
             iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
             title: "Meditation",
             description: "",
             priority: .importantButNotUrgent,
-            type: .repeating
+            type: .repeating,
+            repeting: Set<Weekday>(),
+            dueDate: Date()
         ),
-         .init(icon: "archivebox",
+         .init(icon: "cheers",
                iconColor: ListHabitItem.PriorityEisenhower.urgentButNotImportant.color,
                title: "Wash dishes, vacuum floor, laundry, etc",
                description: "",
                priority: .notUrgentAndNotImportant,
-               type: .dueDate
+               type: .dueDate,
+               repeting: Set<Weekday>(),
+               dueDate: Date()
         ),
-         .init(icon: "bell",
+         .init(icon: "dna",
                iconColor: ListHabitItem.PriorityEisenhower.importantAndUrgent.color,
                title: "Learn System Design",
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
+               repeting: Set<Weekday>(),
+               dueDate: Date(),
                notificationActivated: false
         ),
-         .init(icon: "archivebox",
+         .init(icon: "campfire",
                iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
                title: "Swift 6.2",
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
-               notificationActivated: false
+               repeting: Set<Weekday>(),
+               dueDate: Date(),
+               notificationActivated: true
         ),
-         .init(icon: "archivebox",
+         .init(icon: "campfire",
                iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
                title: "Candle puring",
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .repeating,
+               repeting: Set<Weekday>(),
+               dueDate: Date(),
                notificationActivated: false
         ),
-         .init(icon: "archivebox",
+         .init(icon: "cyclist",
                iconColor: ListHabitItem.PriorityEisenhower.notUrgentAndNotImportant.color,
                title: "Balance board",
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
+               repeting: Set<Weekday>(),
+               dueDate: Date(),
                notificationActivated: false
         ),
-         .init(icon: "square.3.layers.3d.top.filled",
+         .init(icon: "cyclist",
                iconColor: ListHabitItem.PriorityEisenhower.importantAndUrgent.color,
                title: "Algorithms",
                description: "",
                priority: .importantAndUrgent,
-               type: .repeating
+               type: .repeating,
+               repeting: Set<Weekday>(),
+               dueDate: Date()
         )]
     }
 }

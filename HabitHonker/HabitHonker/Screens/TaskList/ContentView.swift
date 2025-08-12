@@ -18,21 +18,22 @@ struct ContentView: View {
             VStack (spacing: -10) {
                 List {
                     ForEach(items) { item in
-                        //                        NavigationLink(value: Route.detailHabit) {
-                        HabitCell(item: item)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    if let i = items.firstIndex(where: { $0.id == item.id }) {
-                                        let deleted = items.remove(at: i)
-                                        items.append(deleted)
-                                    }
-                                } label: {
-                                    RoundedRectangle(cornerRadius: 26, style: .continuous)
-                                    Image(systemName: "checkmark")
-                                }
+                        NavigationLink(value: Route.detailHabit(item.id)) {
+                            HabitCell(item: item)
+//                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+//                                    Button(role: .destructive) {
+//                                        if let i = items.firstIndex(where: { $0.id == item.id }) {
+//                                            let deleted = items.remove(at: i)
+//                                            items.append(deleted)
+//                                        }
+//                                    } label: {
+//                                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+//                                        Image(systemName: "checkmark")
+//                                    }
+//                                    .tint(.clear)
+//                                }
                                 .tint(.clear)
-                            }
-                        //                        }
+                        }
                     }
                     .onDelete(perform: deleteItems)
                     .listRowBackground(Color.clear)
@@ -64,10 +65,22 @@ struct ContentView: View {
             // Map each Route to a destination view
             .navigationDestination(for: Route.self) { route in
                 switch route {
-                case .detailHabit:
-                    AddNewHabitView(item: ListHabitItem.mock())
+                case .detailHabit(let id):
+                                if let found = items.first(where: { $0.id == id }) {
+                                    AddNewHabitView(item: found) { item in
+                                        if let index = items.firstIndex(where: { $0.id == item.id }) {
+                                            items[index] = item
+                                        }
+                                    }
+                                } else {
+                                    AddNewHabitView(item: ListHabitItem.mock()) { item in
+                                        print("can't find item with id: \(id)")
+                                    }
+                                }
                 case .addNewHabit:
-                    AddNewHabitView(item: ListHabitItem.mock())
+                    AddNewHabitView(item: ListHabitItem.mock()) { item in
+                        items.append(item)
+                    }
                 }
             }
             // Refactor: background on change custom

@@ -8,8 +8,8 @@
 import SwiftUI
 
 // MARK: - Routes for value-based navigation
-enum Route: Hashable {
-    case detailHabit
+enum Route: Hashable, Equatable {
+    case detailHabit(UUID)
     case addNewHabit
 }
 

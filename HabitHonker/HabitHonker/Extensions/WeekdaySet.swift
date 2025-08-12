@@ -15,6 +15,8 @@ enum Weekday: Int, CaseIterable, Codable {
         let idx = rawValue - 1 // DateFormatter symbols are 0-based
         return DateFormatter().shortWeekdaySymbols[idx]
     }
+    
+    static var all: [Weekday] = .init(Weekday.allCases)
 }
 
 struct RepeatHabit: Codable, Equatable {

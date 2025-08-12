@@ -16,12 +16,12 @@ struct HabitCell: View {
         HStack {
             ZStack {
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(item.iconColor?.opacity(0.99) ?? Color.clear)
+                    .fill(item.priority.color.opacity(0.7))
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
                     .frame(width: 60, height: 60)
                     .glassEffect()
                 
-                Image(systemName: item.icon ?? "empty_icon")
+                Image(item.icon ?? "empty_icon")
                     .foregroundColor(.white)
                     .font(.system(size: 20))
             }
@@ -43,7 +43,7 @@ struct HabitCell: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                if let remindTime = item.notificationActivated {
+                if item.notificationActivated  {
                     Spacer()
                     
                     HStack {
@@ -57,9 +57,9 @@ struct HabitCell: View {
                                 .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
                                 .frame(width: 98, height: 31)
                                 .glassEffect()
-                            Text("8:00 AM")
+                            Text(item.dueDate.getTimeFrom())
                                 .font(.subheadline)
-                                .padding(.horizontal, 13)
+                                .padding(.horizontal, 5)
                         }
                     }
 //                    .background(.ultraThinMaterial)
