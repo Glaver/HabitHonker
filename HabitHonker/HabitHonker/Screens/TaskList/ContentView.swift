@@ -24,14 +24,21 @@ struct ContentView: View {
                                 path.append(Route.detailHabit(item.id))
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
+                                Button(role: .confirm) {
                                     if let i = items.firstIndex(where: { $0.id == item.id }) {
                                         let deleted = items.remove(at: i)
-                                        items.append(deleted)
+//                                        if i.type == .dueDate {
+                                            // handle record and send to repository for archive and statistic
+//                                        } else if i.type == .repeting {
+                                            items.append(deleted)
+//                                        }
                                     }
                                 } label: {
-                                    RoundedRectangle(cornerRadius: 26, style: .continuous)
-                                    Image(systemName: "checkmark")
+                                    ZStack{
+                                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                                            .glassEffect()
+                                        Image(systemName: "checkmark")
+                                    }
                                 }
                             }
                     }

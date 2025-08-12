@@ -18,6 +18,24 @@ struct ListHabitItem: Identifiable {
     var repeting: Set<Weekday>
     var dueDate: Date
     var notificationActivated: Bool = false
+    var record: [HabitRecord] = []
+    
+    mutating func completeHabitNow() {
+        self.record.append(.init(date: Date(), count: 1))
+    }
+    
+    func isCompleted(on date: Date) -> Bool {
+        record.contains(where: { Calendar.current.isDate($0.date, inSameDayAs: date) })
+    }
+}
+
+extension ListHabitItem {
+    struct HabitRecord: Identifiable, Codable {
+        let id = UUID()
+        let date: Date
+        let count: Int
+        // MARK: this entity will be extanded by specific needs of tasks or habits in future
+    }
 }
 
 extension ListHabitItem {
@@ -40,18 +58,19 @@ extension ListHabitItem {
             }
         }
         
-//        var color: Color {
-//            switch self {
-//            case .importantAndUrgent:
-//                return .red
-//            case .importantButNotUrgent:
-//                return .blue
-//            case .urgentButNotImportant:
-//                return .yellow
-//            case .notUrgentAndNotImportant:
-//                return .green
-//            }
-//        }
+        var color: Color {
+            switch self {
+            case .importantAndUrgent:
+                return .red
+            case .importantButNotUrgent:
+                return .blue
+            case .urgentButNotImportant:
+                return .yellow
+            case .notUrgentAndNotImportant:
+                return .green
+            }
+        }
+        
         var colorsNasty: Color {
             switch self {
             case .importantAndUrgent:
@@ -65,20 +84,22 @@ extension ListHabitItem {
             }
         }
         
-        var color: Color {
-            switch self {
-            case .importantAndUrgent:
-                return Color.honkerRed
-            case .importantButNotUrgent:
-                return Color.goldenGooseYellow
-            case .urgentButNotImportant:
-                return Color.charcoalWingGray
-            case .notUrgentAndNotImportant:
-                return Color.warmFeatherBeige
-            }
-        }
+//        var color: Color {
+//            switch self {
+//            case .importantAndUrgent:
+//                return Color.honkerRed
+//            case .importantButNotUrgent:
+//                return Color.goldenGooseYellow
+//            case .urgentButNotImportant:
+//                return Color.charcoalWingGray
+//            case .notUrgentAndNotImportant:
+//                return Color.warmFeatherBeige
+//            }
+//        }
     }
-    
+}
+
+extension ListHabitItem {
     enum HabitType: CaseIterable {
         case dueDate
         case repeating

@@ -113,14 +113,10 @@ struct AddNewHabitView: View {
                 }
                 .listRowInsets(EdgeInsets())
                 .frame(maxWidth: .infinity, maxHeight: 50)
-                .cornerRadius(30)// remove default padding
                 .multilineTextAlignment(.center)
-                .background(Color.blue.opacity(0.6))
+                .background(Color.blue)
                 .tint(Color.black)
-
-                .glassEffect()
                 .scaledToFill()
-                .shadow(color: Color.blue.opacity(0.6), radius: 3, x: 1, y: 2)
             
         }
         .sheet(isPresented: $isIconsSheetPresented) {
