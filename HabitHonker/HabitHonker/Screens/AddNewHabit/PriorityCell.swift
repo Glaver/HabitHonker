@@ -43,7 +43,7 @@ struct PriorityCell: View {
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .stroke(isSelected ? type.color.opacity(0.8) : .clear, lineWidth: 0.2)
         )
-        .shadow(color: isSelected ? type.color.opacity(0.8) : .clear, radius: 5, x: 0, y: 0)
+        .shadow(color: isSelected ? type.color.opacity(0.3) : .clear, radius: 5, x: 0, y: 0)
     }
 }
 

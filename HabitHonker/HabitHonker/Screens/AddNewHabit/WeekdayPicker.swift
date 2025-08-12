@@ -35,7 +35,7 @@ struct WeekdayPicker: View {
                     .accessibilityLabel(Text(day.shortSymbol))
                     .accessibilityAddTraits(isOn ? .isSelected : [])
                     .glassEffect()
-                    .shadow(color: isOn ? Color.accentColor.opacity(0.8) : .clear, radius: 5, x: 0, y: 0)
+                    .shadow(color: isOn ? Color.accentColor.opacity(0.3) : .clear, radius: 5, x: 0, y: 0)
             }
         }
     }

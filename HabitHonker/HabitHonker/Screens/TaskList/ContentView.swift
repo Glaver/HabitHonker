@@ -67,21 +67,38 @@ struct ContentView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .detailHabit(let id):
-                                if let found = items.first(where: { $0.id == id }) {
-                                    AddNewHabitView(item: found) { item in
-                                        if let index = items.firstIndex(where: { $0.id == item.id }) {
-                                            items[index] = item
-                                        }
-                                    }
-                                } else {
-                                    AddNewHabitView(item: ListHabitItem.mock()) { item in
-                                        print("can't find item with id: \(id)")
-                                    }
-                                }
-                case .addNewHabit:
-                    AddNewHabitView(item: ListHabitItem.mock()) { item in
-                        items.append(item)
+                    if let found = items.first(where: { $0.id == id }) {
+                        AddNewHabitView(item: found,
+                                        saveAction: { item in
+                            if let index = items.firstIndex(where: { $0.id == item.id }) {
+                                items[index] = item
+                            }
+                        },
+                                        saveButton: {
+                            SaveButton() {
+                            }
+                        })
+                    } else {
+                        AddNewHabitView(item: ListHabitItem.mock(),
+                                        saveAction: { item in
+                            if let index = items.firstIndex(where: { $0.id == item.id }) {
+                                items[index] = item
+                            }
+                        },
+                                        saveButton: {
+                            SaveButton() {
+                            }
+                        })
                     }
+                case .addNewHabit:
+                    AddNewHabitView(item: ListHabitItem.mock(),
+                                    saveAction: { item in
+                        items.append(item)
+                    },
+                                    saveButton: {
+                        SaveButton() {
+                        }
+                    })
                 }
             }
             // Refactor: background on change custom

@@ -11,12 +11,21 @@ import SwiftData
 struct AddNewHabitView: View {
     @State var item: ListHabitItem
     @State private var isIconsSheetPresented: Bool = false
-    let onSave: (ListHabitItem) -> Void
+    @ViewBuilder private let saveButton: (() -> SaveButton)
+    private let saveAction: (ListHabitItem) -> Void
     
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.dismiss) private var dismiss
     
     let icons = ["axe", "cheers", "dna", "campfire", "cyclist"]
+    
+    init(item: ListHabitItem,
+        saveAction: @escaping (ListHabitItem) -> Void,
+         @ViewBuilder saveButton: @escaping () -> SaveButton) {
+        self._item = State(initialValue: item)
+        self.saveAction = saveAction
+        self.saveButton = saveButton
+    }
     
     var body: some View {
         List {
@@ -95,22 +104,24 @@ struct AddNewHabitView: View {
             }
             .listStyle(.insetGrouped)
             
-            Section() {
-            Button("Duck!") {
-                onSave(item)
-                dismiss()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding()
-            .foregroundColor(.black)
-            .background(Color.blue.opacity(0.3))
-            .cornerRadius(30)
-            .shadow(color:Color.accentColor.opacity(0.8), radius: 5, x: 0, y: 0)
-            .glassEffect()
-            .buttonStyle(.plain)
-                
+//            Section() {
+                //                RoundedRectangle(cornerRadius: 100, style: .continuous)
+                Button("Save") {
+                    saveAction(item)
+                    print("hoy")
+                    dismiss()
+                }
+                .listRowInsets(EdgeInsets())
+                .frame(maxWidth: .infinity, maxHeight: 50)
+                .cornerRadius(30)// remove default padding
+                .multilineTextAlignment(.center)
+                .background(Color.blue.opacity(0.6))
+                .tint(Color.black)
+
+                .glassEffect()
+                .scaledToFill()
+                .shadow(color: Color.blue.opacity(0.6), radius: 3, x: 1, y: 2)
             
-            }
         }
         .sheet(isPresented: $isIconsSheetPresented) {
             
@@ -133,12 +144,32 @@ struct AddNewHabitView: View {
 }
 
 #Preview {
-    AddNewHabitView(item: ListHabitItem(icon: "circle",
-                                        title: "",
-                                        description: "",
-                                        priority: .notUrgentAndNotImportant,
-                                        type: .repeating,
-                                        repeting: Set<Weekday>(),
-                                        dueDate: Date())) { _ in }
-        .modelContainer(for: Item.self, inMemory: true)
+    AddNewHabitView(
+        item: ListHabitItem(icon: "circle",
+                            iconColor: .red,
+                            title: "Fly with dragon",
+                            description: "That is the only way",
+                            priority: .importantAndUrgent,
+                            type: .repeating,
+                            repeting: Set<Weekday>(),
+                            dueDate: Date()),
+        saveAction: { _ in },
+        saveButton: {
+            SaveButton() {
+                print("sss")
+            }
+        }
+    )
+            .modelContainer(for: Item.self, inMemory: true)
+}
+
+
+struct SaveButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button("Save") {
+            action()
+        }
+    }
 }

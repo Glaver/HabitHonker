@@ -5,7 +5,7 @@
 //  Created by Vladyslav on 8/10/25.
 //
 import SwiftUI
-
+// MARK: Don't even think about to write me comments here. THis all will be refactored when I will understand how many colors we need and how i need to change them    
 extension Color {
     static let goldenGooseYellow = purplion//Color(red: 255/255, green: 200/255, blue: 50/255)   // #FFC832
     static let honkerRed         = fourth//Color(red: 214/255, green: 40/255,  blue: 40/255)   // #D62828

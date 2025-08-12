@@ -16,7 +16,7 @@ enum Route: Hashable, Equatable {
 struct RootTabsView: View {
     var body: some View {
         TabView {
-            ContentView() // Tab 1 with NavigationStack + pushes
+            ContentView()
                 .tabItem {
                     Image(systemName: "line.3.horizontal")
                     Text("List")
