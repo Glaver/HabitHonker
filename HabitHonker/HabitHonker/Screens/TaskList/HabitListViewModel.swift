@@ -14,17 +14,24 @@ final class HabitListViewModel: ObservableObject {
     @Published var error: String?
 
     private let repo: HabitsRepositorySwiftData
-    init(repo: HabitsRepositorySwiftData) {
+    private let notifier: HabitNotificationScheduling
+    
+    init(repo: HabitsRepositorySwiftData,
+         notifier: HabitNotificationScheduling = HabitNotificationService()) {
         self.repo = repo
+        self.notifier = notifier
+        Task { try? await notifier.requestAuthorization() }
     }
 
     // MARK: - Lifecycle
     func onAppear() { 
-        Task { 
-            await load() 
-        } 
+        Task { await load() }
     }
-
+    
+    func onAppLaunch() {
+        Task { try? await notifier.requestAuthorization() }
+    }
+    
     // MARK: - Actions
     func load(forDate date: Date = Date()) async {
         isLoading = true
@@ -162,5 +169,13 @@ final class HabitListViewModel: ObservableObject {
 
     func setEditingItem(_ newItem: ListHabitItem) {
         self.item = newItem
+    }
+    
+    //MARK: - Notifications
+    
+    func updateHabitNotification() {
+        guard item.isNotificationActivated else { return }
+        
+        Task { try? await notifier.reschedule(for: item) }
     }
 }

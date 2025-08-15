@@ -44,7 +44,7 @@ struct HabitCell: View {
                     .font(.caption)
                     .foregroundColor(isCompletedToday ? .gray :.secondary)
                 
-                if item.notificationActivated  {
+                if item.isNotificationActivated  {
                     Spacer()
                     
                     HStack {

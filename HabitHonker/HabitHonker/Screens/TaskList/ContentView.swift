@@ -112,6 +112,7 @@ struct ContentView: View {
                             Task {
                                 viewModel.setEditingItem(item)
                                 await viewModel.saveCurrent()
+                                viewModel.updateHabitNotification()
                             }
                         },
                                         saveButton: {
@@ -125,6 +126,7 @@ struct ContentView: View {
                             Task {
                                 viewModel.setEditingItem(item)
                                 await viewModel.saveCurrent()
+                                viewModel.updateHabitNotification()
                             }
                         },
                                         saveButton: {
@@ -138,11 +140,11 @@ struct ContentView: View {
                         Task {
                             viewModel.setEditingItem(item)
                             await viewModel.saveCurrent()
+                            viewModel.updateHabitNotification()
                         }
                     },
                                     saveButton: {
                         SaveButton() {
-                            print("hoy hoy")
                         }
                     })
                 }

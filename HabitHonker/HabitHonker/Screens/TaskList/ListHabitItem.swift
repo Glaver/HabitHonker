@@ -17,7 +17,7 @@ struct ListHabitItem: Identifiable, Equatable {
     var type: HabitType
     var repeating: Set<Weekday>
     var dueDate: Date
-    var notificationActivated: Bool = false
+    var isNotificationActivated: Bool = false
     var record: [HabitRecord] = []
     var isCompletedToday: Bool { isCompleted(on: Date()) }
     
@@ -61,7 +61,7 @@ struct ListHabitItem: Identifiable, Equatable {
         self.type = type
         self.repeating = repeating
         self.dueDate = dueDate
-        self.notificationActivated = notificationActivated
+        self.isNotificationActivated = notificationActivated
         self.record = record
     }
 }

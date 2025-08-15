@@ -8,7 +8,18 @@ import SwiftUI
 
 enum Weekday: Int, CaseIterable, Codable {
     case sunday = 1, monday, tuesday, wednesday, thursday, friday, saturday
-
+    
+    var text: String {
+        switch self {
+        case .sunday: return "Sunday"
+        case .monday: return "Monday"
+        case .tuesday: return "Tuesday"
+        case .wednesday: return "Wednesday"
+        case .thursday: return "Thursday"
+        case .friday: return "Friday"
+        case .saturday: return "Saturday"
+        }
+    }
     var shortSymbol: String {
         let idx = rawValue - 1 // DateFormatter symbols are 0-based
         return DateFormatter().shortWeekdaySymbols[idx]

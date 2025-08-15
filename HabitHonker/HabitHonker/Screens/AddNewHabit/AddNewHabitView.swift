@@ -90,7 +90,7 @@ struct AddNewHabitView: View {
             }
             
             Section() {
-                Toggle("Schedule notification", isOn: $item.notificationActivated)
+                Toggle("Schedule notification", isOn: $item.isNotificationActivated)
                 if item.type != .dueDate {
                     DatePicker(
                         "Time",
@@ -98,7 +98,7 @@ struct AddNewHabitView: View {
                         displayedComponents: [.hourAndMinute]
                     )
                     .datePickerStyle(.graphical)
-                    .disabled(!item.notificationActivated)
+                    .disabled(!item.isNotificationActivated)
                     
                 }
             }

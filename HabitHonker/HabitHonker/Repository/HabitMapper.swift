@@ -81,7 +81,7 @@ enum HabitMapper {
             typeRaw: domain.type.rawValue,
             repeatingWeekdays: domain.repeating.map(\.rawValue),
             dueDate: domain.dueDate,
-            notificationActivated: domain.notificationActivated,
+            notificationActivated: domain.isNotificationActivated,
             records: domain.record.map { record in
                 let habitRecord = HabitRecordSD()
                 habitRecord.id = record.id
@@ -102,7 +102,7 @@ enum HabitMapper {
         sd.typeRaw = domain.type.rawValue
         sd.repeatingWeekdays = domain.repeating.map(\.rawValue)
         sd.dueDate = domain.dueDate
-        sd.notificationActivated = domain.notificationActivated
+        sd.notificationActivated = domain.isNotificationActivated
         // Replace records (simple strategy; optimize as needed)
         sd.records = domain.record.map { record in
             let habitRecord = HabitRecordSD()
@@ -125,7 +125,7 @@ enum HabitMapper {
             typeRaw: domain.type.rawValue,
             repeatingWeekdays: domain.repeating.map(\.rawValue),
             dueDate: domain.dueDate,
-            notificationActivated: domain.notificationActivated,
+            notificationActivated: domain.isNotificationActivated,
             deletedAt: Date(),
             records: domain.record.map { record in
                 let habitRecord = HabitRecordSD()
