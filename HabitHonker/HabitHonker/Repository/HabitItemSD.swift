@@ -50,11 +50,11 @@ final class HabitSD {
 
 @Model
 final class HabitRecordSD {
-    @Attribute(.unique) var id: UUID
-    var date: Date
-    var count: Int
+    var id: UUID?
+    var date: Date?
+    var count: Int?
 
-    init(id: UUID, date: Date, count: Int) {
+    init(id: UUID = UUID(), date: Date = Date(), count: Int = 1) {
         self.id = id
         self.date = date
         self.count = count

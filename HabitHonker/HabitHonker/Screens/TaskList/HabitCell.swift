@@ -11,15 +11,16 @@ import SwiftData
 
 struct HabitCell: View {
     let item: ListHabitItem
+    private var isCompletedToday: Bool { item.isCompletedToday }
     
     var body: some View {
         HStack {
             ZStack {
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(item.priority.color.opacity(0.7))
+                    .fill(isCompletedToday ? item.priority.color.opacity(0.05) : item.priority.color.opacity(0.7))
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
                     .frame(width: 60, height: 60)
-                    .glassEffect()
+                    .glassEffect(isCompletedToday ? .clear : .regular)
                 
                 Image(item.icon ?? "empty_icon")
                     .foregroundColor(.white)
@@ -36,13 +37,12 @@ struct HabitCell: View {
                             Image(systemName: "infinity")
                                 .foregroundColor(.black)
                                 .padding(.trailing, 15)
-                            
                         }
                     }
                 }
                 Text(item.priority.text)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(isCompletedToday ? .gray :.secondary)
                 
                 if item.notificationActivated  {
                     Spacer()
@@ -78,6 +78,6 @@ struct HabitCell: View {
         .frame(maxWidth: .infinity) // fill full width
         .listRowInsets(EdgeInsets()) // remove extra padding
         .listRowSeparator(.hidden)   // hide divider
-        .glassEffect()
+        .glassEffect(isCompletedToday ? .clear : .regular)
     }
 }

@@ -5,7 +5,7 @@
 //  Created by Vladyslav on 8/14/25.
 //
 
-//import SwiftUI
+import SwiftUI
 
 //extension View {
 //    func glassEffect() -> some View {

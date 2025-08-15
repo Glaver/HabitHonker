@@ -11,6 +11,7 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var path = NavigationPath()
+    @State private var isDeleting = false
     
     let makeViewModel: () -> HabitListViewModel
     @StateObject private var viewModel: HabitListViewModel
@@ -34,10 +35,10 @@ struct ContentView: View {
                                 Button(role: .confirm) {
                                     Task {
                                         // Mark as completed
-//                                        var updatedItem = item
-//                                        updatedItem.completeHabitNow()
-//                                        viewModel.setEditingItem(updatedItem)
-//                                        await viewModel.saveCurrent()
+                                        var updatedItem = item
+                                        updatedItem.completeHabitNow()
+                                        viewModel.setEditingItem(updatedItem)
+                                        await viewModel.saveCurrent()
                                     }
                                 } label: {
                                     ZStack{
@@ -50,7 +51,9 @@ struct ContentView: View {
                             .swipeActions(edge: .leading) {
                                 Button {
                                     Task {
-//                                        await viewModel.deleteItem(withId: item.id)
+                                        isDeleting = true
+                                        await viewModel.deleteItem(withId: item.id)
+                                        isDeleting = false
                                     }
                                 } label: {
                                     ZStack{
@@ -62,8 +65,6 @@ struct ContentView: View {
                                 .tint(.red)
                             }
                     }
-                    .onDelete(perform: deleteItems)
-                    .onMove(perform: move)
                     .listRowBackground(Color.clear)
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -72,6 +73,7 @@ struct ContentView: View {
                 }
                 .onAppear { viewModel.onAppear() }
                 .scrollContentBackground(.hidden)
+                .disabled(isDeleting) // Disable interactions during deletion
                 
             }
             .listStyle(.insetGrouped)
@@ -144,18 +146,8 @@ struct ContentView: View {
         }
     }
     
-    private func deleteItems(at offsets: IndexSet) {
-        Task {
-            await viewModel.delete(at: offsets)
-        }
-    }
-    
-    private func move(from source: IndexSet, to destination: Int) {
-        // Note: This would need to be implemented in the repository if you want to persist order
-        // For now, just update the local array
-        var items = viewModel.items
-        items.move(fromOffsets: source, toOffset: destination)
-    }
+    // Note: deleteItems and move functions are no longer needed since we're using swipe actions
+    // for deletion and the list is automatically sorted by completion status
 }
 
 #Preview {

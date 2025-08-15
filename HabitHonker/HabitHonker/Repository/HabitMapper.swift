@@ -49,16 +49,22 @@ enum HabitMapper {
         let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
 
         var item = ListHabitItem(
+            id: sd.id,
             icon: sd.icon,
             iconColor: color(from: sd.iconColorHex),
             title: sd.title,
             description: sd.descriptionText,
             priority: priority,
             type: type,
-            repeting: weekdays,
+            repeating: weekdays,
             dueDate: sd.dueDate,
             notificationActivated: sd.notificationActivated,
-            record: sd.records.map { ListHabitItem.HabitRecord(date: $0.date, count: $0.count) }
+            record: sd.records.compactMap { record in
+                guard let id = record.id, let date = record.date, let count = record.count else {
+                    return nil
+                }
+                return ListHabitItem.HabitRecord(id: id, date: date, count: count)
+            }
         )
         return item
     }
@@ -73,10 +79,16 @@ enum HabitMapper {
             descriptionText: domain.description,
             priorityRaw: domain.priority.rawValue,
             typeRaw: domain.type.rawValue,
-            repeatingWeekdays: domain.repeting.map(\.rawValue),
+            repeatingWeekdays: domain.repeating.map(\.rawValue),
             dueDate: domain.dueDate,
             notificationActivated: domain.notificationActivated,
-            records: domain.record.map { HabitRecordSD(id: $0.id, date: $0.date, count: $0.count) }
+            records: domain.record.map { record in
+                let habitRecord = HabitRecordSD()
+                habitRecord.id = record.id
+                habitRecord.date = record.date
+                habitRecord.count = record.count
+                return habitRecord
+            }
         )
     }
 
@@ -88,10 +100,16 @@ enum HabitMapper {
         sd.descriptionText = domain.description
         sd.priorityRaw = domain.priority.rawValue
         sd.typeRaw = domain.type.rawValue
-        sd.repeatingWeekdays = domain.repeting.map(\.rawValue)
+        sd.repeatingWeekdays = domain.repeating.map(\.rawValue)
         sd.dueDate = domain.dueDate
         sd.notificationActivated = domain.notificationActivated
         // Replace records (simple strategy; optimize as needed)
-        sd.records = domain.record.map { HabitRecordSD(id: $0.id, date: $0.date, count: $0.count) }
+        sd.records = domain.record.map { record in
+            let habitRecord = HabitRecordSD()
+            habitRecord.id = record.id
+            habitRecord.date = record.date
+            habitRecord.count = record.count
+            return habitRecord
+        }
     }
 }

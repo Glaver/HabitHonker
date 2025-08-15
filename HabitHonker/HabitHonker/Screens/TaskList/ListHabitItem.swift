@@ -8,34 +8,58 @@ import Foundation
 import SwiftUI
 
 struct ListHabitItem: Identifiable, Equatable {
-    let id = UUID()
+    var id: UUID
     var icon: String?
     var iconColor: Color?
     var title: String
     var description: String
     var priority: PriorityEisenhower
     var type: HabitType
-    var repeting: Set<Weekday>
+    var repeating: Set<Weekday>
     var dueDate: Date
     var notificationActivated: Bool = false
     var record: [HabitRecord] = []
+    var isCompletedToday: Bool { isCompleted(on: Date()) }
     
     mutating func completeHabitNow() {
-        self.record.append(.init(date: Date(), count: 1))
+        let today = Date()
+        print("Completing habit: \(title)")
+        print("Current records count: \(record.count)")
+        
+        if let existingIndex = record.firstIndex(where: { Calendar.current.isDate($0.date, inSameDayAs: today) }) {
+            // Increment count for existing record
+            print("Found existing record for today, incrementing count from \(record[existingIndex].count)")
+            record[existingIndex].count += 1
+            print("New count: \(record[existingIndex].count)")
+        } else {
+            // Create new record for today
+            print("Creating new record for today")
+            let newRecord = HabitRecord(date: today, count: 1)
+            print("New record: id=\(newRecord.id), date=\(newRecord.date), count=\(newRecord.count)")
+            record.append(newRecord)
+        }
+        
+        print("Total records after completion: \(record.count)")
     }
     
     func isCompleted(on date: Date) -> Bool {
         record.contains(where: { Calendar.current.isDate($0.date, inSameDayAs: date) })
     }
     
-    init(icon: String? = nil, iconColor: Color? = nil, title: String = "", description: String = "", priority: PriorityEisenhower = .importantAndUrgent, type: HabitType = .repeating, repeting: Set<Weekday> = Weekday.allSet, dueDate: Date = Date(), notificationActivated: Bool = false, record: [HabitRecord] = []) {
+    func getTodayCount() -> Int {
+        let today = Date()
+        return record.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) })?.count ?? 0
+    }
+    
+    init(id: UUID = UUID(), icon: String? = nil, iconColor: Color? = nil, title: String = "", description: String = "", priority: PriorityEisenhower = .importantAndUrgent, type: HabitType = .repeating, repeating: Set<Weekday> = Weekday.allSet, dueDate: Date = Date(), notificationActivated: Bool = false, record: [HabitRecord] = []) {
+        self.id = id
         self.icon = icon
         self.iconColor = iconColor
         self.title = title
         self.description = description
         self.priority = priority
         self.type = type
-        self.repeting = repeting
+        self.repeating = repeating
         self.dueDate = dueDate
         self.notificationActivated = notificationActivated
         self.record = record
@@ -44,9 +68,16 @@ struct ListHabitItem: Identifiable, Equatable {
 
 extension ListHabitItem {
     struct HabitRecord: Identifiable, Codable, Equatable {
-        let id = UUID()
+        var id: UUID
         var date: Date
         var count: Int
+        
+        init(id: UUID = UUID(), date: Date, count: Int) {
+            self.id = id
+            self.date = date
+            self.count = count
+        }
+        
         /// MARK: this entity will be extended by specific needs(properties) of tasks or habits in future
     }
 }
@@ -137,7 +168,7 @@ extension ListHabitItem {
             description: "",
             priority: .notUrgentAndNotImportant,
             type: .repeating,
-            repeting: .init(Weekday.all),
+            repeating: .init(Weekday.all),
             dueDate: Date())
     }
 }
@@ -151,7 +182,7 @@ extension ListHabitItem {
             description: "",
             priority: .importantButNotUrgent,
             type: .repeating,
-            repeting: Set<Weekday>(),
+            repeating: Set<Weekday>(),
             dueDate: Date()
         ),
          .init(icon: "cheers",
@@ -160,7 +191,7 @@ extension ListHabitItem {
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
-               repeting: Set<Weekday>(),
+               repeating: Set<Weekday>(),
                dueDate: Date()
         ),
          .init(icon: "dna",
@@ -169,7 +200,7 @@ extension ListHabitItem {
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
-               repeting: Set<Weekday>(),
+               repeating: Set<Weekday>(),
                dueDate: Date(),
                notificationActivated: false
         ),
@@ -179,7 +210,7 @@ extension ListHabitItem {
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
-               repeting: Set<Weekday>(),
+               repeating: Set<Weekday>(),
                dueDate: Date(),
                notificationActivated: true
         ),
@@ -189,7 +220,7 @@ extension ListHabitItem {
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .repeating,
-               repeting: Set<Weekday>(),
+               repeating: Set<Weekday>(),
                dueDate: Date(),
                notificationActivated: false
         ),
@@ -199,7 +230,7 @@ extension ListHabitItem {
                description: "",
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
-               repeting: Set<Weekday>(),
+               repeating: Set<Weekday>(),
                dueDate: Date(),
                notificationActivated: false
         ),
@@ -209,7 +240,7 @@ extension ListHabitItem {
                description: "",
                priority: .importantAndUrgent,
                type: .repeating,
-               repeting: Set<Weekday>(),
+               repeating: Set<Weekday>(),
                dueDate: Date()
         )]
     }

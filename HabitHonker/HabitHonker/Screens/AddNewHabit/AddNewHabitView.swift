@@ -84,7 +84,7 @@ struct AddNewHabitView: View {
                         )
                         .datePickerStyle(.graphical)
                     } else {
-                        WeekdayPicker(selection: $item.repeting)
+                        WeekdayPicker(selection: $item.repeating)
                     }
                 }
             }
@@ -104,19 +104,16 @@ struct AddNewHabitView: View {
             }
             .listStyle(.insetGrouped)
             
-//            Section() {
-                //                RoundedRectangle(cornerRadius: 100, style: .continuous)
-                Button("Save") {
-                    saveAction(item)
-                    print("hoy")
-                    dismiss()
-                }
-                .listRowInsets(EdgeInsets())
-                .frame(maxWidth: .infinity, maxHeight: 50)
-                .multilineTextAlignment(.center)
-                .background(Color.blue)
-                .tint(Color.black)
-                .scaledToFill()
+            Button("Save") {
+                saveAction(item)
+                dismiss()
+            }
+            .listRowInsets(EdgeInsets())
+            .frame(maxWidth: .infinity, maxHeight: 50)
+            .multilineTextAlignment(.center)
+            .background(Color.blue)
+            .tint(Color.black)
+            .scaledToFill()
             
         }
         .sheet(isPresented: $isIconsSheetPresented) {
@@ -147,7 +144,7 @@ struct AddNewHabitView: View {
                             description: "That is the only way",
                             priority: .importantAndUrgent,
                             type: .repeating,
-                            repeting: Set<Weekday>(),
+                            repeating: Set<Weekday>(),
                             dueDate: Date()),
         saveAction: { _ in },
         saveButton: {
