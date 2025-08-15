@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 // MARK: - Routes for value-based navigation
 enum Route: Hashable, Equatable {
@@ -14,13 +15,18 @@ enum Route: Hashable, Equatable {
 }
 
 struct RootTabsView: View {
+    @Environment(\.modelContext) private var modelContext
+    
     var body: some View {
         TabView {
-            ContentView()
-                .tabItem {
-                    Image(systemName: "line.3.horizontal")
-                    Text("List")
-                }
+            ContentView(makeViewModel: {
+                let container = modelContext.container
+                return HabitListViewModel(repo: HabitsRepositorySwiftData(container: container))
+            })
+            .tabItem {
+                Image(systemName: "line.3.horizontal")
+                Text("List")
+            }
             
             Text("Priority")
                 .tabItem {
@@ -28,10 +34,10 @@ struct RootTabsView: View {
                     Text("Priority")
                 }
             
-            Text("Staistic")
+            Text("Statistics")
                 .tabItem {
                     Image(systemName: "chart.bar.fill")
-                    Text("Staistic")
+                    Text("Statistics")
                 }
             
             Text("Account")

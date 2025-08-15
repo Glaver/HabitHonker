@@ -10,14 +10,21 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var items: [ListHabitItem] = ListHabitItem.mock()
     @State private var path = NavigationPath()
-
+    
+    let makeViewModel: () -> HabitListViewModel
+    @StateObject private var viewModel: HabitListViewModel
+    
+    init(makeViewModel: @escaping () -> HabitListViewModel) {
+        _viewModel = StateObject(wrappedValue: makeViewModel())
+        self.makeViewModel = makeViewModel
+    }
+    
     var body: some View {
         NavigationStack(path: $path) {
             VStack (spacing: -10) {
                 List {
-                    ForEach(items) { item in
+                    ForEach(viewModel.items) { item in
                         HabitCell(item: item)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -25,13 +32,12 @@ struct ContentView: View {
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .confirm) {
-                                    if let i = items.firstIndex(where: { $0.id == item.id }) {
-                                        let deleted = items.remove(at: i)
-//                                        if i.type == .dueDate {
-                                            // handle record and send to repository for archive and statistic
-//                                        } else if i.type == .repeting {
-                                            items.append(deleted)
-//                                        }
+                                    Task {
+                                        // Mark as completed
+//                                        var updatedItem = item
+//                                        updatedItem.completeHabitNow()
+//                                        viewModel.setEditingItem(updatedItem)
+//                                        await viewModel.saveCurrent()
                                     }
                                 } label: {
                                     ZStack{
@@ -40,6 +46,20 @@ struct ContentView: View {
                                         Image(systemName: "checkmark")
                                     }
                                 }
+                            }
+                            .swipeActions(edge: .leading) {
+                                Button {
+                                    Task {
+//                                        await viewModel.deleteItem(withId: item.id)
+                                    }
+                                } label: {
+                                    ZStack{
+                                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                                            .glassEffect()
+                                        Image(systemName: "trash")
+                                    }
+                                }
+                                .tint(.red)
                             }
                     }
                     .onDelete(perform: deleteItems)
@@ -50,11 +70,12 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(.clear)
                 }
+                .onAppear { viewModel.onAppear() }
                 .scrollContentBackground(.hidden)
                 
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("Thrusday 16, July")
+            .navigationTitle("Thursday 16, July")
             .navigationBarTitleDisplayMode(.large)
             
             .toolbar {
@@ -74,22 +95,25 @@ struct ContentView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .detailHabit(let id):
-                    if let found = items.first(where: { $0.id == id }) {
+                    if let found = viewModel.items.first(where: { $0.id == id }) {
                         AddNewHabitView(item: found,
                                         saveAction: { item in
-                            if let index = items.firstIndex(where: { $0.id == item.id }) {
-                                items[index] = item
+                            Task {
+                                viewModel.setEditingItem(item)
+                                await viewModel.saveCurrent()
                             }
                         },
                                         saveButton: {
                             SaveButton() {
+                                print("should be saved here")
                             }
                         })
                     } else {
                         AddNewHabitView(item: ListHabitItem.mock(),
                                         saveAction: { item in
-                            if let index = items.firstIndex(where: { $0.id == item.id }) {
-                                items[index] = item
+                            Task {
+                                viewModel.setEditingItem(item)
+                                await viewModel.saveCurrent()
                             }
                         },
                                         saveButton: {
@@ -100,10 +124,14 @@ struct ContentView: View {
                 case .addNewHabit:
                     AddNewHabitView(item: ListHabitItem.mock(),
                                     saveAction: { item in
-                        items.append(item)
+                        Task {
+                            viewModel.setEditingItem(item)
+                            await viewModel.saveCurrent()
+                        }
                     },
                                     saveButton: {
                         SaveButton() {
+                            print("hoy hoy")
                         }
                     })
                 }
@@ -117,15 +145,33 @@ struct ContentView: View {
     }
     
     private func deleteItems(at offsets: IndexSet) {
-        items.remove(atOffsets: offsets)
+        Task {
+            await viewModel.delete(at: offsets)
+        }
     }
     
     private func move(from source: IndexSet, to destination: Int) {
-        items.move(fromOffsets: source, toOffset: destination) // updates array order
+        // Note: This would need to be implemented in the repository if you want to persist order
+        // For now, just update the local array
+        var items = viewModel.items
+        items.move(fromOffsets: source, toOffset: destination)
     }
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+    // 1) Make an in-memory SwiftData container for previews
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try! ModelContainer(
+            for: HabitSD.self, HabitRecordSD.self,
+            configurations: config
+        )
+
+        // 2) Build a repo for the VM factory
+        let repo = HabitsRepositorySwiftData(container: container)
+
+        // 3) Pass the factory closure + attach the container to the view tree
+    ContentView(makeViewModel: {
+            HabitListViewModel(repo: repo)
+        })
+        .modelContainer(container)
 }

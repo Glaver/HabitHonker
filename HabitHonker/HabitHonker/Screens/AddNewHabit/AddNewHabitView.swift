@@ -156,7 +156,6 @@ struct AddNewHabitView: View {
             }
         }
     )
-            .modelContainer(for: Item.self, inMemory: true)
 }
 
 

@@ -7,7 +7,7 @@
 import Foundation
 import SwiftUI
 
-struct ListHabitItem: Identifiable {
+struct ListHabitItem: Identifiable, Equatable {
     let id = UUID()
     var icon: String?
     var iconColor: Color?
@@ -27,19 +27,48 @@ struct ListHabitItem: Identifiable {
     func isCompleted(on date: Date) -> Bool {
         record.contains(where: { Calendar.current.isDate($0.date, inSameDayAs: date) })
     }
-}
-
-extension ListHabitItem {
-    struct HabitRecord: Identifiable, Codable {
-        let id = UUID()
-        let date: Date
-        let count: Int
-        // MARK: this entity will be extanded by specific needs of tasks or habits in future
+    
+    init(icon: String? = nil, iconColor: Color? = nil, title: String = "", description: String = "", priority: PriorityEisenhower = .importantAndUrgent, type: HabitType = .repeating, repeting: Set<Weekday> = Weekday.allSet, dueDate: Date = Date(), notificationActivated: Bool = false, record: [HabitRecord] = []) {
+        self.icon = icon
+        self.iconColor = iconColor
+        self.title = title
+        self.description = description
+        self.priority = priority
+        self.type = type
+        self.repeting = repeting
+        self.dueDate = dueDate
+        self.notificationActivated = notificationActivated
+        self.record = record
     }
 }
 
 extension ListHabitItem {
-    enum PriorityEisenhower: CaseIterable {
+    struct HabitRecord: Identifiable, Codable, Equatable {
+        let id = UUID()
+        var date: Date
+        var count: Int
+        /// MARK: this entity will be extended by specific needs(properties) of tasks or habits in future
+    }
+}
+
+extension ListHabitItem {
+    enum HabitType: Int, CaseIterable {
+        case dueDate
+        case repeating
+        
+        var text: String {
+            switch self {
+            case .dueDate:
+                return "Due Date"
+            case .repeating:
+                return "Repeating"
+            }
+        }
+    }
+}
+
+extension ListHabitItem {
+    enum PriorityEisenhower: Int, CaseIterable {
         case importantAndUrgent
         case importantButNotUrgent
         case urgentButNotImportant
@@ -96,22 +125,6 @@ extension ListHabitItem {
 //                return Color.warmFeatherBeige
 //            }
 //        }
-    }
-}
-
-extension ListHabitItem {
-    enum HabitType: CaseIterable {
-        case dueDate
-        case repeating
-        
-        var text: String {
-            switch self {
-            case .dueDate:
-                return "Due Date"
-            case .repeating:
-                return "Repeating"
-            }
-        }
     }
 }
 
