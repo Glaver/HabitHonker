@@ -12,6 +12,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var path = NavigationPath()
     @State private var isDeleting = false
+    @State private var currentDate = Date()
     
     let makeViewModel: () -> HabitListViewModel
     @StateObject private var viewModel: HabitListViewModel
@@ -19,6 +20,18 @@ struct ContentView: View {
     init(makeViewModel: @escaping () -> HabitListViewModel) {
         _viewModel = StateObject(wrappedValue: makeViewModel())
         self.makeViewModel = makeViewModel
+    }
+    
+    private var currentDayTitle: String {
+        let calendar = Calendar.current
+        let weekday = calendar.component(.weekday, from: currentDate)
+        let day = calendar.component(.day, from: currentDate)
+        let month = calendar.component(.month, from: currentDate)
+        
+        let weekdaySymbol = DateFormatter().weekdaySymbols[weekday - 1]
+        let monthSymbol = DateFormatter().monthSymbols[month - 1]
+        
+        return "\(weekdaySymbol) \(day), \(monthSymbol)"
     }
     
     var body: some View {
@@ -71,13 +84,21 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(.clear)
                 }
-                .onAppear { viewModel.onAppear() }
+                .onAppear { 
+                    Task {
+                        await viewModel.load(forDate: currentDate)
+                    }
+                    startDateTimer()
+                }
+                .onDisappear {
+                    stopDateTimer()
+                }
                 .scrollContentBackground(.hidden)
                 .disabled(isDeleting) // Disable interactions during deletion
                 
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("Thursday 16, July")
+            .navigationTitle(currentDayTitle)
             .navigationBarTitleDisplayMode(.large)
             
             .toolbar {
@@ -144,6 +165,28 @@ struct ContentView: View {
                 .scaledToFill()
                 .edgesIgnoringSafeArea(.all))
         }
+    }
+    
+    // MARK: - Timer Methods
+    private func startDateTimer() {
+        // Check every minute if the day has changed
+        Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+            let newDate = Date()
+            let calendar = Calendar.current
+            
+            // Check if the day has changed
+            if !calendar.isDate(currentDate, inSameDayAs: newDate) {
+                currentDate = newDate
+                // Reload the list to show tasks for the new day
+                Task {
+                    await viewModel.load(forDate: currentDate)
+                }
+            }
+        }
+    }
+    
+    private func stopDateTimer() {
+        // Timer cleanup if needed
     }
     
     // Note: deleteItems and move functions are no longer needed since we're using swipe actions

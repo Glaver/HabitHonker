@@ -19,16 +19,35 @@ final class HabitListViewModel: ObservableObject {
     }
 
     // MARK: - Lifecycle
-    func onAppear() { Task { await load() } }
+    func onAppear() { 
+        Task { 
+            await load() 
+        } 
+    }
 
     // MARK: - Actions
-    func load() async {
+    func load(forDate date: Date = Date()) async {
         isLoading = true
         defer { isLoading = false }
         do {
             let fetchedItems = try await repo.fetchAll()
+            
+            // Filter items based on specified day of week for repeating tasks
+            let calendar = Calendar.current
+            let targetWeekday = Weekday(rawValue: calendar.component(.weekday, from: date)) ?? .monday
+            
+            let filteredItems = fetchedItems.filter { item in
+                if item.type == .repeating {
+                    // For repeating tasks, only show if the target day is in the repeating weekdays
+                    return item.repeating.contains(targetWeekday)
+                } else {
+                    // For due date tasks, show them always
+                    return true
+                }
+            }
+            
             // Sort items: active tasks first, completed tasks at the end
-            items = fetchedItems.sorted { item1, item2 in
+            items = filteredItems.sorted { item1, item2 in
                 let item1Completed = item1.isCompletedToday
                 let item2Completed = item2.isCompletedToday
                 

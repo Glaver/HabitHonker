@@ -20,7 +20,7 @@ struct HabitCell: View {
                     .fill(isCompletedToday ? item.priority.color.opacity(0.05) : item.priority.color.opacity(0.7))
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
                     .frame(width: 60, height: 60)
-                    .glassEffect(isCompletedToday ? .clear : .regular)
+                    .glassEffect()
                 
                 Image(item.icon ?? "empty_icon")
                     .foregroundColor(.white)
