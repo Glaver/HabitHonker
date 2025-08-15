@@ -33,8 +33,7 @@ final class HabitListViewModel: ObservableObject {
             let fetchedItems = try await repo.fetchAll()
             
             // Filter items based on specified day of week for repeating tasks
-            let calendar = Calendar.current
-            let targetWeekday = Weekday(rawValue: calendar.component(.weekday, from: date)) ?? .monday
+            let targetWeekday = date.currentWeekday
             
             let filteredItems = fetchedItems.filter { item in
                 if item.type == .repeating {
@@ -132,56 +131,36 @@ final class HabitListViewModel: ObservableObject {
             self.error = error.localizedDescription
         }
     }
+    
+    // MARK: - Deleted Habits Methods
+    func loadDeletedHabits() async {
+        do {
+            let deletedItems = try await repo.fetchAllDeleted()
+            // You can add a separate @Published property for deleted habits if needed
+            print("Found \(deletedItems.count) deleted habits")
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+    
+    func restoreDeletedHabit(id: UUID) async {
+        do {
+            try await repo.restoreDeletedHabit(id: id)
+            await load()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+    
+    func permanentlyDeleteHabit(id: UUID) async {
+        do {
+            try await repo.permanentlyDeleteDeleted(id: id)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
 
-    // Удобный helper, если хочешь отдать новый item из формы
     func setEditingItem(_ newItem: ListHabitItem) {
         self.item = newItem
     }
 }
-//
-//final class HabitListViewModel: ObservableObject {
-//    @Published private(set) var items: [ListHabitItem] = []
-//    @Published private(set) var item: ListHabitItem = .init()
-//    @Published private(set) var isLoading = false
-//    @Published var error: String?
-//
-//    private let repo: HabitsRepositorySwiftData
-//    init(repo: HabitsRepositorySwiftData) { self.repo = repo }
-//
-//    func onAppear() { Task { await load() } }
-//
-//    func load() async {
-//        isLoading = true
-//        defer { isLoading = false }
-//        do { items = try await repo.fetchAll() }
-//        catch { self.error = error.localizedDescription }
-//    }
-//
-//    func delete(at offsets: IndexSet) {
-//        Task {
-//            for index in offsets {
-//                try? await repo.delete(id: items[index].id)
-//            }
-//            await load()
-//        }
-//    }
-//    
-//    func save() async {
-//        Task {
-//            do {
-//                // upsert depending on existence
-//                if try await repo.fetch(id: item.id) != nil {
-//                    try await repo.update(item)
-//                } else {
-//                    try await repo.save(item)
-//                }
-//            } catch {
-//                self.error = error.localizedDescription
-//            }
-//        }
-//    }
-//    
-//    func delete() async {
-//        try? await repo.delete(id: item.id)
-//    }
-//}

@@ -14,6 +14,6 @@ struct HabitHonkerApp: App {
         WindowGroup {
             RootTabsView()
         }
-        .modelContainer(for: [HabitSD.self, HabitRecordSD.self])
+        .modelContainer(for: [HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self])
     }
 }

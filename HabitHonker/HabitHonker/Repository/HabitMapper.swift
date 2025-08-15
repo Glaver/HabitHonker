@@ -112,4 +112,58 @@ enum HabitMapper {
             return habitRecord
         }
     }
+    
+    // MARK: Domain -> DeletedHabitSD (for archiving deleted habits)
+    static func makeDeletedSD(from domain: ListHabitItem) -> DeletedHabitSD {
+        DeletedHabitSD(
+            id: domain.id,
+            icon: domain.icon,
+            iconColorHex: hex(from: domain.iconColor),
+            title: domain.title,
+            descriptionText: domain.description,
+            priorityRaw: domain.priority.rawValue,
+            typeRaw: domain.type.rawValue,
+            repeatingWeekdays: domain.repeating.map(\.rawValue),
+            dueDate: domain.dueDate,
+            notificationActivated: domain.notificationActivated,
+            deletedAt: Date(),
+            records: domain.record.map { record in
+                let habitRecord = HabitRecordSD()
+                habitRecord.id = record.id
+                habitRecord.date = record.date
+                habitRecord.count = record.count
+                return habitRecord
+            }
+        )
+    }
+    
+    // MARK: DeletedHabitSD -> Domain
+    static func deletedToDomain(_ sd: DeletedHabitSD) -> ListHabitItem {
+        let priority = ListHabitItem.PriorityEisenhower(rawValue: sd.priorityRaw)
+            ?? .importantAndUrgent
+        let type = ListHabitItem.HabitType(rawValue: sd.typeRaw)
+            ?? .dueDate
+
+        let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
+
+        var item = ListHabitItem(
+            id: sd.id,
+            icon: sd.icon,
+            iconColor: color(from: sd.iconColorHex),
+            title: sd.title,
+            description: sd.descriptionText,
+            priority: priority,
+            type: type,
+            repeating: weekdays,
+            dueDate: sd.dueDate,
+            notificationActivated: sd.notificationActivated,
+            record: sd.records.compactMap { record in
+                guard let id = record.id, let date = record.date, let count = record.count else {
+                    return nil
+                }
+                return ListHabitItem.HabitRecord(id: id, date: date, count: count)
+            }
+        )
+        return item
+    }
 }

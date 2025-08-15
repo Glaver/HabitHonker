@@ -67,63 +67,57 @@ actor HabitsRepositorySwiftData {
         var d = FetchDescriptor<HabitSD>(predicate: pred)
         d.fetchLimit = 1
         if let sd = try ctx.fetch(d).first {
+            // Archive the habit before deleting
+            let deletedHabit = HabitMapper.makeDeletedSD(from: HabitMapper.toDomain(sd))
+            ctx.insert(deletedHabit)
+            
+            // Delete the original habit
             ctx.delete(sd)
             try ctx.save()
         }
     }
+    
+    // MARK: - Deleted Habits Methods
+    func fetchAllDeleted() throws -> [ListHabitItem] {
+        let ctx = makeContext()
+        let descriptor = FetchDescriptor<DeletedHabitSD>(sortBy: [.init(\.deletedAt, order: .reverse)])
+        let rows = try ctx.fetch(descriptor)
+        return rows.map(HabitMapper.deletedToDomain)
+    }
+    
+    func fetchDeleted(id: UUID) throws -> ListHabitItem? {
+        let ctx = makeContext()
+        let pred = #Predicate<DeletedHabitSD> { $0.id == id }
+        var d = FetchDescriptor<DeletedHabitSD>(predicate: pred)
+        d.fetchLimit = 1
+        return try ctx.fetch(d).first.map(HabitMapper.deletedToDomain)
+    }
+    
+    func permanentlyDeleteDeleted(id: UUID) throws {
+        let ctx = makeContext()
+        let pred = #Predicate<DeletedHabitSD> { $0.id == id }
+        var d = FetchDescriptor<DeletedHabitSD>(predicate: pred)
+        d.fetchLimit = 1
+        if let sd = try ctx.fetch(d).first {
+            ctx.delete(sd)
+            try ctx.save()
+        }
+    }
+    
+    func restoreDeletedHabit(id: UUID) throws {
+        let ctx = makeContext()
+        let pred = #Predicate<DeletedHabitSD> { $0.id == id }
+        var d = FetchDescriptor<DeletedHabitSD>(predicate: pred)
+        d.fetchLimit = 1
+        if let deletedSD = try ctx.fetch(d).first {
+            // Convert back to regular habit
+            let restoredHabit = HabitMapper.deletedToDomain(deletedSD)
+            let habitSD = HabitMapper.makeSD(from: restoredHabit)
+            ctx.insert(habitSD)
+            
+            // Remove from deleted habits
+            ctx.delete(deletedSD)
+            try ctx.save()
+        }
+    }
 }
-
-//@MainActor
-//final class HabitsRepositorySwiftData {
-//    private let context: ModelContext
-////    private let container: ModelContainer
-//    
-//    init(context: ModelContext) { self.context = context }
-//    
-//    func fetchAll() throws -> [ListHabitItem] {
-//        try context.fetch(FetchDescriptor<HabitSD>(sortBy: [.init(\.title)]))
-//            .map(HabitMapper.toDomain)
-//    }
-//    
-//    func save(_ item: ListHabitItem) throws {
-//        let sd = HabitMapper.makeSD(from: item)
-//        context.insert(sd)
-//        try context.save()
-//    }
-//    
-//    func update(_ item: ListHabitItem) throws {
-//        let targetId = item.id                      // capture VALUE, not key path
-//        let pred = #Predicate<HabitSD> { $0.id == targetId }
-//        
-//        var descriptor = FetchDescriptor<HabitSD>(predicate: pred)
-//        descriptor.fetchLimit = 1
-//        
-//        if let sd = try context.fetch(descriptor).first {
-//            HabitMapper.apply(item, to: sd)
-//            try context.save()
-//        }
-//    }
-//    
-//    func delete(id: UUID) throws {
-//        let pred = #Predicate<HabitSD> { $0.id == id }
-//        
-//        var descriptor = FetchDescriptor<HabitSD>(predicate: pred)
-//        descriptor.fetchLimit = 1
-//        
-//        if let sd = try context.fetch(descriptor).first {
-//            context.delete(sd)
-//            try context.save()
-//        }
-//    }
-//    
-//    func fetch(id: UUID) throws -> ListHabitItem? {
-//        let targetId = id
-//        let pred = #Predicate<HabitSD> { $0.id == targetId }
-//        
-//        var descriptor = FetchDescriptor<HabitSD>(predicate: pred)
-//        descriptor.fetchLimit = 1
-//        
-//        guard let sd = try context.fetch(descriptor).first else { return nil }
-//        return HabitMapper.toDomain(sd)
-//    }
-//}

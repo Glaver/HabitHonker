@@ -22,18 +22,6 @@ struct ContentView: View {
         self.makeViewModel = makeViewModel
     }
     
-    private var currentDayTitle: String {
-        let calendar = Calendar.current
-        let weekday = calendar.component(.weekday, from: currentDate)
-        let day = calendar.component(.day, from: currentDate)
-        let month = calendar.component(.month, from: currentDate)
-        
-        let weekdaySymbol = DateFormatter().weekdaySymbols[weekday - 1]
-        let monthSymbol = DateFormatter().monthSymbols[month - 1]
-        
-        return "\(weekdaySymbol) \(day), \(monthSymbol)"
-    }
-    
     var body: some View {
         NavigationStack(path: $path) {
             VStack (spacing: -10) {
@@ -98,7 +86,7 @@ struct ContentView: View {
                 
             }
             .listStyle(.insetGrouped)
-            .navigationTitle(currentDayTitle)
+            .navigationTitle(currentDate.currentDayTitle)
             .navigationBarTitleDisplayMode(.large)
             
             .toolbar {
@@ -172,10 +160,9 @@ struct ContentView: View {
         // Check every minute if the day has changed
         Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
             let newDate = Date()
-            let calendar = Calendar.current
             
-            // Check if the day has changed
-            if !calendar.isDate(currentDate, inSameDayAs: newDate) {
+            // Check if the day has changed using Date extension
+            if !currentDate.isSameDay(as: newDate) {
                 currentDate = newDate
                 // Reload the list to show tasks for the new day
                 Task {
