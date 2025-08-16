@@ -72,7 +72,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(.clear)
                 }
-                .onAppear { 
+                .onAppear {
                     Task {
                         await viewModel.load(forDate: currentDate)
                     }
@@ -101,8 +101,7 @@ struct ContentView: View {
                     }
                 }
             }
-            
-            // Map each Route to a destination view
+// MARK: Navigation
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .detailHabit(let id):
@@ -117,7 +116,6 @@ struct ContentView: View {
                         },
                                         saveButton: {
                             SaveButton() {
-                                print("should be saved here")
                             }
                         })
                     } else {
@@ -149,7 +147,7 @@ struct ContentView: View {
                     })
                 }
             }
-            // Refactor: background on change custom
+            // Refactor later: background on change custom
             .background(Image("Wallpaper")
                 .resizable()
                 .scaledToFill()
@@ -177,25 +175,24 @@ struct ContentView: View {
     private func stopDateTimer() {
         // Timer cleanup if needed
     }
-    
-    // Note: deleteItems and move functions are no longer needed since we're using swipe actions
-    // for deletion and the list is automatically sorted by completion status
 }
+
+// MARK: Preview
 
 #Preview {
     // 1) Make an in-memory SwiftData container for previews
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(
-            for: HabitSD.self, HabitRecordSD.self,
-            configurations: config
-        )
-
-        // 2) Build a repo for the VM factory
-        let repo = HabitsRepositorySwiftData(container: container)
-
-        // 3) Pass the factory closure + attach the container to the view tree
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: HabitSD.self, HabitRecordSD.self,
+        configurations: config
+    )
+    
+    // 2) Build a repo for the VM factory
+    let repo = HabitsRepositorySwiftData(container: container)
+    
+    // 3) Pass the factory closure + attach the container to the view tree
     ContentView(makeViewModel: {
-            HabitListViewModel(repo: repo)
-        })
-        .modelContainer(container)
+        HabitListViewModel(repo: repo)
+    })
+    .modelContainer(container)
 }

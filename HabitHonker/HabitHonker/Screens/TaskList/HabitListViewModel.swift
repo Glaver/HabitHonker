@@ -78,7 +78,7 @@ final class HabitListViewModel: ObservableObject {
             self.error = error.localizedDescription
         }
     }
-
+    // MARK: Swift Data Methods
     func delete(at offsets: IndexSet) async {
         do {
             for index in offsets {

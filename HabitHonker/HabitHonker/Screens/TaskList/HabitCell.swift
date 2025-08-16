@@ -72,9 +72,9 @@ struct HabitCell: View {
         .padding(.vertical, 15)
         .padding(.horizontal, 10)
         .listRowInsets(EdgeInsets(top: 0, leading: 10, bottom: 15, trailing: 10))
-        .frame(maxWidth: .infinity) // fill full width
-        .listRowInsets(EdgeInsets()) // remove extra padding
-        .listRowSeparator(.hidden)   // hide divider
-        .glassEffect()
+        .frame(maxWidth: .infinity)
+        .listRowInsets(EdgeInsets())
+        .listRowSeparator(.hidden)
+        .glassEffect(isCompletedToday ? .clear : .regular)
     }
 }

@@ -26,7 +26,7 @@ struct AddNewHabitView: View {
         self.saveAction = saveAction
         self.saveButton = saveButton
     }
-    
+    // MARK: View
     var body: some View {
         List {
             Section() {
@@ -55,7 +55,7 @@ struct AddNewHabitView: View {
                 }
             }
             
-            
+            // MARK: PriorityPicker
             Section() {
                 VStack() {
                     Text("Select priority")
@@ -66,7 +66,7 @@ struct AddNewHabitView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            
+            // MARK: Advanced Options Repeting or DueDate
             Section(header: Text("Advanced Options")) {
                 VStack {
                     Picker("Priority", selection: $item.type) {
@@ -88,7 +88,7 @@ struct AddNewHabitView: View {
                     }
                 }
             }
-            
+            // MARK: Schedule notification
             Section() {
                 Toggle("Schedule notification", isOn: $item.isNotificationActivated)
                 if item.type != .dueDate {
@@ -117,7 +117,7 @@ struct AddNewHabitView: View {
             
         }
         .sheet(isPresented: $isIconsSheetPresented) {
-            
+            // MARK: Icons bottom sheet view
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(icons, id: \.self) { icon in
                     Image(icon)
@@ -135,7 +135,7 @@ struct AddNewHabitView: View {
         }
     }
 }
-
+// MARK: Preview
 #Preview {
     AddNewHabitView(
         item: ListHabitItem(icon: "circle",
