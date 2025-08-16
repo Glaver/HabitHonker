@@ -1,0 +1,167 @@
+//
+//  AddNewHabit.swift
+//  HabitHonker
+//
+//  Created by Vladyslav on 8/8/25.
+//
+
+import SwiftUI
+import SwiftData
+
+struct AddNewHabitView: View {
+    @State var item: ListHabitItem
+    @State private var isIconsSheetPresented: Bool = false
+    @ViewBuilder private let saveButton: (() -> SaveButton)
+    private let saveAction: (ListHabitItem) -> Void
+    
+    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
+    
+    let icons = ["axe", "cheers", "dna", "campfire", "cyclist"]
+    
+    init(item: ListHabitItem,
+        saveAction: @escaping (ListHabitItem) -> Void,
+         @ViewBuilder saveButton: @escaping () -> SaveButton) {
+        self._item = State(initialValue: item)
+        self.saveAction = saveAction
+        self.saveButton = saveButton
+    }
+    // MARK: View
+    var body: some View {
+        List {
+            Section() {
+                TextField("Name", text: $item.title)
+                TextField("Description", text: $item.description)
+            }
+            
+            Section() {
+                HStack{
+                    Button("Icon") {
+                        isIconsSheetPresented.toggle()
+                    }
+                    .foregroundColor(.gray)
+                    
+                    Spacer()
+                    ZStack {
+                        Image(item.icon ?? "")
+                            .font(Font.title)
+                            .frame(width: 20, height: 20)
+                        
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .fill(Color.gray.opacity(0.2))
+                            .shadow(color: .black.opacity(0.45), radius: 3, x: 1, y: 1)
+                            .frame(width: 42, height: 42)
+                    }
+                }
+            }
+            
+            // MARK: PriorityPicker
+            Section() {
+                VStack() {
+                    Text("Select priority")
+                        .font(.subheadline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                    PriorityPicker(priorityEisenhower: $item.priority)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            // MARK: Advanced Options Repeting or DueDate
+            Section(header: Text("Advanced Options")) {
+                VStack {
+                    Picker("Priority", selection: $item.type) {
+                        ForEach(ListHabitItem.HabitType.allCases, id: \.self) { type in
+                            Text(type.text)
+                            
+                        }
+                    }
+                    .pickerStyle(.palette)
+                    if item.type == .dueDate {
+                        DatePicker(
+                            "Start Date",
+                            selection: $item.dueDate,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .datePickerStyle(.graphical)
+                    } else {
+                        WeekdayPicker(selection: $item.repeating)
+                    }
+                }
+            }
+            // MARK: Schedule notification
+            Section() {
+                Toggle("Schedule notification", isOn: $item.isNotificationActivated)
+                if item.type != .dueDate {
+                    DatePicker(
+                        "Time",
+                        selection: $item.dueDate,
+                        displayedComponents: [.hourAndMinute]
+                    )
+                    .datePickerStyle(.graphical)
+                    .disabled(!item.isNotificationActivated)
+                    
+                }
+            }
+            .listStyle(.insetGrouped)
+            
+            Button("Save") {
+                saveAction(item)
+                dismiss()
+            }
+            .listRowInsets(EdgeInsets())
+            .frame(maxWidth: .infinity, maxHeight: 50)
+            .multilineTextAlignment(.center)
+            .background(Color.blue)
+            .tint(Color.black)
+            .scaledToFill()
+            
+        }
+        .sheet(isPresented: $isIconsSheetPresented) {
+            // MARK: Icons bottom sheet view
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(icons, id: \.self) { icon in
+                    Image(icon)
+                        .font(.system(size: 35))
+                        .font(.largeTitle)
+                        .frame(maxWidth: .infinity, minHeight: 80)
+                        .cornerRadius(10)
+                        .onTapGesture {
+                            item.icon = icon
+                            isIconsSheetPresented = false
+                        }
+                }
+            }
+            .presentationDetents([.large])
+        }
+    }
+}
+// MARK: Preview
+#Preview {
+    AddNewHabitView(
+        item: ListHabitItem(icon: "circle",
+                            iconColor: .red,
+                            title: "Fly with dragon",
+                            description: "That is the only way",
+                            priority: .importantAndUrgent,
+                            type: .repeating,
+                            repeating: Set<Weekday>(),
+                            dueDate: Date()),
+        saveAction: { _ in },
+        saveButton: {
+            SaveButton() {
+                print("sss")
+            }
+        }
+    )
+}
+
+
+struct SaveButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button("Save") {
+            action()
+        }
+    }
+}
