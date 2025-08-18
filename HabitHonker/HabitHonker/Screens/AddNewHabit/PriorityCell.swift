@@ -24,26 +24,33 @@ struct PriorityCell: View {
             HStack() {
                 Capsule()
                     .fill(isSelected ? type.color.opacity(0.7) : .clear)
-                    .frame(width: 15, height: 38)
-                    .glassEffect()
-                    .shadow(color: isSelected ? type.color.opacity(0.7) : .clear, radius: 1, x: 0, y: 3)
+                    .frame(width: 22, height: 48)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: isSelected ? type.color.opacity(0.4) : .clear, radius: 3, x: 2, y: 2)
+//                    .padding(.leading, 10)
+//                    .shadow(color: isSelected ? type.color.opacity(0.7) : .clear, radius: 1, x: 0, y: 3)
                 
-                Text(type.text)
+                Text(type.text.replacingOccurrences(of: "/", with: ""))
                     .font(.subheadline)
                     .foregroundColor(.primary)
                     .lineLimit(2)
                     .padding(.leading, 10)
+                
+                Spacer()
             }
-            .padding(10)
+            .padding(5)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+            .shadow(color: isSelected ? type.color.opacity(0.6) : .clear, radius: 10, x: 5, y: 5)
+            
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? type.color.opacity(0.4) : .clear, lineWidth: 0.3)
+            )
         }
         .buttonStyle(.plain)
-        .glassEffect()
-        .overlay(
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .stroke(isSelected ? type.color.opacity(0.8) : .clear, lineWidth: 0.2)
-        )
-        .shadow(color: isSelected ? type.color.opacity(0.3) : .clear, radius: 5, x: 0, y: 0)
+
+        
     }
 }
 

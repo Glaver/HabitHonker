@@ -24,68 +24,33 @@ struct ContentView: View {
     
     var body: some View {
         NavigationStack(path: $path) {
-            VStack (spacing: -10) {
-                List {
+            ScrollView {
+                LazyVGrid(
+                    columns: [GridItem(.flexible(), spacing: 0)],
+                    spacing: 16
+                ) {
                     ForEach(viewModel.items) { item in
                         HabitCell(item: item)
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 path.append(Route.detailHabit(item.id))
                             }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .confirm) {
-                                    Task {
-                                        // Mark as completed
-                                        var updatedItem = item
-                                        updatedItem.completeHabitNow()
-                                        viewModel.setEditingItem(updatedItem)
-                                        await viewModel.saveCurrent()
-                                    }
-                                } label: {
-                                    ZStack{
-                                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-                                            .glassEffect()
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    Task {
-                                        isDeleting = true
-                                        await viewModel.deleteItem(withId: item.id)
-                                        isDeleting = false
-                                    }
-                                } label: {
-                                    ZStack{
-                                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-                                            .glassEffect()
-                                        Image(systemName: "trash")
-                                    }
-                                }
-                                .tint(.red)
-                            }
+                            .padding(.horizontal, 10)
                     }
-                    .listRowBackground(Color.clear)
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.clear)
+                    .padding(.horizontal, 10)
                 }
-                .onAppear {
-                    Task {
-                        await viewModel.load(forDate: currentDate)
-                    }
-                    startDateTimer()
-                }
-                .onDisappear {
-                    stopDateTimer()
-                }
-                .scrollContentBackground(.hidden)
-                .disabled(isDeleting) // Disable interactions during deletion
-                
             }
-            .listStyle(.insetGrouped)
+            .onAppear {
+                Task {
+                    await viewModel.load(forDate: currentDate)
+                }
+                startDateTimer()
+            }
+            .onDisappear {
+                stopDateTimer()
+            }
+            .disabled(isDeleting)
+            .scrollContentBackground(.hidden)
             .navigationTitle(currentDate.currentDayTitle)
             .navigationBarTitleDisplayMode(.large)
             
@@ -95,13 +60,12 @@ struct ContentView: View {
                         path.append(Route.addNewHabit)
                     } label: {
                         Image(systemName: "plus")
-                            .foregroundColor(.black)
                             .padding()
                             .glassEffect()
                     }
                 }
             }
-// MARK: Navigation
+            // MARK: Navigation
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .detailHabit(let id):
@@ -147,13 +111,15 @@ struct ContentView: View {
                     })
                 }
             }
-            // Refactor later: background on change custom
             .background(Image("Wallpaper")
                 .resizable()
                 .scaledToFill()
                 .edgesIgnoringSafeArea(.all))
         }
+        // Refactor later: background on change custom
+        
     }
+    
     
     // MARK: - Timer Methods
     private func startDateTimer() {

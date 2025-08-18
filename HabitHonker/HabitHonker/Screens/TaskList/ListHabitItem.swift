@@ -121,13 +121,13 @@ extension ListHabitItem {
         var color: Color {
             switch self {
             case .importantAndUrgent:
-                return .red
+                return .goldenGooseYellow
             case .importantButNotUrgent:
-                return .blue
+                return .honkerRed
             case .urgentButNotImportant:
-                return .yellow
+                return .warmFeatherBeige
             case .notUrgentAndNotImportant:
-                return .green
+                return .charcoalWingGray
             }
         }
         
@@ -176,7 +176,7 @@ extension ListHabitItem {
 extension ListHabitItem {
     static func mock() -> [ListHabitItem] {
         [.init(
-            icon: "axe",
+            icon: "atom",
             iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
             title: "Meditation",
             description: "",
@@ -185,7 +185,7 @@ extension ListHabitItem {
             repeating: Set<Weekday>(),
             dueDate: Date()
         ),
-         .init(icon: "cheers",
+         .init(icon: "academic-cap",
                iconColor: ListHabitItem.PriorityEisenhower.urgentButNotImportant.color,
                title: "Wash dishes, vacuum floor, laundry, etc",
                description: "",
@@ -194,7 +194,7 @@ extension ListHabitItem {
                repeating: Set<Weekday>(),
                dueDate: Date()
         ),
-         .init(icon: "dna",
+         .init(icon: "atom",
                iconColor: ListHabitItem.PriorityEisenhower.importantAndUrgent.color,
                title: "Learn System Design",
                description: "",
@@ -204,7 +204,7 @@ extension ListHabitItem {
                dueDate: Date(),
                notificationActivated: false
         ),
-         .init(icon: "campfire",
+         .init(icon: "alien",
                iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
                title: "Swift 6.2",
                description: "",
@@ -214,7 +214,7 @@ extension ListHabitItem {
                dueDate: Date(),
                notificationActivated: true
         ),
-         .init(icon: "campfire",
+         .init(icon: "baby",
                iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
                title: "Candle puring",
                description: "",
@@ -224,7 +224,7 @@ extension ListHabitItem {
                dueDate: Date(),
                notificationActivated: false
         ),
-         .init(icon: "cyclist",
+         .init(icon: "avocado",
                iconColor: ListHabitItem.PriorityEisenhower.notUrgentAndNotImportant.color,
                title: "Balance board",
                description: "",
@@ -234,7 +234,7 @@ extension ListHabitItem {
                dueDate: Date(),
                notificationActivated: false
         ),
-         .init(icon: "cyclist",
+         .init(icon: "alarm",
                iconColor: ListHabitItem.PriorityEisenhower.importantAndUrgent.color,
                title: "Algorithms",
                description: "",

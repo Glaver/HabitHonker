@@ -14,24 +14,34 @@ struct HabitCell: View {
     private var isCompletedToday: Bool { item.isCompletedToday }
     
     var body: some View {
-        HStack {
-            ZStack {
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(isCompletedToday ? item.priority.color.opacity(0.05) : item.priority.color.opacity(0.7))
-                    .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
-                    .frame(width: 60, height: 60)
-                    .glassEffect()
-                
-                Image(item.icon ?? "empty_icon")
-                    .foregroundColor(.white)
-                    .font(.system(size: 20))
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
+        GlassEffectContainer {
+            HStack {
                 ZStack {
-                    HStack {
-                        Text(item.title)
-                            .font(.headline)
+                    RoundedRectangle(cornerRadius: 23)
+                        .fill(isCompletedToday ? item.priority.color.opacity(0.05) : item.priority.color.opacity(0.5))
+                        .frame(width: 56)
+                        .zIndex(0)
+                    
+                    Image(item.icon ?? "empty_icon")
+                        .resizable()
+                        .frame(width: 40, height: 40)
+                        .scaledToFit()
+                        .foregroundColor(.black)
+                        .zIndex(1)
+                        .padding(.vertical, 10)
+                }
+                .glassEffect(isCompletedToday ? .clear : .regular, in: RoundedRectangle(cornerRadius: 23))
+                .frame(maxHeight:.infinity)
+                
+                VStack(alignment: .leading) {
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading,spacing: 4) {
+                            Text(item.title)
+                                .font(.headline)
+                            Text(item.priority.text)
+                                .font(.caption)
+                                .foregroundColor(isCompletedToday ? .gray :.secondary)
+                        }
                         Spacer()
                         if item.type == .repeating {
                             Image(systemName: "infinity")
@@ -39,42 +49,35 @@ struct HabitCell: View {
                                 .padding(.trailing, 15)
                         }
                     }
-                }
-                Text(item.priority.text)
-                    .font(.caption)
-                    .foregroundColor(isCompletedToday ? .gray :.secondary)
-                
-                if item.isNotificationActivated  {
-                    Spacer()
                     
-                    HStack {
-                        Text("Remind me at")
-                            .font(.subheadline)
-                            .padding(.horizontal, 12)
+                    if item.isNotificationActivated  {
                         Spacer()
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                .fill(.white.opacity(0.1))
-                                .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
-                                .frame(width: 98, height: 31)
-                                .glassEffect()
-                            Text(item.dueDate.getTimeFrom())
+                        HStack {
+                            Text("Remind me at")
                                 .font(.subheadline)
-                                .padding(.horizontal, 5)
+                                .padding(.horizontal, 12)
+                            Spacer()
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 25, style: .continuous)
+                                    .fill(.white.opacity(0.3))
+                                    .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
+                                    .frame(width: 98, height: 31)
+                                    .glassEffect()
+                                Text(item.dueDate.getTimeFrom())
+                                    .font(.subheadline)
+                                    .padding(.horizontal, 5)
+                                    .glassEffect()
+                            }
                         }
                     }
-                    .glassEffect()
                 }
+                .padding(.leading, 5)
+                .padding(.trailing, 10)
             }
-            .padding(.leading, 5)
-            .padding(.trailing, 10)
         }
-        .padding(.vertical, 15)
+        .padding(.vertical, 10)
         .padding(.horizontal, 10)
-        .listRowInsets(EdgeInsets(top: 0, leading: 10, bottom: 15, trailing: 10))
         .frame(maxWidth: .infinity)
-        .listRowInsets(EdgeInsets())
-        .listRowSeparator(.hidden)
-        .glassEffect(isCompletedToday ? .clear : .regular)
+        .glassEffect(isCompletedToday ? .clear : .regular, in: RoundedRectangle(cornerRadius: 25))
     }
 }
