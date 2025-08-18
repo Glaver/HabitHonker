@@ -36,6 +36,17 @@ struct ContentView: View {
                                 path.append(Route.detailHabit(item.id))
                             }
                             .padding(.horizontal, 10)
+                            .swipeActions {
+                                Action(symbolImage: "square.and.arrow.up.fill", tint: .white, background: .blue) { resetPosition in
+                                    resetPosition.toggle()
+                                }
+                                Action(symbolImage: "square.and.arrow.down.fill", tint: .white, background: .purple) { resetPosition in
+                                    resetPosition.toggle()
+                                }
+                                Action(symbolImage: "trash.fill", tint: .white, background: .red) { resetPosition in
+                                    resetPosition.toggle()
+                                }
+                            }
                     }
                     .padding(.horizontal, 10)
                 }
