@@ -8,11 +8,11 @@ import Foundation
 
 @MainActor
 final class HabitListViewModel: ObservableObject {
-    @Published private(set) var items: [ListHabitItem] = []
-    @Published private(set) var item: ListHabitItem = .init()
+    @Published private(set) var items: [HabitModel] = []
+    @Published private(set) var item: HabitModel = .init()
     @Published private(set) var isLoading = false
     @Published var error: String?
-
+    
     private let repo: HabitsRepositorySwiftData
     private let notifier: HabitNotificationScheduling
     
@@ -22,9 +22,9 @@ final class HabitListViewModel: ObservableObject {
         self.notifier = notifier
         Task { try? await notifier.requestAuthorization() }
     }
-
+    
     // MARK: - Lifecycle
-    func onAppear() { 
+    func onAppear() {
         Task { await load() }
     }
     
@@ -78,7 +78,37 @@ final class HabitListViewModel: ObservableObject {
             self.error = error.localizedDescription
         }
     }
-    // MARK: Swift Data Methods
+    // MARK: Public methods
+    func saveItem(_ item: HabitModel) {
+        Task {
+            setEditingItem(item) // NEED REFACTOR
+            await saveCurrent()
+            updateHabitNotification()
+        }
+    }
+    
+    func deleteItem(_ item: HabitModel) {
+        Task {
+            setEditingItem(item) // NEED REFACTOR
+            await deleteItem(withId: item.id) // NEED REFACTOR
+            deleteNotification(for: item.id) // NEED REFACTOR
+        }
+    }
+    
+    func habitComplete() {
+//        Task {
+            // Need to improve logic for finish Habit
+            
+//            item.completeHabitNow() // NEED REFACTOR
+//            await saveCurrent()
+//            setEditingItem(item) // NEED REFACTOR
+//        }
+    }
+}
+// MARK: Private methods
+
+// MARK: Swift Data Methods
+private extension HabitListViewModel {
     func delete(at offsets: IndexSet) async {
         do {
             for index in offsets {
@@ -89,7 +119,7 @@ final class HabitListViewModel: ObservableObject {
             self.error = error.localizedDescription
         }
     }
-
+    
     func saveCurrent() async {
         do {
             print("Saving item with ID: \(item.id)")
@@ -118,7 +148,7 @@ final class HabitListViewModel: ObservableObject {
             self.error = error.localizedDescription
         }
     }
-
+    
     func deleteCurrent() async {
         do {
             try await repo.delete(id: item.id)
@@ -166,8 +196,8 @@ final class HabitListViewModel: ObservableObject {
             self.error = error.localizedDescription
         }
     }
-
-    func setEditingItem(_ newItem: ListHabitItem) {
+    
+    func setEditingItem(_ newItem: HabitModel) {
         self.item = newItem
     }
     
@@ -178,4 +208,11 @@ final class HabitListViewModel: ObservableObject {
         
         Task { try? await notifier.reschedule(for: item) }
     }
+    
+    func deleteNotification(for id: UUID) {
+        guard item.isNotificationActivated else { return }
+        
+        Task { await notifier.cancel(for: id) }
+    }
 }
+

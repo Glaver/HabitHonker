@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct ContentView: View {
+struct HabitListView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var path = NavigationPath()
     @State private var isDeleting = false
@@ -37,14 +37,9 @@ struct ContentView: View {
                             }
                             .padding(.horizontal, 10)
                             .swipeActions {
-                                Action(symbolImage: "square.and.arrow.up.fill", tint: .white, background: .blue) { resetPosition in
+                                Action(symbolImage: "checkmark", tint: .black, background: .white) { resetPosition in
                                     resetPosition.toggle()
-                                }
-                                Action(symbolImage: "square.and.arrow.down.fill", tint: .white, background: .purple) { resetPosition in
-                                    resetPosition.toggle()
-                                }
-                                Action(symbolImage: "trash.fill", tint: .white, background: .red) { resetPosition in
-                                    resetPosition.toggle()
+                                    viewModel.habitComplete()
                                 }
                             }
                     }
@@ -81,26 +76,24 @@ struct ContentView: View {
                 switch route {
                 case .detailHabit(let id):
                     if let found = viewModel.items.first(where: { $0.id == id }) {
-                        AddNewHabitView(item: found,
+                        HabitDetailView(item: found,
+                                        mode: .detailScreen,
                                         saveAction: { item in
-                            Task {
-                                viewModel.setEditingItem(item)
-                                await viewModel.saveCurrent()
-                                viewModel.updateHabitNotification()
-                            }
+                                viewModel.saveItem(item)
+                        }, deleteAction: { item in
+                            viewModel.deleteItem(item)
                         },
                                         saveButton: {
                             SaveButton() {
                             }
                         })
                     } else {
-                        AddNewHabitView(item: ListHabitItem.mock(),
+                        HabitDetailView(item: HabitModel.mock(),
+                                        mode: .detailScreen,
                                         saveAction: { item in
-                            Task {
-                                viewModel.setEditingItem(item)
-                                await viewModel.saveCurrent()
-                                viewModel.updateHabitNotification()
-                            }
+                            viewModel.saveItem(item)
+                        }, deleteAction: { item in
+                            viewModel.deleteItem(item)
                         },
                                         saveButton: {
                             SaveButton() {
@@ -108,13 +101,12 @@ struct ContentView: View {
                         })
                     }
                 case .addNewHabit:
-                    AddNewHabitView(item: ListHabitItem.mock(),
+                    HabitDetailView(item: HabitModel.mock(),
+                                    mode: .addNewHabit,
                                     saveAction: { item in
-                        Task {
-                            viewModel.setEditingItem(item)
-                            await viewModel.saveCurrent()
-                            viewModel.updateHabitNotification()
-                        }
+                        viewModel.saveItem(item)
+                    }, deleteAction: { item in
+                        viewModel.deleteItem(item)
                     },
                                     saveButton: {
                         SaveButton() {
@@ -168,7 +160,7 @@ struct ContentView: View {
     let repo = HabitsRepositorySwiftData(container: container)
     
     // 3) Pass the factory closure + attach the container to the view tree
-    ContentView(makeViewModel: {
+    HabitListView(makeViewModel: {
         HabitListViewModel(repo: repo)
     })
     .modelContainer(container)

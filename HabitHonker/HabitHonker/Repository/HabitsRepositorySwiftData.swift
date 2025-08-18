@@ -22,14 +22,14 @@ actor HabitsRepositorySwiftData {
     }
 
     // MARK: - CRUD
-    func fetchAll() throws -> [ListHabitItem] {
+    func fetchAll() throws -> [HabitModel] {
         let ctx = makeContext()
         let descriptor = FetchDescriptor<HabitSD>(sortBy: [.init(\.title)])
         let rows = try ctx.fetch(descriptor)
         return rows.map(HabitMapper.toDomain)
     }
 
-    func fetch(id: UUID) throws -> ListHabitItem? {
+    func fetch(id: UUID) throws -> HabitModel? {
         let ctx = makeContext()
         let pred = #Predicate<HabitSD> { $0.id == id }
         var d = FetchDescriptor<HabitSD>(predicate: pred)
@@ -37,14 +37,14 @@ actor HabitsRepositorySwiftData {
         return try ctx.fetch(d).first.map(HabitMapper.toDomain)
     }
 
-    func save(_ item: ListHabitItem) throws {
+    func save(_ item: HabitModel) throws {
         let ctx = makeContext()
         let sd = HabitMapper.makeSD(from: item)
         ctx.insert(sd)
         try ctx.save()
     }
 
-    func update(_ item: ListHabitItem) throws {
+    func update(_ item: HabitModel) throws {
         let ctx = makeContext()
 
         // 👈 capture the value FIRST so RHS is a literal, not a key path
@@ -78,14 +78,14 @@ actor HabitsRepositorySwiftData {
     }
     
     // MARK: - Deleted Habits Methods
-    func fetchAllDeleted() throws -> [ListHabitItem] {
+    func fetchAllDeleted() throws -> [HabitModel] {
         let ctx = makeContext()
         let descriptor = FetchDescriptor<DeletedHabitSD>(sortBy: [.init(\.deletedAt, order: .reverse)])
         let rows = try ctx.fetch(descriptor)
         return rows.map(HabitMapper.deletedToDomain)
     }
     
-    func fetchDeleted(id: UUID) throws -> ListHabitItem? {
+    func fetchDeleted(id: UUID) throws -> HabitModel? {
         let ctx = makeContext()
         let pred = #Predicate<DeletedHabitSD> { $0.id == id }
         var d = FetchDescriptor<DeletedHabitSD>(predicate: pred)

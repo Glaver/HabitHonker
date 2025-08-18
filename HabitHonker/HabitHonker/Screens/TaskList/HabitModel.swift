@@ -1,5 +1,5 @@
 //
-//  ListHabitItem.swift
+//  HabitListModel.swift
 //  HabitHonker
 //
 //  Created by Vladyslav on 8/4/25.
@@ -7,7 +7,7 @@
 import Foundation
 import SwiftUI
 
-struct ListHabitItem: Identifiable, Equatable {
+struct HabitModel: Identifiable, Equatable {
     var id: UUID
     var icon: String?
     var iconColor: Color?
@@ -66,7 +66,7 @@ struct ListHabitItem: Identifiable, Equatable {
     }
 }
 
-extension ListHabitItem {
+extension HabitModel {
     struct HabitRecord: Identifiable, Codable, Equatable {
         var id: UUID
         var date: Date
@@ -82,7 +82,7 @@ extension ListHabitItem {
     }
 }
 
-extension ListHabitItem {
+extension HabitModel {
     enum HabitType: Int, CaseIterable {
         case dueDate
         case repeating
@@ -98,7 +98,7 @@ extension ListHabitItem {
     }
 }
 
-extension ListHabitItem {
+extension HabitModel {
     enum PriorityEisenhower: Int, CaseIterable {
         case importantAndUrgent
         case importantButNotUrgent
@@ -159,8 +159,8 @@ extension ListHabitItem {
     }
 }
 
-extension ListHabitItem {
-    static func mock() -> ListHabitItem {
+extension HabitModel {
+    static func mock() -> HabitModel {
         .init(
             icon: "empty_icon",
             iconColor: .clear,
@@ -173,11 +173,11 @@ extension ListHabitItem {
     }
 }
 
-extension ListHabitItem {
-    static func mock() -> [ListHabitItem] {
+extension HabitModel {
+    static func mock() -> [HabitModel] {
         [.init(
             icon: "atom",
-            iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
+            iconColor: HabitModel.PriorityEisenhower.importantButNotUrgent.color,
             title: "Meditation",
             description: "",
             priority: .importantButNotUrgent,
@@ -186,7 +186,7 @@ extension ListHabitItem {
             dueDate: Date()
         ),
          .init(icon: "academic-cap",
-               iconColor: ListHabitItem.PriorityEisenhower.urgentButNotImportant.color,
+               iconColor: HabitModel.PriorityEisenhower.urgentButNotImportant.color,
                title: "Wash dishes, vacuum floor, laundry, etc",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -195,7 +195,7 @@ extension ListHabitItem {
                dueDate: Date()
         ),
          .init(icon: "atom",
-               iconColor: ListHabitItem.PriorityEisenhower.importantAndUrgent.color,
+               iconColor: HabitModel.PriorityEisenhower.importantAndUrgent.color,
                title: "Learn System Design",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -205,7 +205,7 @@ extension ListHabitItem {
                notificationActivated: false
         ),
          .init(icon: "alien",
-               iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
+               iconColor: HabitModel.PriorityEisenhower.importantButNotUrgent.color,
                title: "Swift 6.2",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -215,7 +215,7 @@ extension ListHabitItem {
                notificationActivated: true
         ),
          .init(icon: "baby",
-               iconColor: ListHabitItem.PriorityEisenhower.importantButNotUrgent.color,
+               iconColor: HabitModel.PriorityEisenhower.importantButNotUrgent.color,
                title: "Candle puring",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -225,7 +225,7 @@ extension ListHabitItem {
                notificationActivated: false
         ),
          .init(icon: "avocado",
-               iconColor: ListHabitItem.PriorityEisenhower.notUrgentAndNotImportant.color,
+               iconColor: HabitModel.PriorityEisenhower.notUrgentAndNotImportant.color,
                title: "Balance board",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -235,7 +235,7 @@ extension ListHabitItem {
                notificationActivated: false
         ),
          .init(icon: "alarm",
-               iconColor: ListHabitItem.PriorityEisenhower.importantAndUrgent.color,
+               iconColor: HabitModel.PriorityEisenhower.importantAndUrgent.color,
                title: "Algorithms",
                description: "",
                priority: .importantAndUrgent,

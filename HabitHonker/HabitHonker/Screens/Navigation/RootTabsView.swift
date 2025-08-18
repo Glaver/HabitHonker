@@ -19,7 +19,7 @@ struct RootTabsView: View {
     
     var body: some View {
         TabView {
-            ContentView(makeViewModel: {
+            HabitListView(makeViewModel: {
                 let container = modelContext.container
                 return HabitListViewModel(repo: HabitsRepositorySwiftData(container: container))
             })

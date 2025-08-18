@@ -65,7 +65,11 @@ fileprivate struct CustomSwipeActionModifier: ViewModifier {
                     .foregroundStyle(.clear)
                     .containerRelativeFrame(config.occupiesFullWidth ? .horizontal : .init())
                     .overlay(alignment: .trailing) {
-                        ActionView()
+                        if progress > 0.01 {
+                            ActionView()
+                                .padding(.trailing, config.trailingPadding)
+                                .transition(.opacity)
+                        }
                     }
             }
             .compositingGroup()
@@ -118,8 +122,8 @@ fileprivate struct CustomSwipeActionModifier: ViewModifier {
                             .font(action.font)
                             .foregroundStyle(action.tint)
                             .frame(width: size.width, height: size.height)
-                            .background(action.background, in: Circle())
                             .contentShape(action.shape)
+                            .glassEffect(.regular, in: Capsule())
                     }
                     .offset(x: offset * progress)
                 }

@@ -10,7 +10,7 @@ import SwiftUI
 import SwiftData
 
 struct HabitCell: View {
-    let item: ListHabitItem
+    let item: HabitModel
     private var isCompletedToday: Bool { item.isCompletedToday }
     
     var body: some View {

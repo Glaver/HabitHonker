@@ -40,15 +40,15 @@ enum HabitMapper {
     }
 
     // MARK: SD -> Domain
-    static func toDomain(_ sd: HabitSD) -> ListHabitItem {
-        let priority = ListHabitItem.PriorityEisenhower(rawValue: sd.priorityRaw)
+    static func toDomain(_ sd: HabitSD) -> HabitModel {
+        let priority = HabitModel.PriorityEisenhower(rawValue: sd.priorityRaw)
             ?? .importantAndUrgent
-        let type = ListHabitItem.HabitType(rawValue: sd.typeRaw)
+        let type = HabitModel.HabitType(rawValue: sd.typeRaw)
             ?? .dueDate
 
         let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
 
-        var item = ListHabitItem(
+        var item = HabitModel(
             id: sd.id,
             icon: sd.icon,
             iconColor: color(from: sd.iconColorHex),
@@ -63,14 +63,14 @@ enum HabitMapper {
                 guard let id = record.id, let date = record.date, let count = record.count else {
                     return nil
                 }
-                return ListHabitItem.HabitRecord(id: id, date: date, count: count)
+                return HabitModel.HabitRecord(id: id, date: date, count: count)
             }
         )
         return item
     }
 
     // MARK: Domain -> SD (create new)
-    static func makeSD(from domain: ListHabitItem) -> HabitSD {
+    static func makeSD(from domain: HabitModel) -> HabitSD {
         HabitSD(
             id: domain.id,
             icon: domain.icon,
@@ -93,7 +93,7 @@ enum HabitMapper {
     }
 
     // MARK: Update existing SD with domain values
-    static func apply(_ domain: ListHabitItem, to sd: HabitSD) {
+    static func apply(_ domain: HabitModel, to sd: HabitSD) {
         sd.icon = domain.icon
         sd.iconColorHex = hex(from: domain.iconColor)
         sd.title = domain.title
@@ -114,7 +114,7 @@ enum HabitMapper {
     }
     
     // MARK: Domain -> DeletedHabitSD (for archiving deleted habits)
-    static func makeDeletedSD(from domain: ListHabitItem) -> DeletedHabitSD {
+    static func makeDeletedSD(from domain: HabitModel) -> DeletedHabitSD {
         DeletedHabitSD(
             id: domain.id,
             icon: domain.icon,
@@ -138,15 +138,15 @@ enum HabitMapper {
     }
     
     // MARK: DeletedHabitSD -> Domain
-    static func deletedToDomain(_ sd: DeletedHabitSD) -> ListHabitItem {
-        let priority = ListHabitItem.PriorityEisenhower(rawValue: sd.priorityRaw)
+    static func deletedToDomain(_ sd: DeletedHabitSD) -> HabitModel {
+        let priority = HabitModel.PriorityEisenhower(rawValue: sd.priorityRaw)
             ?? .importantAndUrgent
-        let type = ListHabitItem.HabitType(rawValue: sd.typeRaw)
+        let type = HabitModel.HabitType(rawValue: sd.typeRaw)
             ?? .dueDate
 
         let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
 
-        var item = ListHabitItem(
+        var item = HabitModel(
             id: sd.id,
             icon: sd.icon,
             iconColor: color(from: sd.iconColorHex),
@@ -161,7 +161,7 @@ enum HabitMapper {
                 guard let id = record.id, let date = record.date, let count = record.count else {
                     return nil
                 }
-                return ListHabitItem.HabitRecord(id: id, date: date, count: count)
+                return HabitModel.HabitRecord(id: id, date: date, count: count)
             }
         )
         return item

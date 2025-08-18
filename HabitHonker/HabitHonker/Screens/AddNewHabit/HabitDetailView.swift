@@ -1,5 +1,5 @@
 //
-//  AddNewHabit.swift
+//  HabitDetailView.swift
 //  HabitHonker
 //
 //  Created by Vladyslav on 8/8/25.
@@ -8,22 +8,36 @@
 import SwiftUI
 import SwiftData
 
-struct AddNewHabitView: View {
-    @State var item: ListHabitItem
+extension HabitDetailView {
+    enum HabitScreenMode {
+        case addNewHabit
+        case detailScreen
+    }
+}
+
+struct HabitDetailView: View {
+    @State var item: HabitModel
     @State private var isIconsSheetPresented: Bool = false
+    @State private var showDeleteConfirmation: Bool = false
     @ViewBuilder private let saveButton: (() -> SaveButton)
-    private let saveAction: (ListHabitItem) -> Void
+    private let saveAction: (HabitModel) -> Void
+    private let deleteAction: (HabitModel) -> Void
     
     @Environment(\.colorScheme) var colorSchema
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.dismiss) private var dismiss
     
     let icons = ["academic-cap", "alarm", "alien", "archive-box", "atom", "attachment", "augmented-reality", "avocado", "axe", "baby-carriage", "baby"]
+    let mode: HabitScreenMode
     
-    init(item: ListHabitItem,
-         saveAction: @escaping (ListHabitItem) -> Void,
+    init(item: HabitModel,
+         mode: HabitScreenMode,
+         saveAction: @escaping (HabitModel) -> Void,
+         deleteAction: @escaping (HabitModel) -> Void,
          @ViewBuilder saveButton: @escaping () -> SaveButton) {
         self._item = State(initialValue: item)
+        self.mode = mode
+        self.deleteAction = deleteAction
         self.saveAction = saveAction
         self.saveButton = saveButton
     }
@@ -159,7 +173,7 @@ struct AddNewHabitView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
                             Picker("Priority", selection: $item.type) {
-                                ForEach(ListHabitItem.HabitType.allCases, id: \.self) { type in
+                                ForEach(HabitModel.HabitType.allCases, id: \.self) { type in
                                     Text(type.text)
                                     
                                 }
@@ -223,7 +237,6 @@ struct AddNewHabitView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 54)
                     .multilineTextAlignment(.center)
-                    //                    .background(.blue)
                     .tint(Color.black)
                     .cornerRadius(26)
                     .padding(.horizontal, 10)
@@ -258,20 +271,47 @@ struct AddNewHabitView: View {
             .navigationTitle("Detail screen")
             .navigationBarTitleDisplayMode(.inline)
             .background(Color(.systemGray6))
+            .toolbar { // MARK: ToolbarItem
+                if mode == .detailScreen {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            showDeleteConfirmation.toggle()
+                        }) {
+                            Image(systemName: "trash")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .foregroundColor(Color(UIColor.systemRed).opacity(0.7))
+                                .frame(width: 24, height: 24)
+                        }
+                    }
+                }
+            }// MARK: Alert Delete Habit
+            .alert("Delete Habit", isPresented: $showDeleteConfirmation) {
+                Button("Delete", role: .destructive) {
+                    deleteAction(item)
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Are you sure you want to delete this habit? This action cannot be undone.")
+            }
     }
 }
+
 // MARK: Preview
 #Preview {
-    AddNewHabitView(
-        item: ListHabitItem(icon: "atom",
-                            iconColor: .red,
-                            title: "Fly on a dragon",
-                            description: "That is the only way",
-                            priority: .importantAndUrgent,
-                            type: .repeating,
-                            repeating: Set<Weekday>(),
-                            dueDate: Date()),
+    HabitDetailView(
+        item: HabitModel(icon: "atom",
+                         iconColor: .red,
+                         title: "Fly on a dragon",
+                         description: "That is the only way",
+                         priority: .importantAndUrgent,
+                         type: .repeating,
+                         repeating: Set<Weekday>(),
+                         dueDate: Date()),
+        mode: .detailScreen,
         saveAction: { _ in },
+        deleteAction: { _ in},
         saveButton: {
             SaveButton() {
                 print("sss")

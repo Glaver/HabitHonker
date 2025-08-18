@@ -10,7 +10,7 @@ import UserNotifications
 // MARK: - Protocol
 protocol HabitNotificationScheduling {
     func requestAuthorization() async throws
-    func reschedule(for habit: ListHabitItem) async throws
+    func reschedule(for habit: HabitModel) async throws
     func cancel(for habitID: UUID) async
     func cancelAll() async
 }
@@ -30,7 +30,7 @@ final class HabitNotificationService: NSObject, HabitNotificationScheduling {
         // await MainActor.run { self.center.delegate = self }
     }
 
-    func reschedule(for habit: ListHabitItem) async throws {
+    func reschedule(for habit: HabitModel) async throws {
         // Turned off? remove everything
         guard habit.isNotificationActivated else {
             await cancel(for: habit.id)
@@ -61,7 +61,7 @@ final class HabitNotificationService: NSObject, HabitNotificationScheduling {
 
 // MARK: - Private helpers
 private extension HabitNotificationService {
-    func scheduleOneShot(_ habit: ListHabitItem) async throws {
+    func scheduleOneShot(_ habit: HabitModel) async throws {
         // Skip if dueDate already passed (you could clamp instead)
         guard habit.dueDate > Date() else { return }
 
@@ -77,7 +77,7 @@ private extension HabitNotificationService {
         try await center.add(req)
     }
 
-    func scheduleRepeatingByWeekdays(_ habit: ListHabitItem) async throws {
+    func scheduleRepeatingByWeekdays(_ habit: HabitModel) async throws {
         guard !habit.repeating.isEmpty else { return }
 
         // Extract only time-of-day from dueDate
@@ -99,7 +99,7 @@ private extension HabitNotificationService {
         }
     }
 
-    func makeContent(for habit: ListHabitItem, weekday: Weekday? = nil) -> UNMutableNotificationContent {
+    func makeContent(for habit: HabitModel, weekday: Weekday? = nil) -> UNMutableNotificationContent {
         let c = UNMutableNotificationContent()
         // Customize to your model
         c.title = "Habit Honks"
