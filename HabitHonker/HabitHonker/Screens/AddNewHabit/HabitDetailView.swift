@@ -26,9 +26,8 @@ struct HabitDetailView: View {
     @Environment(\.colorScheme) var colorSchema
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.dismiss) private var dismiss
-    
-    let icons = ["academic-cap", "alarm", "alien", "archive-box", "atom", "attachment", "augmented-reality", "avocado", "axe", "baby-carriage", "baby"]
-    let mode: HabitScreenMode
+
+    private let mode: HabitScreenMode
     
     init(item: HabitModel,
          mode: HabitScreenMode,
@@ -83,14 +82,11 @@ struct HabitDetailView: View {
                                     .frame(height: 30)
                             }
                         }
-                        
                         .padding(10)
-                        
                     }
                     .padding(.horizontal, 10)
                     
                     // MARK: Icon picker
-                    
                     
                     Button {
                         isIconsSheetPresented.toggle()
@@ -159,7 +155,6 @@ struct HabitDetailView: View {
                     .background(.white)
                     .cornerRadius(26)
                     .padding(.horizontal, 10)
-                    //                }
                     
                     // MARK: Advanced Options
                     
@@ -252,20 +247,24 @@ struct HabitDetailView: View {
         
             .sheet(isPresented: $isIconsSheetPresented) {
                 // MARK: Icons bottom sheet view
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    ForEach(icons, id: \.self) { icon in
-                        Image(icon)
-                            .font(.system(size: 35))
-                            .font(.largeTitle)
-                            .frame(maxWidth: .infinity, minHeight: 80)
-                            .cornerRadius(10)
-                            .onTapGesture {
-                                item.icon = icon
+                ScrollView { // REFACTOR NEED MOVE TO SEPARATE VIEW
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                        ForEach(HabitDetailView.icons, id: \.self) { icon in
+                            Image(icon)
+                                .font(.system(size: 35))
+                                .font(.largeTitle)
+                                .frame(maxWidth: .infinity, minHeight: 80)
+                                .cornerRadius(10)
+                                .onTapGesture {
+                                    item.icon = icon
                                     print(icon)
-                                isIconsSheetPresented = false
-                            }
+                                    isIconsSheetPresented = false
+                                }
+                        }
                     }
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
                 .presentationDetents([.large])
             }
             .navigationTitle("Detail screen")
@@ -329,4 +328,8 @@ struct SaveButton: View {
             action()
         }
     }
+}
+// Icon pack
+extension HabitDetailView {
+    static let icons: [String] = ["academic-cap","alarm","alien","archive-box","atom","attachment","augmented-reality","avocado","axe","baby-carriage","baby","backpack","balloon","bank-card-fill","bank","bao-bun","basketball","bathroom","battery-charging","bed","biceps-flexed","bill","bluetooth","boarding-pass","boat","bolt","bone","brand-dropbox-fill","brand-github-fill","brand-github-mascot-fill","brand-instagram-fill","brand-linkedin-fill","brand-open-ai-fill","brandy","bread","cable-car","calendar-dates","call","campfire","car-alt-2","cell-signal","checklist","cheers","chef-hat","clover","club","cocktail","coffee-bean","coin","cornflakes","cyclist","disconnect","discount-alt","dna","dress","drill","drone","drop","drum","electric-car-charging","elephant","eye","face-angry","face-love","face-very-happy","fan","film-slate","fingerprint","fire-extinguisher","fire-truck","fishing","flask","flying-saucer","game-controller","generate","ghost","give","guitar","hammer","head-circuit","headphones","ice-cream","justice","magic-wand-ai","mailbox","navigation-north-east","office-chair","office","paint-roller","passport","pig","pizza-slice","plane","planet","plant","print","rain","rocket-ship","satellite","savings","scissors","speakers","split","sunrise","sunset","surveillance-cameras-two","sword-alt","telescope","temperature","tire","toilet-paper","toilet","tooth","tour-bus","train","transfer","tulip","tv","umbrella","university-hat-simple","unlock","vault","vial","virus","wallet","washing-machine","weight","wheelchair-alt","wifi","wind","world","yen"]
 }

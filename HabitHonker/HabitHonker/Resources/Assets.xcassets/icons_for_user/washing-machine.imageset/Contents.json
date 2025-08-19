@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "washing-machine.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

@@ -1,15 +1,12 @@
 {
   "images" : [
     {
-      "filename" : "archive-box.svg",
+      "filename" : "archive-box.pdf",
       "idiom" : "universal"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
-  },
-  "properties" : {
-    "preserves-vector-representation" : true
   }
 }

@@ -96,13 +96,13 @@ final class HabitListViewModel: ObservableObject {
     }
     
     func habitComplete() {
-//        Task {
+        Task {
             // Need to improve logic for finish Habit
-            
-//            item.completeHabitNow() // NEED REFACTOR
-//            await saveCurrent()
-//            setEditingItem(item) // NEED REFACTOR
-//        }
+            setEditingItem(item)
+            item.completeHabitNow() // NEED REFACTOR
+            await saveCurrent()
+            setEditingItem(item) // NEED REFACTOR
+        }
     }
 }
 // MARK: Private methods

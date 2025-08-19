@@ -66,8 +66,6 @@ struct HabitListView: View {
                         path.append(Route.addNewHabit)
                     } label: {
                         Image(systemName: "plus")
-                            .padding()
-                            .glassEffect()
                     }
                 }
             }
