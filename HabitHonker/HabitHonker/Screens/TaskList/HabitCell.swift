@@ -12,13 +12,14 @@ import SwiftData
 struct HabitCell: View {
     let item: HabitModel
     private var isCompletedToday: Bool { item.isCompletedToday }
+    @Environment(\.colorScheme) var scheme
     
     var body: some View {
         GlassEffectContainer {
             HStack {
                 ZStack {
                     RoundedRectangle(cornerRadius: 23)
-                        .fill(isCompletedToday ? item.priority.color.opacity(0.05) : item.priority.color.opacity(0.5))
+                        .fill(isCompletedToday ? item.priority.color.opacity(0.05) : item.priority.color.opacity(Color.opacityForSheme(scheme)))
                         .frame(width: 56)
                         .zIndex(0)
                     
@@ -26,7 +27,7 @@ struct HabitCell: View {
                         .resizable()
                         .frame(width: 40, height: 40)
                         .scaledToFit()
-                        .foregroundColor(.black)
+                        .foregroundColor(.primary.opacity(1))
                         .zIndex(1)
                         .padding(.vertical, 10)
                 }
@@ -38,14 +39,15 @@ struct HabitCell: View {
                         VStack(alignment: .leading,spacing: 4) {
                             Text(item.title)
                                 .font(.headline)
+                                .foregroundColor(.primary.opacity(isCompletedToday ? 0.5 : 1))
                             Text(item.priority.text)
                                 .font(.caption)
-                                .foregroundColor(isCompletedToday ? .gray :.secondary)
+                                .foregroundColor(.primary.opacity(isCompletedToday ? 0.5 : 1))
                         }
                         Spacer()
                         if item.type == .repeating {
                             Image(systemName: "infinity")
-                                .foregroundColor(.black)
+                                .foregroundColor(.primary)
                                 .padding(.trailing, 15)
                         }
                     }

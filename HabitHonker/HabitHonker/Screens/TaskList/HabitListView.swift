@@ -10,6 +10,8 @@ import SwiftData
 
 struct HabitListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) var scheme
+    
     @State private var path = NavigationPath()
     @State private var isDeleting = false
     @State private var currentDate = Date()
@@ -111,11 +113,14 @@ struct HabitListView: View {
                         }
                     })
                 }
-            }
+            }//scheme
             .background(Image("Wallpaper")
                 .resizable()
                 .scaledToFill()
-                .edgesIgnoringSafeArea(.all))
+                .edgesIgnoringSafeArea(.all)
+                .overlay(
+                    scheme == .dark ? Color.black.opacity(0.4) : Color.clear
+                ))
         }
         // Refactor later: background on change custom
         

@@ -48,7 +48,7 @@ struct HabitDetailView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 26)
                             .frame(maxWidth: .infinity)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color("cellContentColor"))
                         
                         VStack() {
                             VStack(alignment: .leading) {
@@ -95,7 +95,7 @@ struct HabitDetailView: View {
                         RoundedRectangle(cornerRadius: 26)
                             .frame(maxWidth: .infinity)
                             .frame(minHeight: 62)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color("cellContentColor"))
                         
                         HStack {
                             Text("Icon")
@@ -103,15 +103,16 @@ struct HabitDetailView: View {
                             
                             Spacer()
                             ZStack {
-                                Image(item.icon ?? "")
+                                Image(item.icon ?? "empty_icon")
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
+                                    .foregroundColor(.primary)
                                     .frame(width: 24, height: 24)
                                     .zIndex(2)
                                 
                                 RoundedRectangle(cornerRadius: 20)
-                                    .fill(.white)
                                     .frame(width: 42, height: 42)
+                                    .foregroundStyle(Color("cellContentColor"))
                                     .shadow(color: .gray.opacity(0.3), radius: 6, x: 1, y: 1)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 20)
@@ -139,10 +140,11 @@ struct HabitDetailView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 26)
                             .frame(maxWidth: .infinity)
-                            .foregroundStyle(.clear)
+                            .foregroundStyle(Color("cellContentColor"))
                         VStack {
                             Text("Select priority")
                                 .font(.subheadline)
+                                .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .multilineTextAlignment(.leading)
                             PriorityPicker(priorityEisenhower: $item.priority)
@@ -161,7 +163,7 @@ struct HabitDetailView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 26)
                             .frame(maxWidth: .infinity)
-                            .foregroundStyle(.clear)
+                            .foregroundStyle(Color("cellContentColor"))
                         
                         VStack {
                             Text("Advanced Options")
@@ -197,17 +199,15 @@ struct HabitDetailView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 26)
                             .frame(maxWidth: .infinity)
-                            .foregroundStyle(.clear)
+                            .foregroundColor(Color("cellContentColor"))
                         VStack {
                             Toggle("Schedule notification", isOn: $item.isNotificationActivated)
-//                                .padding(.top, 10)
                                 .padding(.vertical, 10)
                             if item.type != .dueDate {
                                 Rectangle()
                                     .foregroundStyle(.gray.opacity(0.3))
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 1)
-//                                    .padding(.top, 20)
                                 DatePicker(
                                     "Time",
                                     selection: $item.dueDate,
@@ -232,7 +232,7 @@ struct HabitDetailView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 54)
                     .multilineTextAlignment(.center)
-                    .tint(Color.black)
+                    .tint(.primary.opacity(1))
                     .cornerRadius(26)
                     .padding(.horizontal, 10)
                     .background(.blue.opacity(0.6))

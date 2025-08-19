@@ -21,5 +21,14 @@ extension Color {
     static let fourth = Color(red: 39/255, green: 51/255,  blue: 143/255)   // #27338F
     static let orangone = Color(red: 208/255, green: 160/255, blue: 33/255)  // #D0A021
     static let yllowone = Color(red: 208/255,  green: 114/255,  blue: 33/255)   // #D07221
+    
+    
+    static func opacityForSheme(_ sheme: ColorScheme) -> Double {
+        if sheme == .dark {
+            return 0.9
+        } else {
+            return 0.7
+        }
+    }
 }
 
