@@ -42,7 +42,7 @@ struct PriorityCell: View {
             .padding(5)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
-            .shadow(color: isSelected ? type.color.opacity(Color.opacityForSheme(scheme)) : .clear, radius: 10, x: 5, y: 5)
+            .shadow(color: isSelected ? type.color.opacity(Color.opacityForSheme(scheme)) : .clear, radius: 5, x: 1, y: 1)
             
             .overlay(
                 RoundedRectangle(cornerRadius: 16)

@@ -25,9 +25,9 @@ extension Color {
     
     static func opacityForSheme(_ sheme: ColorScheme) -> Double {
         if sheme == .dark {
-            return 0.9
-        } else {
             return 0.7
+        } else {
+            return 0.5
         }
     }
 }
