@@ -47,28 +47,37 @@ struct HabitCell: View {
                         Spacer()
                         if item.type == .repeating {
                             Image(systemName: "infinity")
-                                .foregroundColor(.primary)
+                                .foregroundColor(.primary.opacity(1))
                                 .padding(.trailing, 15)
                         }
                     }
                     
                     if item.isNotificationActivated  {
                         Spacer()
-                        HStack {
-                            Text("Remind me at")
-                                .font(.subheadline)
-                                .padding(.horizontal, 12)
-                            Spacer()
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                    .fill(.white.opacity(0.3))
-                                    .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
-                                    .frame(width: 98, height: 31)
-                                    .glassEffect()
-                                Text(item.dueDate.getTimeFrom())
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 25, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
+                                .frame(height: 31)
+                                
+                            HStack {
+                                Text("Remind me at")
                                     .font(.subheadline)
-                                    .padding(.horizontal, 5)
-                                    .glassEffect()
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 12)
+                                Spacer()
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 25, style: .continuous)
+                                        .fill(.white.opacity(0.3))
+                                        .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 1)
+                                        .frame(width: 98, height: 31)
+                                        .glassEffect()
+                                    Text(item.dueDate.getTimeFrom())
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 5)
+                                        .glassEffect()
+                                }
                             }
                         }
                     }
