@@ -15,6 +15,7 @@ struct HabitListView: View {
     @State private var path = NavigationPath()
     @State private var isDeleting = false
     @State private var currentDate = Date()
+    @State private var timer: Timer?
     
     let makeViewModel: () -> HabitListViewModel
     @StateObject private var viewModel: HabitListViewModel
@@ -41,7 +42,9 @@ struct HabitListView: View {
                             .swipeActions {
                                 Action(symbolImage: "checkmark", tint: .black, background: .white) { resetPosition in
                                     resetPosition.toggle()
-                                    viewModel.habitComplete()
+                                    Task {
+                                        await viewModel.habitCompleteWith(id: item.id)
+                                    }
                                 }
                             }
                     }
@@ -50,6 +53,7 @@ struct HabitListView: View {
             }
             .onAppear {
                 Task {
+                    await viewModel.onAppLaunch()
                     await viewModel.load(forDate: currentDate)
                 }
                 startDateTimer()
@@ -75,45 +79,13 @@ struct HabitListView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .detailHabit(let id):
-                    if let found = viewModel.items.first(where: { $0.id == id }) {
-                        HabitDetailView(item: found,
-                                        mode: .detailScreen,
-                                        saveAction: { item in
-                                viewModel.saveItem(item)
-                        }, deleteAction: { item in
-                            viewModel.deleteItem(item)
-                        },
-                                        saveButton: {
-                            SaveButton() {
-                            }
-                        })
-                    } else {
-                        HabitDetailView(item: HabitModel.mock(),
-                                        mode: .detailScreen,
-                                        saveAction: { item in
-                            viewModel.saveItem(item)
-                        }, deleteAction: { item in
-                            viewModel.deleteItem(item)
-                        },
-                                        saveButton: {
-                            SaveButton() {
-                            }
-                        })
-                    }
+                    let item = viewModel.items.first(where: { $0.id == id }) ?? HabitModel.mock()
+                    makeHabitDetailView(for: item, mode: .detailScreen)
+
                 case .addNewHabit:
-                    HabitDetailView(item: HabitModel.mock(),
-                                    mode: .addNewHabit,
-                                    saveAction: { item in
-                        viewModel.saveItem(item)
-                    }, deleteAction: { item in
-                        viewModel.deleteItem(item)
-                    },
-                                    saveButton: {
-                        SaveButton() {
-                        }
-                    })
+                    makeHabitDetailView(for: HabitModel.mock(), mode: .addNewHabit)
                 }
-            }//scheme
+            }
             .background(Image("Wallpaper")
                 .resizable()
                 .scaledToFill()
@@ -130,7 +102,7 @@ struct HabitListView: View {
     // MARK: - Timer Methods
     private func startDateTimer() {
         // Check every minute if the day has changed
-        Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
             let newDate = Date()
             
             // Check if the day has changed using Date extension
@@ -145,7 +117,27 @@ struct HabitListView: View {
     }
     
     private func stopDateTimer() {
-        // Timer cleanup if needed
+        timer?.invalidate()
+        timer = nil
+    }
+}
+
+private extension HabitListView {
+    @ViewBuilder
+    func makeHabitDetailView(for item: HabitModel, mode: HabitDetailView.HabitScreenMode) -> some View {
+        HabitDetailView(
+            item: item,
+            mode: mode,
+            saveAction: { item in
+                Task { await viewModel.saveItem(item) }
+            },
+            deleteAction: { item in
+                Task { await viewModel.deleteItem(item) }
+            },
+            saveButton: {
+                SaveButton() {}
+            }
+        )
     }
 }
 

@@ -143,19 +143,6 @@ extension HabitModel {
                 return Color.warmFeatherBeige
             }
         }
-        
-//        var color: Color {
-//            switch self {
-//            case .importantAndUrgent:
-//                return Color.honkerRed
-//            case .importantButNotUrgent:
-//                return Color.goldenGooseYellow
-//            case .urgentButNotImportant:
-//                return Color.charcoalWingGray
-//            case .notUrgentAndNotImportant:
-//                return Color.warmFeatherBeige
-//            }
-//        }
     }
 }
 

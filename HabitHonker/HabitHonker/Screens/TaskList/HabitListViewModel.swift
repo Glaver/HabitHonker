@@ -20,19 +20,18 @@ final class HabitListViewModel: ObservableObject {
          notifier: HabitNotificationScheduling = HabitNotificationService()) {
         self.repo = repo
         self.notifier = notifier
-        Task { try? await notifier.requestAuthorization() }
     }
     
     // MARK: - Lifecycle
-    func onAppear() {
-        Task { await load() }
+    func onAppear() async {
+        await load()
     }
     
-    func onAppLaunch() {
-        Task { try? await notifier.requestAuthorization() }
+    func onAppLaunch() async {
+        try? await notifier.requestAuthorization()
     }
     
-    // MARK: - Actions
+    // MARK: Public methods
     func load(forDate date: Date = Date()) async {
         isLoading = true
         defer { isLoading = false }
@@ -78,31 +77,24 @@ final class HabitListViewModel: ObservableObject {
             self.error = error.localizedDescription
         }
     }
-    // MARK: Public methods
-    func saveItem(_ item: HabitModel) {
-        Task {
-            setEditingItem(item) // NEED REFACTOR
-            await saveCurrent()
-            updateHabitNotification()
-        }
+    
+    func saveItem(_ item: HabitModel) async {
+        setEditingItem(item)
+        updateHabitNotification()
+        await saveCurrent()
     }
     
-    func deleteItem(_ item: HabitModel) {
-        Task {
-            setEditingItem(item) // NEED REFACTOR
-            await deleteItem(withId: item.id) // NEED REFACTOR
-            deleteNotification(for: item.id) // NEED REFACTOR
-        }
+    func deleteItem(_ item: HabitModel) async {
+        deleteNotification(for: item.id)
+        await deleteItem(withId: item.id)
     }
     
-    func habitComplete() {
-        Task {
-            // Need to improve logic for finish Habit
-            setEditingItem(item)
-            item.completeHabitNow() // NEED REFACTOR
-            await saveCurrent()
-            setEditingItem(item) // NEED REFACTOR
-        }
+    func habitCompleteWith(id: UUID) async {
+        guard let i = items.firstIndex(where: { $0.id == id }) else { return }
+        var item = items[i]
+        item.completeHabitNow()
+        setEditingItem(item)
+        await saveCurrent()
     }
 }
 // MARK: Private methods
@@ -122,18 +114,12 @@ private extension HabitListViewModel {
     
     func saveCurrent() async {
         do {
-            print("Saving item with ID: \(item.id)")
-            print("Item has \(item.record.count) records")
             for (index, record) in item.record.enumerated() {
-                print("Record \(index): id=\(record.id), date=\(record.date), count=\(record.count)")
             }
-            
-            // upsert
+
             if try await repo.fetch(id: item.id) != nil {
-                print("Updating existing item")
                 try await repo.update(item)
             } else {
-                print("Creating new item")
                 try await repo.save(item)
             }
             
@@ -142,9 +128,7 @@ private extension HabitListViewModel {
             
             // Reload items to apply sorting (completed tasks move to end)
             await load()
-            print("items = try await repo.fetchAll()")
         } catch {
-            print("Error saving item: \(error)")
             self.error = error.localizedDescription
         }
     }
@@ -215,4 +199,3 @@ private extension HabitListViewModel {
         Task { await notifier.cancel(for: id) }
     }
 }
-
