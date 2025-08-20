@@ -43,54 +43,54 @@ struct HabitDetailView: View {
     // MARK: View
     var body: some View {
         
-            ScrollView {
-                LazyVStack (spacing: 20) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 26)
-                            .frame(maxWidth: .infinity)
-                            .foregroundStyle(Color("cellContentColor"))
-                        
-                        VStack() {
-                            VStack(alignment: .leading) {
-                                Text("Name")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .frame(height: 22)
-                                
-                                TextField("", text: $item.title)
-                                    .textFieldStyle(.plain) // or .roundedBorder
-                                    .font(.system(size: 17, weight: .medium, design: .rounded))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .frame(height: 30)
-                            }
+        ScrollView {
+            LazyVStack (spacing: 20) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 26)
+                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(Color("cellContentColor"))
+                    
+                    VStack() {
+                        VStack(alignment: .leading) {
+                            Text(Constants.name)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .frame(height: 22)
                             
-                            Rectangle()
-                                .foregroundStyle(.gray.opacity(0.3))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 1)
-                            
-                            VStack(alignment: .leading) {
-                                Text("Description")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .frame(height: 22)
-                                
-                                TextField("", text: $item.description)
-                                    .textFieldStyle(.plain) // or .roundedBorder
-                                    .font(.system(size: 17, weight: .medium, design: .rounded))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .frame(height: 30)
-                            }
+                            TextField("", text: $item.title)
+                                .textFieldStyle(.plain) // or .roundedBorder
+                                .font(.system(size: 17, weight: .medium, design: .rounded))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(height: 30)
                         }
-                        .padding(10)
+                        
+                        Rectangle()
+                            .foregroundStyle(.gray.opacity(0.3))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 1)
+                        
+                        VStack(alignment: .leading) {
+                            Text(Constants.description)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .frame(height: 22)
+                            
+                            TextField("", text: $item.description)
+                                .textFieldStyle(.plain) // or .roundedBorder
+                                .font(.system(size: 17, weight: .medium, design: .rounded))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(height: 30)
+                        }
                     }
-                    .padding(.horizontal, 10)
-                    
-                    // MARK: Icon picker
-                    
-                    Button {
-                        isIconsSheetPresented.toggle()
-                    } label: {
+                    .padding(10)
+                }
+                .padding(.horizontal, 10)
+                
+                // MARK: Icon picker
+                
+                Button {
+                    isIconsSheetPresented.toggle()
+                } label: {
                     ZStack{
                         RoundedRectangle(cornerRadius: 26)
                             .frame(maxWidth: .infinity)
@@ -98,7 +98,7 @@ struct HabitDetailView: View {
                             .foregroundStyle(Color("cellContentColor"))
                         
                         HStack {
-                            Text("Icon")
+                            Text(Constants.icon)
                                 .multilineTextAlignment(.leading)
                             
                             Spacer()
@@ -129,125 +129,123 @@ struct HabitDetailView: View {
                         .padding(.horizontal, 10)
                     }
                     .padding(.horizontal, 10)
+                }
+                .buttonStyle(.plain) // prevents shrinking/tinting
+                .frame(maxWidth: .infinity)
+                .zIndex(3)
+                
+                
+                // MARK: PriorityPicker
+                
+                ZStack {
+                    RoundedRectangle(cornerRadius: 26)
+                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(Color("cellContentColor"))
+                    VStack {
+                        Text(Constants.selectPriorit)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
+                        PriorityPicker(priorityEisenhower: $item.priority)
                     }
-                    .buttonStyle(.plain) // prevents shrinking/tinting
-                    .frame(maxWidth: .infinity)
-                    .zIndex(3)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(10)
+                    .padding(.vertical, 10)
+                }
+                
+                .background(.white)
+                .cornerRadius(26)
+                .padding(.horizontal, 10)
+                
+                // MARK: Advanced Options
+                
+                ZStack {
+                    RoundedRectangle(cornerRadius: 26)
+                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(Color("cellContentColor"))
                     
-                    
-                    // MARK: PriorityPicker
-                    
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 26)
-                            .frame(maxWidth: .infinity)
-                            .foregroundStyle(Color("cellContentColor"))
-                        VStack {
-                            Text("Select priority")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .multilineTextAlignment(.leading)
-                            PriorityPicker(priorityEisenhower: $item.priority)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(10)
-                        .padding(.vertical, 10)
-                    }
-                    
-                    .background(.white)
-                    .cornerRadius(26)
-                    .padding(.horizontal, 10)
-                    
-                    // MARK: Advanced Options
-                    
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 26)
-                            .frame(maxWidth: .infinity)
-                            .foregroundStyle(Color("cellContentColor"))
+                    VStack {
+                        Text(Constants.advancedOption)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         
-                        VStack {
-                            Text("Advanced Options")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            Picker("Priority", selection: $item.type) {
-                                ForEach(HabitModel.HabitType.allCases, id: \.self) { type in
-                                    Text(type.text)
-                                    
-                                }
-                            }
-                            
-                            .pickerStyle(.palette)
-                            if item.type == .dueDate {
-                                DatePicker(
-                                    "Start Date",
-                                    selection: $item.dueDate,
-                                    displayedComponents: [.date, .hourAndMinute]
-                                )
-                                .datePickerStyle(.graphical)
-                            } else {
-                                WeekdayPicker(selection: $item.repeating, color: item.priority.color)
-                            }
-                        }
-                        //                    .padding(.horizontal, 10)
-                        .padding(10)
-                    }
-                    .background(.white)
-                    .cornerRadius(26)
-                    .padding(.horizontal, 10)
-                    
-                    // MARK: Schedule notification
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 26)
-                            .frame(maxWidth: .infinity)
-                            .foregroundColor(Color("cellContentColor"))
-                        VStack {
-                            Toggle("Schedule notification", isOn: $item.isNotificationActivated)
-                                .padding(.vertical, 10)
-                            if item.type != .dueDate {
-                                Rectangle()
-                                    .foregroundStyle(.gray.opacity(0.3))
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 1)
-                                DatePicker(
-                                    "Time",
-                                    selection: $item.dueDate,
-                                    displayedComponents: [.hourAndMinute]
-                                )
-                                .datePickerStyle(.graphical)
-                                .disabled(!item.isNotificationActivated)
+                        Picker(Constants.priority, selection: $item.type) {
+                            ForEach(HabitModel.HabitType.allCases, id: \.self) { type in
+                                Text(type.text)
                                 
                             }
                         }
-                        .padding(.horizontal, 10)
+                        
+                        .pickerStyle(.palette)
+                        if item.type == .dueDate {
+                            DatePicker(
+                                Constants.startDate,
+                                selection: $item.dueDate,
+                                displayedComponents: [.date, .hourAndMinute]
+                            )
+                            .datePickerStyle(.graphical)
+                        } else {
+                            WeekdayPicker(selection: $item.repeating, color: item.priority.color)
+                        }
                     }
-                    //                .padding(.horizontal, 10)
-                    .background(.white)
-                    .cornerRadius(26)
-                    .padding(.horizontal, 10)
-                    
-                    Button("Save") {
-                        saveAction(item)
-                        dismiss()
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 54)
-                    .multilineTextAlignment(.center)
-                    .tint(.primary.opacity(1))
-                    .cornerRadius(26)
-                    .padding(.horizontal, 10)
-                    .background(.blue.opacity(0.6))
-                    .cornerRadius(26)
-                    .glassEffect(.regular, in: Capsule())
-                    .shadow(color: .blue.opacity(0.7), radius: 5, x: 2, y: 2)
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 20)
+                    //                    .padding(.horizontal, 10)
+                    .padding(10)
                 }
-                .background(Color(.systemGray6))
+                .background(.white)
+                .cornerRadius(26)
+                .padding(.horizontal, 10)
+                
+                // MARK: Schedule notification
+                ZStack {
+                    RoundedRectangle(cornerRadius: 26)
+                        .frame(maxWidth: .infinity)
+                        .foregroundColor(Color("cellContentColor"))
+                    VStack {
+                        Toggle(Constants.scheduleNotificatio, isOn: $item.isNotificationActivated)
+                            .padding(.vertical, 10)
+                        if item.type != .dueDate {
+                            Rectangle()
+                                .foregroundStyle(.gray.opacity(0.3))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 1)
+                            DatePicker(
+                                Constants.time,
+                                selection: $item.dueDate,
+                                displayedComponents: [.hourAndMinute]
+                            )
+                            .datePickerStyle(.graphical)
+                            .disabled(!item.isNotificationActivated)
+                            
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                }
+                //                .padding(.horizontal, 10)
+                .background(.white)
+                .cornerRadius(26)
+                .padding(.horizontal, 10)
+                
+                Button(action: {
+                    saveAction(item)
+                    dismiss()
+                }) {
+                    Text(Constants.save)
+                        .frame(maxWidth: .infinity, minHeight: 54)   // fills width + height
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.white)                     // text color
+                        .background(.blue.opacity(0.6))              // background inside label
+                        .clipShape(Capsule())                        // rounded corners / capsule
+                        .glassEffect(.regular, in: Capsule())
+                        .shadow(color: .blue.opacity(0.7), radius: 5, x: 2, y: 2)
+                }
+                .padding(.horizontal, 10)
+                .padding(.bottom, 20)
             }
-        
-            .sheet(isPresented: $isIconsSheetPresented) {
-                // MARK: Icons bottom sheet view
-                ScrollView { // REFACTOR NEED MOVE TO SEPARATE VIEW
+            .background(Color(.systemGray6))
+        }
+        .sheet(isPresented: $isIconsSheetPresented) {
+            // MARK: Icons bottom sheet view
+            ScrollView { // REFACTOR NEED MOVE TO SEPARATE VIEW
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(HabitDetailView.icons, id: \.self) { icon in
                             Image(icon)
@@ -267,7 +265,7 @@ struct HabitDetailView: View {
                 .padding(.vertical, 10)
                 .presentationDetents([.large])
             }
-            .navigationTitle("Detail screen")
+            .navigationTitle(Constants.detailScreen)
             .navigationBarTitleDisplayMode(.inline)
             .background(Color(.systemGray6))
             .toolbar { // MARK: ToolbarItem
@@ -285,14 +283,14 @@ struct HabitDetailView: View {
                     }
                 }
             }// MARK: Alert Delete Habit
-            .alert("Delete Habit", isPresented: $showDeleteConfirmation) {
-                Button("Delete", role: .destructive) {
+            .alert(Constants.deleteHabit, isPresented: $showDeleteConfirmation) {
+                Button(Constants.delete, role: .destructive) {
                     deleteAction(item)
                     dismiss()
                 }
-                Button("Cancel", role: .cancel) { }
+                Button(Constants.cancel, role: .cancel) { }
             } message: {
-                Text("Are you sure you want to delete this habit? This action cannot be undone.")
+                Text(Constants.areYouSureDelete)
             }
     }
 }
@@ -327,6 +325,26 @@ struct SaveButton: View {
         Button("Save") {
             action()
         }
+    }
+}
+
+extension HabitDetailView {
+    enum Constants {
+        static let name = "Name"
+        static let description = "Description"
+        static let icon = "Icon"
+        static let selectPriorit = "Select priority"
+        static let advancedOption = "Advanced Options"
+        static let priority = "Priority"
+        static let startDate = "Start Date"
+        static let scheduleNotificatio = "Schedule notification"
+        static let time = "Time"
+        static let save = "Save"
+        static let detailScreen = "Detail screen"
+        static let deleteHabit = "Delete Habit"
+        static let delete = "Delete"
+        static let cancel = "Cancel"
+        static let areYouSureDelete = "Are you sure you want to delete this habit? This action cannot be undone."
     }
 }
 // Icon pack

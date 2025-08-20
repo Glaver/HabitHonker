@@ -90,9 +90,9 @@ extension HabitModel {
         var text: String {
             switch self {
             case .dueDate:
-                return "Due Date"
+                return Constants.dueDate
             case .repeating:
-                return "Repeating"
+                return Constants.repeating
             }
         }
     }
@@ -108,13 +108,13 @@ extension HabitModel {
         var text: String {
             switch self {
             case .importantAndUrgent:
-                return "Important / Urgent"
+                return Constants.importantAndUrgent
             case .importantButNotUrgent:
-                return "Important / Not Urgent"
+                return Constants.importantButNotUrgent
             case .urgentButNotImportant:
-                return "Urgent / Not Important"
+                return Constants.urgentButNotImportant
             case .notUrgentAndNotImportant:
-                return "Not Urgent / Not Important"
+                return Constants.notUrgentAndNotImportant
             }
         }
         
@@ -230,5 +230,16 @@ extension HabitModel {
                repeating: Set<Weekday>(),
                dueDate: Date()
         )]
+    }
+}
+
+extension HabitModel {
+    enum Constants {
+        static let dueDate = "Due Date"
+        static let repeating = "Repeating"
+        static let importantAndUrgent = "Important / Urgent"
+        static let importantButNotUrgent = "Important / Not Urgent"
+        static let urgentButNotImportant = "Urgent / Not Important"
+        static let notUrgentAndNotImportant = "Not Urgent / Not Important"
     }
 }

@@ -25,26 +25,21 @@ struct RootTabsView: View {
             })
             .tabItem {
                 Image(systemName: "line.3.horizontal")
-                Text("List")
+                Text(Constants.list)
             }
             
-            Text("Priority")
+            Text(Constants.priority)
                 .tabItem {
-                    Image(systemName: "magnifyingglass")
-                    Text("Priority")
-                }
-            
-            Text("Statistics")
-                .tabItem {
-                    Image(systemName: "chart.bar.fill")
-                    Text("Statistics")
-                }
-            
-            Text("Account")
-                .tabItem {
-                    Image(systemName: "gearshape.fill")
-                    Text("Account")
+                    Image(systemName: "square.grid.2x2.fill")
+                    Text(Constants.priority)
                 }
         }
+    }
+}
+
+extension RootTabsView {
+    enum Constants {
+        static let list = "List"
+        static let priority = "Priority"
     }
 }

@@ -61,7 +61,7 @@ struct HabitCell: View {
                                 .frame(height: 31)
                                 
                             HStack {
-                                Text("Remind me at")
+                                Text(Constants.remindMeAt)
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                     .padding(.horizontal, 12)
@@ -90,5 +90,11 @@ struct HabitCell: View {
         .padding(.horizontal, 10)
         .frame(maxWidth: .infinity)
         .glassEffect(isCompletedToday ? .clear : .regular, in: RoundedRectangle(cornerRadius: 25))
+    }
+}
+
+extension HabitCell {
+    enum Constants {
+        static let remindMeAt = "Remind me at"
     }
 }

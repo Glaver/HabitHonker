@@ -107,7 +107,7 @@ private extension HabitNotificationService {
         // c.title = habit.title
         // c.body = habit.description
         if let w = weekday {
-            c.body = "It's \(w.text) time!"
+            c.body = "It's \(w.text) and time! For \(habit.title)"
         }
         c.sound = .default
         c.userInfo = ["habitID": habit.id.uuidString]
