@@ -4,6 +4,7 @@
 //
 //  Created by Vladyslav on 8/13/25.
 //
+
 import Foundation
 
 @MainActor
@@ -15,6 +16,7 @@ final class HabitListViewModel: ObservableObject {
     
     private let repo: HabitsRepositorySwiftData
     private let notifier: HabitNotificationScheduling
+    private var didLoadOnce = false
     
     init(repo: HabitsRepositorySwiftData,
          notifier: HabitNotificationScheduling = HabitNotificationService()) {
@@ -90,11 +92,25 @@ final class HabitListViewModel: ObservableObject {
     }
     
     func habitCompleteWith(id: UUID) async {
-        guard let i = items.firstIndex(where: { $0.id == id }) else { return }
-        var item = items[i]
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        var item = items[index]
         item.completeHabitNow()
         setEditingItem(item)
         await saveCurrent()
+    }
+    
+    func changePrirorityFor(_ id: UUID, to newPriority: HabitModel.PriorityEisenhower) async {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        var item = items[index]
+        item.priority = newPriority
+        setEditingItem(item)
+        await saveCurrent()
+    }
+    
+    func loadIfNeeded() async {
+        guard !didLoadOnce else { return }
+        didLoadOnce = true
+        await load()
     }
 }
 // MARK: Private methods

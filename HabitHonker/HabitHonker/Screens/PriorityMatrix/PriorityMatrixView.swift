@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import SwiftData
 
 
 // MARK: - Drag payload (safe for Transferable; avoids Color/complex fields)
@@ -18,18 +19,14 @@ struct HabitDragPayload: Identifiable, Hashable, Codable, Transferable {
 }
 
 // MARK: - Priority Matrix
-
 struct PriorityMatrixView: View {
-    // Bind your source of truth (VM/State). Moves update this array in-place.
-//    @Binding var habits: [HabitModel]
-    @State private var habits: [HabitModel] = HabitModel.mock()
-    /// Optional hook if you want to persist moves to a repo
+    @EnvironmentObject var viewModel: HabitListViewModel
     var onMove: ((HabitModel, HabitModel.PriorityEisenhower) -> Void)?
-
+    
     init(onMove: ((HabitModel, HabitModel.PriorityEisenhower) -> Void)? = nil) {
         self.onMove = onMove
     }
-
+    
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack {
@@ -48,7 +45,7 @@ struct PriorityMatrixView: View {
             GeometryReader { proxy in
                 let rowSpacing: CGFloat = 12
                 let rowHeight = (proxy.size.height - rowSpacing) / 2  // 2 rows
-
+                
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12),
                                     GridItem(.flexible(), spacing: 12)],
                           spacing: rowSpacing) {
@@ -57,8 +54,8 @@ struct PriorityMatrixView: View {
                     quadrant(.importantButNotUrgent, rowHeight: rowHeight)
                     quadrant(.notUrgentAndNotImportant, rowHeight: rowHeight)
                 }
-                .frame(width: proxy.size.width, height: proxy.size.height) // fill the reader
-                .overlay(dividers)
+                          .frame(width: proxy.size.width, height: proxy.size.height) // fill the reader
+                          .overlay(dividers)
             }
             
             HStack {
@@ -70,25 +67,26 @@ struct PriorityMatrixView: View {
         }
         .padding(.horizontal, 10)
     }
-        
+    
     // MARK: - Quadrant column
-
+    
     private func quadrant(_ priority: HabitModel.PriorityEisenhower,
                           rowHeight: CGFloat) -> some View {
-        let chips = habits.filter { $0.priority == priority }
-        let chipAlignment: Alignment = {
+        let capsule = viewModel.items.filter { $0.priority == priority }
+        
+        let capsuleAlignment: Alignment = {
             // choose how chips line up horizontally
             switch priority {
             case .importantAndUrgent, .importantButNotUrgent: return .trailing
             case .urgentButNotImportant, .notUrgentAndNotImportant: return .leading
             }
         }()
-
+        
         return VStack(alignment: .leading, spacing: 10) {
-            ForEach(chips) { habit in
+            ForEach(capsule) { habit in
                 HabitMatrixCapsuleView(habit: habit, tint: priority.color)
                     .draggable(HabitDragPayload(id: habit.id))
-                    .frame(maxWidth: .infinity, alignment: chipAlignment)
+                    .frame(maxWidth: .infinity, alignment: capsuleAlignment)
             }
         }
         .padding(12)
@@ -98,17 +96,14 @@ struct PriorityMatrixView: View {
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .dropDestination(for: HabitDragPayload.self) { payloads, _ in
             withAnimation(.spring) {
-                for payload in payloads { moveHabit(withId: payload.id, to: priority) }
+                for payload in payloads { moveHabitWith(payload.id, to: priority) }
             }
             return true
         }
     }
-
-
-
-
+    
     // MARK: - Headers
-
+    
     @ViewBuilder
     private func header(for priority: HabitModel.PriorityEisenhower, alignRight: Bool) -> some View {
         let priorityText = priority.text.components(separatedBy: "/ ")
@@ -117,7 +112,7 @@ struct PriorityMatrixView: View {
             Text(priorityText[1]).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
         }
     }
-
+    
     // MARK: - Helpers
     private func alignmentForCapsule(_ priority: HabitModel.PriorityEisenhower) -> Alignment {
         switch priority {
@@ -136,7 +131,7 @@ struct PriorityMatrixView: View {
         case .notUrgentAndNotImportant:  return .leading
         }
     }
-
+    
     private var dividers: some View {
         GeometryReader { geo in
             let midX = geo.size.width / 2
@@ -152,11 +147,11 @@ struct PriorityMatrixView: View {
         }
         .allowsHitTesting(false)
     }
-
-    private func moveHabit(withId id: UUID, to newPriority: HabitModel.PriorityEisenhower) {
-        guard let idx = habits.firstIndex(where: { $0.id == id }) else { return }
-        habits[idx].priority = newPriority
-        onMove?(habits[idx], newPriority)
+    
+    private func moveHabitWith(_ id: UUID, to newPriority: HabitModel.PriorityEisenhower) {
+        Task {
+            await viewModel.changePrirorityFor(id, to: newPriority)
+        }
     }
 }
 
@@ -165,7 +160,7 @@ struct PriorityMatrixView: View {
 private struct HabitMatrixCapsuleView: View {
     let habit: HabitModel
     let tint: Color
-
+    
     var body: some View {
         HStack(spacing: 5) {
             if let icon = habit.icon, !icon.isEmpty {
@@ -182,7 +177,7 @@ private struct HabitMatrixCapsuleView: View {
             Text(habit.title)
                 .lineLimit(2)
                 .font(.caption2.weight(.semibold))
-                
+            
         }
         .padding(.horizontal, 5)
         .padding(.vertical, 5)
@@ -202,8 +197,19 @@ private struct HabitMatrixCapsuleView: View {
 
 struct PriorityMatrixView_Previews: PreviewProvider {
     static var previews: some View {
-        PriorityMatrixView()
-        .padding()
-        .previewLayout(.sizeThatFits)
+        let container = try! ModelContainer(
+            for: Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self]),
+            configurations: .init(isStoredInMemoryOnly: true)
+        )
+
+        let repo = HabitsRepositorySwiftData(container: container)
+        let vm = HabitListViewModel(repo: repo)
+
+        // ✅ Inject mock habits into the preview view model
+
+        return PriorityMatrixView()
+            .environmentObject(vm)
+            .padding()
+            .previewLayout(.sizeThatFits)
     }
 }

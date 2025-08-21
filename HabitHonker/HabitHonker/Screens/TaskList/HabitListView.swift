@@ -17,13 +17,7 @@ struct HabitListView: View {
     @State private var currentDate = Date()
     @State private var timer: Timer?
     
-    let makeViewModel: () -> HabitListViewModel
-    @StateObject private var viewModel: HabitListViewModel
-    
-    init(makeViewModel: @escaping () -> HabitListViewModel) {
-        _viewModel = StateObject(wrappedValue: makeViewModel())
-        self.makeViewModel = makeViewModel
-    }
+    @EnvironmentObject private var viewModel: HabitListViewModel
     
     var body: some View {
         NavigationStack(path: $path) {
@@ -155,8 +149,6 @@ private extension HabitListView {
     let repo = HabitsRepositorySwiftData(container: container)
     
     // 3) Pass the factory closure + attach the container to the view tree
-    HabitListView(makeViewModel: {
-        HabitListViewModel(repo: repo)
-    })
+    HabitListView()
     .modelContainer(container)
 }

@@ -10,10 +10,15 @@ import SwiftData
 
 @main
 struct HabitHonkerApp: App {
+    private let container: ModelContainer = {
+        let schema = Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self])
+        return try! ModelContainer(for: schema)
+    }()
+
     var body: some Scene {
         WindowGroup {
-            RootTabsView()
+            RootTabsView(container: container)
+                .modelContainer(container)
         }
-        .modelContainer(for: [HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self])
     }
 }

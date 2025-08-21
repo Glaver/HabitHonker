@@ -1,40 +1,47 @@
 //
-//  Nav.swift
+//  RootTabsView.swift
 //  HabitHonker
 //
 //  Created by Vladyslav on 8/9/25.
+//
 //
 
 import SwiftUI
 import SwiftData
 
-// MARK: - Routes for value-based navigation
+// MARK: - Routes
 enum Route: Hashable, Equatable {
     case detailHabit(UUID)
     case addNewHabit
 }
 
 struct RootTabsView: View {
-    @Environment(\.modelContext) private var modelContext
+    @StateObject private var viewModel: HabitListViewModel
 
-    
+    init(container: ModelContainer) {
+        _viewModel = StateObject(
+            wrappedValue: HabitListViewModel(
+                repo: HabitsRepositorySwiftData(container: container)
+            )
+        )
+    }
+
     var body: some View {
         TabView {
-            HabitListView(makeViewModel: {
-                let container = modelContext.container
-                return HabitListViewModel(repo: HabitsRepositorySwiftData(container: container))
-            })
-            .tabItem {
-                Image(systemName: "line.3.horizontal")
-                Text(Constants.list)
-            }
-            
+            HabitListView()
+                .tabItem {
+                    Image(systemName: "line.3.horizontal")
+                    Text(Constants.list)
+                }
+
             PriorityMatrixView()
                 .tabItem {
                     Image(systemName: "square.grid.2x2.fill")
                     Text(Constants.priority)
                 }
         }
+        .environmentObject(viewModel)
+        .task { await viewModel.loadIfNeeded() }
     }
 }
 
@@ -44,3 +51,4 @@ extension RootTabsView {
         static let priority = "Priority"
     }
 }
+
