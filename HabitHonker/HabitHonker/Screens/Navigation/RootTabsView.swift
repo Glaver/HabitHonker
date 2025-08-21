@@ -16,6 +16,7 @@ enum Route: Hashable, Equatable {
 
 struct RootTabsView: View {
     @Environment(\.modelContext) private var modelContext
+
     
     var body: some View {
         TabView {
@@ -28,7 +29,7 @@ struct RootTabsView: View {
                 Text(Constants.list)
             }
             
-            Text(Constants.priority)
+            PriorityMatrixView()
                 .tabItem {
                     Image(systemName: "square.grid.2x2.fill")
                     Text(Constants.priority)

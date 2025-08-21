@@ -101,8 +101,8 @@ extension HabitModel {
 extension HabitModel {
     enum PriorityEisenhower: Int, CaseIterable {
         case importantAndUrgent
-        case importantButNotUrgent
         case urgentButNotImportant
+        case importantButNotUrgent
         case notUrgentAndNotImportant
         
         var text: String {
@@ -239,7 +239,7 @@ extension HabitModel {
         static let repeating = "Repeating"
         static let importantAndUrgent = "Important / Urgent"
         static let importantButNotUrgent = "Important / Not Urgent"
-        static let urgentButNotImportant = "Urgent / Not Important"
-        static let notUrgentAndNotImportant = "Not Urgent / Not Important"
+        static let urgentButNotImportant = "Not Important / Urgent"
+        static let notUrgentAndNotImportant = "Not Important / Not Urgent"
     }
 }
