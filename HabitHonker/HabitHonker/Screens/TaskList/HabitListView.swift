@@ -25,8 +25,8 @@ struct HabitListView: View {
                 LazyVGrid(
                     columns: [GridItem(.flexible(), spacing: 0)],
                     spacing: 16
-                ) {
-                    ForEach(viewModel.items) { item in
+                ) { // Weekday filter is here for future improvemmts ↓
+                    ForEach(viewModel.items.filtered(by: currentDate)) { item in
                         HabitCell(item: item)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -48,7 +48,7 @@ struct HabitListView: View {
             .onAppear {
                 Task {
                     await viewModel.onAppLaunch()
-                    await viewModel.load(forDate: currentDate)
+                    await viewModel.load()
                 }
                 startDateTimer()
             }
@@ -80,7 +80,7 @@ struct HabitListView: View {
                     makeHabitDetailView(for: HabitModel.mock(), mode: .addNewHabit)
                 }
             }
-            .background(Image("Wallpaper")
+            .background(Image("Wallpaper")// Refactor later: background on change custom
                 .resizable()
                 .scaledToFill()
                 .edgesIgnoringSafeArea(.all)
@@ -88,10 +88,7 @@ struct HabitListView: View {
                     scheme == .dark ? Color.black.opacity(0.4) : Color.clear
                 ))
         }
-        // Refactor later: background on change custom
-        
     }
-    
     
     // MARK: - Timer Methods
     private func startDateTimer() {
@@ -104,7 +101,7 @@ struct HabitListView: View {
                 currentDate = newDate
                 // Reload the list to show tasks for the new day
                 Task {
-                    await viewModel.load(forDate: currentDate)
+                    await viewModel.load()
                 }
             }
         }

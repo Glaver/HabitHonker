@@ -87,6 +87,10 @@ struct PriorityMatrixView: View {
                 HabitMatrixCapsuleView(habit: habit, tint: priority.color)
                     .draggable(HabitDragPayload(id: habit.id))
                     .frame(maxWidth: .infinity, alignment: capsuleAlignment)
+                    .onTapGesture { // TODO: link on detail screen
+                        print("Picked: \(habit.id)")
+//                        path.append(Route.detailHabit(habit.id))
+                    }
             }
         }
         .padding(12)

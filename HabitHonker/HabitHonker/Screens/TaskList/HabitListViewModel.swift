@@ -34,47 +34,31 @@ final class HabitListViewModel: ObservableObject {
     }
     
     // MARK: Public methods
-    func load(forDate date: Date = Date()) async {
+    func load(mode: HabitLoadMode = .all) async {
         isLoading = true
         defer { isLoading = false }
+        
         do {
             let fetchedItems = try await repo.fetchAll()
+            let filteredItems: [HabitModel]
             
-            // Filter items based on specified day of week for repeating tasks
-            let targetWeekday = date.currentWeekday
-            
-            let filteredItems = fetchedItems.filter { item in
-                if item.type == .repeating {
-                    // For repeating tasks, only show if the target day is in the repeating weekdays
-                    return item.repeating.contains(targetWeekday)
-                } else {
-                    // For due date tasks, show them always
-                    return true
-                }
-            }
-            
-            // Sort items: active tasks first, completed tasks at the end
-            items = filteredItems.sorted { item1, item2 in
-                let item1Completed = item1.isCompletedToday
-                let item2Completed = item2.isCompletedToday
+            switch mode {
+            case .all:
+                filteredItems = fetchedItems
                 
-                // If one is completed and the other isn't, put the active one first
-                if item1Completed != item2Completed {
-                    return !item1Completed // true (active) comes before false (completed)
-                }
-                
-                // If both have the same completion status, sort by priority and then by title
-                if item1Completed == item2Completed {
-                    // Sort by priority first (lower raw value = higher priority)
-                    if item1.priority.rawValue != item2.priority.rawValue {
-                        return item1.priority.rawValue < item2.priority.rawValue
+            case .filteredByWeekday(let date):
+                let targetWeekday = date.currentWeekday
+                filteredItems = fetchedItems.filter { item in
+                    if item.type == .repeating {
+                        return item.repeating.contains(targetWeekday)
+                    } else {
+                        return true
                     }
-                    // Then by title
-                    return item1.title.localizedCaseInsensitiveCompare(item2.title) == .orderedAscending
                 }
-                
-                return false
             }
+
+            items = sortItems(filteredItems)
+            
         } catch {
             self.error = error.localizedDescription
         }
@@ -132,7 +116,7 @@ private extension HabitListViewModel {
         do {
             for (index, record) in item.record.enumerated() {
             }
-
+            
             if try await repo.fetch(id: item.id) != nil {
                 try await repo.update(item)
             } else {
@@ -213,5 +197,35 @@ private extension HabitListViewModel {
         guard item.isNotificationActivated else { return }
         
         Task { await notifier.cancel(for: id) }
+    }
+}
+
+// MARK: - Helpers
+
+extension HabitListViewModel {
+    enum HabitLoadMode {
+        case all
+        case filteredByWeekday(Date)
+    }
+    
+    func sortItems(_ items: [HabitModel]) -> [HabitModel] {
+        return items.sorted { item1, item2 in
+            if item1.isCompletedToday != item2.isCompletedToday {
+                return !item1.isCompletedToday
+            }
+            if item1.priority.rawValue != item2.priority.rawValue {
+                return item1.priority.rawValue < item2.priority.rawValue
+            }
+            return item1.title.localizedCaseInsensitiveCompare(item2.title) == .orderedAscending
+        }
+    }
+}
+
+extension [HabitModel] {
+    func filtered(by date: Date) -> [HabitModel] {
+        let weekday = date.currentWeekday
+        return self.filter {
+            $0.type != .repeating || $0.repeating.contains(weekday)
+        }
     }
 }
