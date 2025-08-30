@@ -39,6 +39,12 @@ struct RootTabsView: View {
                     Image(systemName: "square.grid.2x2.fill")
                     Text(Constants.priority)
                 }
+            
+            YearCalendarScreen()
+                .tabItem {
+                    Image(systemName: "calendar")
+                    Text(Constants.statistic)
+                }
         }
         .environmentObject(viewModel)
         .task { await viewModel.loadIfNeeded() }
@@ -49,6 +55,7 @@ extension RootTabsView {
     enum Constants {
         static let list = "List"
         static let priority = "Priority"
+        static let statistic = "Statistic"
     }
 }
 
