@@ -11,6 +11,7 @@ import Foundation
 final class HabitListViewModel: ObservableObject {
     @Published private(set) var items: [HabitModel] = []
     @Published private(set) var item: HabitModel = .init()
+    @Published private(set) var deletedItems: [HabitModel] = []
     @Published private(set) var isLoading = false
     @Published var error: String?
     
@@ -156,7 +157,7 @@ private extension HabitListViewModel {
     // MARK: - Deleted Habits Methods
     func loadDeletedHabits() async {
         do {
-            let deletedItems = try await repo.fetchAllDeleted()
+            deletedItems = try await repo.fetchAllDeleted()
             // You can add a separate @Published property for deleted habits if needed
             print("Found \(deletedItems.count) deleted habits")
         } catch {

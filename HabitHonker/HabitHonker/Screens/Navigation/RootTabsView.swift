@@ -41,7 +41,7 @@ struct RootTabsView: View {
                     Text(Constants.priority)
                 }
             
-            YearCalendarScreen()
+            StaisticsView()
                 .tabItem {
                     Image(systemName: "calendar")
                     Text(Constants.statistic)

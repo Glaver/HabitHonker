@@ -1,5 +1,5 @@
 //
-//  SelectHabitsViewModel.swift
+//  SelectHabitsView.swift
 //  HabitHonker
 //
 //  Created by Vladyslav on 9/6/25.
@@ -7,68 +7,33 @@
 
 import SwiftUI
 
-// MARK: - Model
-
-struct Habit: Identifiable, Hashable {
-    let id = UUID()
-    var name: String
-    var color: Color
-    var systemImage: String
-    var isEnabled: Bool = true
-    var isSelected: Bool = false
-}
-
-// MARK: - ViewModel
-
-@MainActor
-final class SelectHabitsViewModel: ObservableObject {
-    @Published var habits: [Habit]
-    let selectionLimit: Int
-
-    init(habits: [Habit] = SampleHabits.make(), selectionLimit: Int = 4) {
-        self.habits = habits
-        self.selectionLimit = selectionLimit
-    }
-
-    var selectedCount: Int { habits.filter(\.isSelected).count }
-
-    func toggle(_ habitID: Habit.ID) {
-        guard let idx = habits.firstIndex(where: { $0.id == habitID }) else { return }
-        // If trying to select a new one while at the limit, do nothing
-        if !habits[idx].isSelected && selectedCount >= selectionLimit { return }
-        // Ignore taps for disabled items
-        guard habits[idx].isEnabled else { return }
-        habits[idx].isSelected.toggle()
-    }
-}
-
 // MARK: - Screen
 
 struct SelectHabitsView: View {
-    @StateObject private var vm = SelectHabitsViewModel()
-    @EnvironmentObject var viewModel: HabitListViewModel
+    @StateObject private var viewModel = SelectHabitsViewModel()
+    
     
     var body: some View {
         
             ScrollView {
                 VStack(spacing: 12) {
                     // Subtitle
-                    Text("Select maximum \(vm.selectionLimit) habits to show")
+                    Text("Select maximum \(viewModel.selectionLimit) habits to show")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .padding(.top, 4)
 
                     // Card container
                     VStack(spacing: 0) {
-                        ForEach(vm.habits) { habit in
+                        ForEach(viewModel.habits) { habit in
                             HabitRow(
                                 habit: habit,
-                                isAtLimit: vm.selectedCount >= vm.selectionLimit
+                                isAtLimit: viewModel.selectedCount >= viewModel.selectionLimit
                             )
                             .contentShape(Rectangle())
-                            .onTapGesture { vm.toggle(habit.id) }
+                            .onTapGesture { viewModel.toggle(habit.id) }
 
-                            if habit.id != vm.habits.last?.id {
+                            if habit.id != viewModel.habits.last?.id {
                                 Divider().padding(.leading, 64)
                             }
                         }
@@ -86,36 +51,10 @@ struct SelectHabitsView: View {
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
         
             .onAppear {
-                Task {
-                    await viewModel.onAppear()
-                }
+//                Task {
+//                    await viewModel
+//                }
             }
-//            .navigationTitle("Select habits")
-//            .navigationBarTitleDisplayMode(.inline)
-//            .toolbar {
-//                ToolbarItem(placement: .topBarLeading) {
-//                    Button {
-//                        // handle back
-//                    } label: {
-//                        Image(systemName: "chevron.backward")
-//                            .font(.system(size: 17, weight: .semibold))
-//                            .frame(width: 32, height: 32)
-//                            .background(Circle().fill(Color(.systemGray6)))
-//                    }
-//                    .buttonStyle(.plain)
-//                }
-//                ToolbarItem(placement: .topBarTrailing) {
-//                    Button {
-//                        // handle filter/settings
-//                    } label: {
-//                        Image(systemName: "line.3.horizontal.decrease.circle")
-//                            .font(.system(size: 18, weight: .semibold))
-//                            .frame(width: 32, height: 32)
-//                            .background(Circle().fill(Color(.systemGray6)))
-//                    }
-//                    .buttonStyle(.plain)
-//                }
-//            }
     }
 }
 
