@@ -78,6 +78,8 @@ struct HabitListView: View {
 
                 case .addNewHabit:
                     makeHabitDetailView(for: HabitModel.mock(), mode: .addNewHabit)
+                default: EmptyView()
+                        .background(Color.blue)
                 }
             }
             .background(Image("Wallpaper")// Refactor later: background on change custom

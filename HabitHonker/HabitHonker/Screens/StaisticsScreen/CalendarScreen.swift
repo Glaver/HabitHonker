@@ -15,14 +15,14 @@ struct Pill: Identifiable, Hashable {
 }
 
 struct DayItem: Identifiable, Hashable {
-    let id = UUID()
+    let id: UUID
     let date: Date?
     let inCurrentMonth: Bool
     let isToday: Bool
     let pills: [Pill]
     let isEmpty: Bool
     
-    static let blank = DayItem(date: nil, inCurrentMonth: false, isToday: false, pills: [], isEmpty: true)
+    static let blank = DayItem(id: UUID(), date: nil, inCurrentMonth: false, isToday: false, pills: [], isEmpty: true)
 }
 
 struct MonthSection: Identifiable {
@@ -45,11 +45,6 @@ final class CalendarBuilder {
         self.locale = locale
     }
     
-    func setFirstWeekday(_ weekday: Int) {
-        // 1 = Sunday in Gregorian, 2 = Monday, etc.
-        calendar.firstWeekday = weekday
-    }
-    
     // Month for a specific anchor date
     func makeMonth(for anchor: Date) -> MonthSection {
         let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: anchor))!
@@ -66,7 +61,7 @@ final class CalendarBuilder {
             let date = calendar.date(byAdding: .day, value: day - 1, to: monthStart)!
             let isToday = calendar.isDateInToday(date)
             let pills = demoPills(for: date)
-            items.append(DayItem(date: date, inCurrentMonth: true, isToday: isToday, pills: pills, isEmpty: false))
+            items.append(DayItem(id: UUID(), date: date, inCurrentMonth: true, isToday: isToday, pills: pills, isEmpty: false))
         }
         
         let remainder = items.count % 7
@@ -119,7 +114,7 @@ struct YearCalendarScreen: View {
     
     @State private var selectedYear: Int
     @State private var months: [MonthSection]
-    @State private var firstWeekday: Int = 1 // 1=Sun, 2=Mon…
+    @State private var path = NavigationPath()
     
     private let builder = CalendarBuilder()
     
@@ -131,96 +126,115 @@ struct YearCalendarScreen: View {
     }
     
     var body: some View {
-        ScrollViewReader { proxy in
-            VStack(spacing: 0) {
-                header(proxy: proxy)
-                
-                Divider()
-                GeometryReader { geometry in
-                    ScrollView {
-                        
-                        let width = geometry.size.width
-                        VStack(alignment: .leading, spacing: 16) {
-                            WeekdayHeader(firstWeekday: firstWeekday)
-                                .padding(.horizontal)
+        NavigationStack(path: $path) {
+            ScrollViewReader { proxy in
+                VStack(spacing: 0) {
+                    HabitFilterCollection()
+                        .padding(.vertical, 8)
+                    WeekdayHeader()
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                    Divider()
+                    GeometryReader { geometry in
+                        ScrollView {
                             
-                            ForEach(months) { section in
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(section.title)
-                                        .font(.title3.weight(.semibold))
-                                        .padding(.horizontal)
-                                    
-                                    LazyVGrid(columns: gridColumns, spacing: 8) {
-                                        ForEach(section.days) { day in
-                                            DayCell(day: day, widthCell: (width / 7) - 7)
+                            let width = geometry.size.width
+                            
+                            VStack(alignment: .leading, spacing: 16) {
+                                
+                                ForEach(months) { section in
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text(section.title)
+                                            .font(.title3.weight(.semibold))
+                                            .padding(.horizontal)
+                                        
+                                        LazyVGrid(columns: gridColumns, spacing: 8) {
+                                            ForEach(Array(section.days.enumerated()), id: \.offset) { _, day in
+                                                DayCell(day: day, widthCell: (width / 7) - 7)
+                                            }
                                         }
+//                                        LazyVGrid(columns: gridColumns, spacing: 8) {
+//                                            ForEach(section.days) { day in
+//                                                DayCell(day: day, widthCell: (width / 7) - 7)
+//                                            }
+//                                        }
+                                        .padding(.horizontal)
+                                        .padding(.bottom, 6)
                                     }
-                                    .padding(.horizontal)
-                                    .padding(.bottom, 6)
+                                    .id(sectionID(section))
                                 }
-                                .id(sectionID(section))
+                                Spacer(minLength: 24)
                             }
-                            Spacer(minLength: 24)
-                        }
-                        .padding(.top, 12)
-                    }}
-                .background(Color(.systemGroupedBackground))
+                            .padding(.top, 12)
+                        }}
+                    .background(Color(.systemGroupedBackground))
+                }
+                .onChange(of: selectedYear) { _, _ in regenerateYear() }
+                .onAppear {
+                    // Jump to the month that contains "today" on first load
+                    if let idx = months.firstIndex(where: { Calendar.current.isDate(Date(), equalTo: $0.monthDate, toGranularity: .month) }) {
+                        proxy.scrollTo(sectionID(months[idx]), anchor: .top)
+                    }
+                }
             }
-            .onChange(of: selectedYear) { _, _ in regenerateYear() }
-            .onChange(of: firstWeekday) { _, _ in regenerateYear() }
-            .onAppear {
-                // Jump to the month that contains "today" on first load
-                if let idx = months.firstIndex(where: { Calendar.current.isDate(Date(), equalTo: $0.monthDate, toGranularity: .month) }) {
-                    proxy.scrollTo(sectionID(months[idx]), anchor: .top)
+            .navigationTitle("Statistics")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button {
+                        path.append(Route.choseHabitForStatistics)
+                    } label: {
+                        Image(systemName: "calendar.badge.plus")
+                            .glassEffect()
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                }
+            }
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .choseHabitForStatistics:
+                    SelectHabitsView()
+                default:
+                    EmptyView()
+                        .background(Color.red)
                 }
             }
         }
-        .navigationTitle("Calendar")
-        .navigationBarTitleDisplayMode(.inline)
     }
     
     // MARK: - Private methods
     
-    private func header(proxy: ScrollViewProxy) -> some View {
-        HStack(spacing: 12) {
-            // Year picker (±10 years around current)
-            let current = Calendar.current.component(.year, from: Date())
-            Picker("Year", selection: $selectedYear) {
-                ForEach((current-10)...(current+10), id: \.self) { y in
-                    Text("\(y)").tag(y)
-                }
-            }
-            .pickerStyle(.menu)
-            
-            // First weekday toggle (Sun/Mon)
-            Menu {
-                Button("Start week on Sunday") { firstWeekday = 1 }
-                Button("Start week on Monday") { firstWeekday = 2 }
-            } label: {
-                Label(firstWeekday == 1 ? "Sun–Sat" : "Mon–Sun", systemImage: "calendar")
-            }
-            
-            Spacer()
-            
-            Button {
-                // Scroll to today's month
-                if let idx = months.firstIndex(where: { Calendar.current.isDate(Date(), equalTo: $0.monthDate, toGranularity: .month) }) {
-                    proxy.scrollTo(sectionID(months[idx]), anchor: .top)
-                }
-            } label: {
-                Label("Today", systemImage: "location.fill")
-            }
-            .labelStyle(.iconOnly)
-            .buttonStyle(.bordered)
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
-    }
+//    private func header(proxy: ScrollViewProxy) -> some View {
+//        HStack(spacing: 12) {
+//            // Year picker (±10 years around current)
+//            let current = Calendar.current.component(.year, from: Date())
+//            Picker("Year", selection: $selectedYear) {
+//                ForEach((current-5)...(current), id: \.self) { y in
+//                    Text("\(y)").tag(y)
+//                }
+//            }
+//            .pickerStyle(.menu)
+//
+//            Spacer()
+//
+//            Button {
+//                // Scroll to today's month
+//                if let idx = months.firstIndex(where: { Calendar.current.isDate(Date(), equalTo: $0.monthDate, toGranularity: .month) }) {
+//                    proxy.scrollTo(sectionID(months[idx]), anchor: .top)
+//                }
+//            } label: {
+//                Label("Today", systemImage: "location.fill")
+//            }
+//            .labelStyle(.iconOnly)
+//            .buttonStyle(.bordered)
+//        }
+//        .padding(.horizontal)
+//        .padding(.vertical, 8)
+//        .background(.ultraThinMaterial)
+//    }
     
     private func regenerateYear() {
         let start = Calendar.current.date(from: DateComponents(year: selectedYear, month: 1, day: 1))!
-        builder.setFirstWeekday(firstWeekday)
         months = builder.makeYear(for: start)
     }
     
@@ -233,14 +247,11 @@ struct YearCalendarScreen: View {
 // MARK: - WeekdayHeader
 
 struct WeekdayHeader: View {
-    let firstWeekday: Int // 1=Sun, 2=Mon, ...
-    
     private var symbols: [String] {
         var cal = Calendar.current
-        cal.firstWeekday = firstWeekday
         cal.locale = Locale.current
-        let base = cal.veryShortWeekdaySymbols // ["S","M","T","W","T","F","S"]
-        let start = firstWeekday - 1
+        let base = cal.shortWeekdaySymbols
+        let start = cal.firstWeekday - 1
         return Array(base[start...] + base[..<start])
     }
     
@@ -260,7 +271,7 @@ struct WeekdayHeader: View {
 
 struct DayCell: View {
     let day: DayItem
-    let widthCell: CGFloat
+    var widthCell: CGFloat
     
     var body: some View {
         ZStack {

@@ -13,6 +13,7 @@ import SwiftData
 enum Route: Hashable, Equatable {
     case detailHabit(UUID)
     case addNewHabit
+    case choseHabitForStatistics
 }
 
 struct RootTabsView: View {
