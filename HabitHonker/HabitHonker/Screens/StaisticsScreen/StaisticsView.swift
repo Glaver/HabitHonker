@@ -15,9 +15,14 @@ struct StaisticsView: View {
     @State private var months: [MonthSection]
     @State private var path = NavigationPath()
     
+    @StateObject private var viewModel: StatisticsViewModel
+    
     private let builder = CalendarBuilder()
     
-    init(anchor: Date = Date()) {
+    init(viewModel: StatisticsViewModel,
+         anchor: Date = Date()) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+        
         let year = Calendar.current.component(.year, from: anchor)
         _selectedYear = State(initialValue: year)
         let start = Calendar.current.date(from: DateComponents(year: year, month: 1, day: 1))!
@@ -28,8 +33,30 @@ struct StaisticsView: View {
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
                 VStack(spacing: 0) {
-                    HabitFilterCollection()
-                        .padding(.vertical, 8)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(viewModel.items) { item in
+                                HStack(spacing: 6) {
+                                    Image(item.icon ?? "empty_icon")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 16, height: 16)
+                                    Text(item.title)
+                                        .font(.system(size: 14, weight: .semibold))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 30)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 3)
+                                .background(item.priority.color)
+                                .clipShape(Capsule())
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+//                    HabitFilterCollection()
+                    .padding(.bottom, 8)
                     WeekdayHeader()
                         .padding(.horizontal)
                         .padding(.bottom, 8)
@@ -52,11 +79,6 @@ struct StaisticsView: View {
                                                 DayCell(day: day, widthCell: (width / 7) - 7)
                                             }
                                         }
-//                                        LazyVGrid(columns: gridColumns, spacing: 8) {
-//                                            ForEach(section.days) { day in
-//                                                DayCell(day: day, widthCell: (width / 7) - 7)
-//                                            }
-//                                        }
                                         .padding(.horizontal)
                                         .padding(.bottom, 6)
                                     }
@@ -70,6 +92,11 @@ struct StaisticsView: View {
                 }
                 .onChange(of: selectedYear) { _, _ in regenerateYear() }
                 .onAppear {
+                    
+                    Task {
+                        await viewModel.loadPresetHabits()
+                    }
+                    
                     // Jump to the month that contains "today" on first load
                     if let idx = months.firstIndex(where: { Calendar.current.isDate(Date(), equalTo: $0.monthDate, toGranularity: .month) }) {
                         proxy.scrollTo(sectionID(months[idx]), anchor: .top)
@@ -81,7 +108,10 @@ struct StaisticsView: View {
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button {
-                        path.append(Route.choseHabitForStatistics)
+                        
+                            path.append(Route.choseHabitForStatistics)
+                        
+                        
                     } label: {
                         Image(systemName: "calendar.badge.plus")
                             .glassEffect()
@@ -92,7 +122,7 @@ struct StaisticsView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .choseHabitForStatistics:
-                    SelectHabitsView()
+                        SelectHabitsView(viewModel: SelectHabitsViewModel(repo: viewModel.repo))
                 default:
                     EmptyView()
                         .background(Color.red)
@@ -161,13 +191,13 @@ struct PillStack: View {
 }
 
 // MARK: - Preview
-
-struct YearCalendarScreen_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationStack { StaisticsView() }
-            .environment(\.colorScheme, .light)
-        
-        NavigationStack { StaisticsView() }
-            .environment(\.colorScheme, .dark)
-    }
-}
+//
+//struct YearCalendarScreen_Previews: PreviewProvider {
+//    static var previews: some View {
+//        NavigationStack { StaisticsView() }
+//            .environment(\.colorScheme, .light)
+//        
+//        NavigationStack { StaisticsView() }
+//            .environment(\.colorScheme, .dark)
+//    }
+//}

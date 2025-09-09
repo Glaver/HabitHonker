@@ -120,4 +120,49 @@ actor HabitsRepositorySwiftData {
             try ctx.save()
         }
     }
+
+    
+    // MARK: - Statistics Preset
+    
+    // MARK: - Statistics Preset
+
+    func fetchStatisticsPreset() async throws -> StatisticsPresetSD? {
+        let ctx = makeContext()
+        let descriptor = FetchDescriptor<StatisticsPresetSD>(
+            sortBy: [SortDescriptor(\.id)]
+        )
+        return try ctx.fetch(descriptor).first
+    }
+
+    func saveStatisticsPreset(_ habitIDs: [UUID], presetName: String? = nil) async throws {
+        let ctx = makeContext()
+
+        // IMPORTANT: fetch with the SAME ctx you will save
+        let descriptor = FetchDescriptor<StatisticsPresetSD>(
+            sortBy: [SortDescriptor(\.id)]
+        )
+        if let existing = try ctx.fetch(descriptor).first {
+            existing.habitIDs = habitIDs
+            existing.presetName = presetName
+        } else {
+            let newPreset = StatisticsPresetSD(habitIDs: habitIDs, presetName: presetName)
+            ctx.insert(newPreset)
+        }
+
+        try ctx.save()
+    }
+
+    func deleteStatisticsPreset() async throws {
+        let ctx = makeContext()
+        let descriptor = FetchDescriptor<StatisticsPresetSD>(
+            sortBy: [SortDescriptor(\.id)]
+        )
+        if let existing = try ctx.fetch(descriptor).first {
+            ctx.delete(existing)
+            try ctx.save()
+        }
+    }
 }
+
+
+

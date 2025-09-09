@@ -11,7 +11,7 @@ import SwiftData
 @main
 struct HabitHonkerApp: App {
     private let container: ModelContainer = {
-        let schema = Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self])
+        let schema = Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self, StatisticsPresetSD.self])
         return try! ModelContainer(for: schema)
     }()
 

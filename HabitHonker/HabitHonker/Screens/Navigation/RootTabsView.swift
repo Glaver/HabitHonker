@@ -18,8 +18,10 @@ enum Route: Hashable, Equatable {
 
 struct RootTabsView: View {
     @StateObject private var viewModel: HabitListViewModel
-
+    private let container: ModelContainer
+    
     init(container: ModelContainer) {
+        self.container = container
         _viewModel = StateObject(
             wrappedValue: HabitListViewModel(
                 repo: HabitsRepositorySwiftData(container: container)
@@ -41,7 +43,7 @@ struct RootTabsView: View {
                     Text(Constants.priority)
                 }
             
-            StaisticsView()
+            StaisticsView(viewModel: StatisticsViewModel(repo: HabitsRepositorySwiftData(container: container)))
                 .tabItem {
                     Image(systemName: "calendar")
                     Text(Constants.statistic)

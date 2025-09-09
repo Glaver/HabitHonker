@@ -17,9 +17,10 @@ struct HabitFilter: Identifiable {
 struct HabitFilterCollection: View {
     let filters: [HabitFilter] = [
         HabitFilter(title: "All", color: .gray.opacity(0.15), systemIcon: "diamond"),
-        HabitFilter(title: "Morning water vs lime", color: .red, systemIcon: "diamond.fill"),
+        HabitFilter(title: "Algorithms", color: .red, systemIcon: "diamond.fill"),
         HabitFilter(title: "Meditation", color: .blue, systemIcon: "diamond.fill"),
-        HabitFilter(title: "Workout", color: .green, systemIcon: "diamond.fill")
+        HabitFilter(title: "iOS Project", color: .green, systemIcon: "diamond.fill"),
+        HabitFilter(title: "Gym", color: .purple, systemIcon: "diamond.fill")
     ]
     
     var body: some View {

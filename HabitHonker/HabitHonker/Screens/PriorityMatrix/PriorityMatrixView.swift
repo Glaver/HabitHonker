@@ -172,11 +172,10 @@ private struct HabitMatrixCapsuleView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 16, height: 16)
-                    .opacity(0.9)
             } else {
                 Image(systemName: "diamond.fill")
-                    .imageScale(.small)
-                    .opacity(0.9)
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
             }
             Text(habit.title)
                 .lineLimit(2)
