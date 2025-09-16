@@ -11,6 +11,7 @@ import Foundation
 final class HabitListViewModel: ObservableObject {
     @Published private(set) var items: [HabitModel] = []
     @Published private(set) var item: HabitModel = .init()
+    @Published private(set) var newTag: String = ""
     @Published private(set) var deletedItems: [HabitModel] = []
     @Published private(set) var isLoading = false
     @Published var error: String?

@@ -33,30 +33,7 @@ struct StaisticsView: View {
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
                 VStack(spacing: 0) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(viewModel.items) { item in
-                                HStack(spacing: 6) {
-                                    Image(item.icon ?? "empty_icon")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 16, height: 16)
-                                    Text(item.title)
-                                        .font(.system(size: 14, weight: .semibold))
-                                }
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 30)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 3)
-                                .background(item.priority.color)
-                                .clipShape(Capsule())
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-//                    HabitFilterCollection()
-                    .padding(.bottom, 8)
+                    HabitFilterCollection(viewModel: viewModel)
                     WeekdayHeader()
                         .padding(.horizontal)
                         .padding(.bottom, 8)
@@ -109,7 +86,7 @@ struct StaisticsView: View {
                 ToolbarItem(placement: .automatic) {
                     Button {
                         
-                            path.append(Route.choseHabitForStatistics)
+                        path.append(Route.choseHabitForStatistics)
                         
                         
                     } label: {
@@ -122,7 +99,7 @@ struct StaisticsView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .choseHabitForStatistics:
-                        SelectHabitsView(viewModel: SelectHabitsViewModel(repo: viewModel.repo))
+                    SelectHabitsView(viewModel: SelectHabitsViewModel(repo: viewModel.repo))
                 default:
                     EmptyView()
                         .background(Color.red)
@@ -145,7 +122,7 @@ struct StaisticsView: View {
 // MARK: - WeekdayHeader
 
 struct WeekdayHeader: View {
-    private var symbols: [String] {
+    private var weekday: [String] {
         var cal = Calendar.current
         cal.locale = Locale.current
         let base = cal.shortWeekdaySymbols
@@ -155,8 +132,8 @@ struct WeekdayHeader: View {
     
     var body: some View {
         HStack(spacing: 8) {
-            ForEach(symbols, id: \.self) { s in
-                Text(s)
+            ForEach(weekday, id: \.self) { day in
+                Text(day)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
@@ -164,8 +141,6 @@ struct WeekdayHeader: View {
         }
     }
 }
-
-
 
 // MARK: - PillStack
 
@@ -196,7 +171,7 @@ struct PillStack: View {
 //    static var previews: some View {
 //        NavigationStack { StaisticsView() }
 //            .environment(\.colorScheme, .light)
-//        
+//
 //        NavigationStack { StaisticsView() }
 //            .environment(\.colorScheme, .dark)
 //    }

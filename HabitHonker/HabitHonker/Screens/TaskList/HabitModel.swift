@@ -13,6 +13,7 @@ struct HabitModel: Identifiable, Equatable {
     var iconColor: Color?
     var title: String
     var description: String
+    var tags: [String?] = []
     var priority: PriorityEisenhower
     var type: HabitType
     var repeating: Set<Weekday>
@@ -51,12 +52,13 @@ struct HabitModel: Identifiable, Equatable {
         return record.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) })?.count ?? 0
     }
     
-    init(id: UUID = UUID(), icon: String? = nil, iconColor: Color? = nil, title: String = "", description: String = "", priority: PriorityEisenhower = .importantAndUrgent, type: HabitType = .repeating, repeating: Set<Weekday> = Weekday.allSet, dueDate: Date = Date(), notificationActivated: Bool = false, record: [HabitRecord] = []) {
+    init(id: UUID = UUID(), icon: String? = nil, iconColor: Color? = nil, title: String = "", description: String = "", tags: [String?] = [], priority: PriorityEisenhower = .importantAndUrgent, type: HabitType = .repeating, repeating: Set<Weekday> = Weekday.allSet, dueDate: Date = Date(), notificationActivated: Bool = false, record: [HabitRecord] = []) {
         self.id = id
         self.icon = icon
         self.iconColor = iconColor
         self.title = title
         self.description = description
+        self.tags = tags
         self.priority = priority
         self.type = type
         self.repeating = repeating
@@ -215,6 +217,7 @@ extension HabitModel {
                iconColor: HabitModel.PriorityEisenhower.notUrgentAndNotImportant.color,
                title: "Balance board",
                description: "",
+               tags: [],
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
                repeating: Set<Weekday>(),
@@ -225,6 +228,7 @@ extension HabitModel {
                iconColor: HabitModel.PriorityEisenhower.importantAndUrgent.color,
                title: "Algorithms",
                description: "",
+               tags: [],
                priority: .importantAndUrgent,
                type: .repeating,
                repeating: Set<Weekday>(),

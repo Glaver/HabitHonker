@@ -54,6 +54,7 @@ enum HabitMapper {
             iconColor: color(from: sd.iconColorHex),
             title: sd.title,
             description: sd.descriptionText,
+            tags: sd.tags,
             priority: priority,
             type: type,
             repeating: weekdays,
@@ -77,6 +78,7 @@ enum HabitMapper {
             iconColorHex: hex(from: domain.iconColor),
             title: domain.title,
             descriptionText: domain.description,
+            tags: domain.tags,
             priorityRaw: domain.priority.rawValue,
             typeRaw: domain.type.rawValue,
             repeatingWeekdays: domain.repeating.map(\.rawValue),
@@ -98,6 +100,7 @@ enum HabitMapper {
         sd.iconColorHex = hex(from: domain.iconColor)
         sd.title = domain.title
         sd.descriptionText = domain.description
+        sd.tags = domain.tags
         sd.priorityRaw = domain.priority.rawValue
         sd.typeRaw = domain.type.rawValue
         sd.repeatingWeekdays = domain.repeating.map(\.rawValue)
@@ -121,6 +124,7 @@ enum HabitMapper {
             iconColorHex: hex(from: domain.iconColor),
             title: domain.title,
             descriptionText: domain.description,
+            tags: domain.tags,
             priorityRaw: domain.priority.rawValue,
             typeRaw: domain.type.rawValue,
             repeatingWeekdays: domain.repeating.map(\.rawValue),
@@ -152,6 +156,7 @@ enum HabitMapper {
             iconColor: color(from: sd.iconColorHex),
             title: sd.title,
             description: sd.descriptionText,
+            tags: sd.tags,
             priority: priority,
             type: type,
             repeating: weekdays,
