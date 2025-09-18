@@ -9,15 +9,14 @@ import SwiftUI
 // MARK: - Views
 
 struct StaisticsView: View {
-    private let gridColumns: [GridItem] = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
-    
     @State private var selectedYear: Int
-    @State private var months: [MonthSection]
     @State private var path = NavigationPath()
-    
+
     @StateObject private var viewModel: StatisticsViewModel
     
-    private let builder = CalendarBuilder()
+    private let gridColumns: [GridItem] = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
+    
+    // MARK: - Init
     
     init(viewModel: StatisticsViewModel,
          anchor: Date = Date()) {
@@ -25,9 +24,11 @@ struct StaisticsView: View {
         
         let year = Calendar.current.component(.year, from: anchor)
         _selectedYear = State(initialValue: year)
-        let start = Calendar.current.date(from: DateComponents(year: year, month: 1, day: 1))!
-        _months = State(initialValue: CalendarBuilder().makeYear(for: start))
+//        let start = Calendar.current.date(from: DateComponents(year: year, month: 1, day: 1))!
+//        _months = State(initialValue: viewModel.makeYear(for: start))
     }
+    
+    // MARK: View
     
     var body: some View {
         NavigationStack(path: $path) {
@@ -36,7 +37,9 @@ struct StaisticsView: View {
                     HabitFilterCollection(viewModel: viewModel)
                     WeekdayHeader()
                         .padding(.horizontal)
+                        .padding(.top, 7)
                         .padding(.bottom, 8)
+                        .background(Color(.systemGray6).opacity(0.68)) // REFACTOR: find best solution for background
                     Divider()
                     GeometryReader { geometry in
                         ScrollView {
@@ -45,7 +48,7 @@ struct StaisticsView: View {
                             
                             VStack(alignment: .leading, spacing: 16) {
                                 
-                                ForEach(months) { section in
+                                ForEach(viewModel.months) { section in
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text(section.title)
                                             .font(.title3.weight(.semibold))
@@ -54,6 +57,7 @@ struct StaisticsView: View {
                                         LazyVGrid(columns: gridColumns, spacing: 8) {
                                             ForEach(Array(section.days.enumerated()), id: \.offset) { _, day in
                                                 DayCell(day: day, widthCell: (width / 7) - 7)
+                                                    
                                             }
                                         }
                                         .padding(.horizontal)
@@ -64,19 +68,24 @@ struct StaisticsView: View {
                                 Spacer(minLength: 24)
                             }
                             .padding(.top, 12)
-                        }}
-                    .background(Color(.systemGroupedBackground))
+                        }
+                    }
                 }
                 .onChange(of: selectedYear) { _, _ in regenerateYear() }
+
                 .onAppear {
                     
                     Task {
                         await viewModel.loadPresetHabits()
+                        viewModel.reloadStatistic()
                     }
-                    
-                    // Jump to the month that contains "today" on first load
-                    if let idx = months.firstIndex(where: { Calendar.current.isDate(Date(), equalTo: $0.monthDate, toGranularity: .month) }) {
-                        proxy.scrollTo(sectionID(months[idx]), anchor: .top)
+                    Task { @MainActor in
+                        try await Task.sleep(for: .seconds(1))
+                        if let idx = viewModel.months.firstIndex(where: { Calendar.current.isDate(Date(), equalTo: $0.monthDate, toGranularity: .month) }) {
+                            withAnimation {
+                                proxy.scrollTo(sectionID(viewModel.months[idx]), anchor: .top)
+                            }
+                        }
                     }
                 }
             }
@@ -110,7 +119,7 @@ struct StaisticsView: View {
     
     private func regenerateYear() {
         let start = Calendar.current.date(from: DateComponents(year: selectedYear, month: 1, day: 1))!
-        months = builder.makeYear(for: start)
+        viewModel.reloadStatistic(anchor: start)
     }
     
     private func sectionID(_ m: MonthSection) -> String {
@@ -164,6 +173,8 @@ struct PillStack: View {
         }
     }
 }
+
+
 
 // MARK: - Preview
 //

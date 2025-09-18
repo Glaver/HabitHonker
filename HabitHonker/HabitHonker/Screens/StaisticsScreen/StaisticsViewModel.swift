@@ -13,15 +13,28 @@ final class StatisticsViewModel: ObservableObject {
     @Published private(set) var habitPresetIDs: [UUID] = []
     
     @Published private(set) var selected: Set<UUID> = []
-    @Published var items: [HabitFilterCollectionModel] = [] {
+    @Published var items: [HabitModel] = []
+    @Published var filterItems: [HabitFilterCollectionModel] = [] {
         didSet { pruneSelectionIfNeeded() }
     }
+    
+    @Published var months: [MonthSection] = []
+    
+    private let builder = CalendarBuilder()
+    
+    func reloadStatistic(anchor: Date = Date()) {
+        builder.updateHabits(items)
+        let todayKey = Calendar.current.startOfDay(for: Date())
+        let month = builder.makeMonth(for: Date())
+        months = builder.makeYear(for: anchor)
+    }
+    
     
     let maxRegularSelections = 4
     
     private let allUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()
     
-    private var allID: UUID { items.first?.id ?? UUID() }
+    private var allID: UUID { filterItems.first?.id ?? UUID() }
     
     @Published private(set) var error: Error?
     @Published private(set) var isLoading = false
@@ -38,7 +51,8 @@ final class StatisticsViewModel: ObservableObject {
 
         do {
             guard let preset = try await repo.fetchStatisticsPreset() else {
-                self.items = makeListWithAll([])
+                self.filterItems = makeListWithAll([])
+                self.items = []
                 return
             }
 
@@ -58,11 +72,12 @@ final class StatisticsViewModel: ObservableObject {
                 // If not found at all, skip silently (or log)
             }
             
-            self.items = makeListWithAll(HabitFilterCollectionModel.mapFrom(resolved))
-            print("StatisticsView ID of habits in preset:\(habitPresetIDs)")
+            self.items = resolved
+            self.filterItems = makeListWithAll(HabitFilterCollectionModel.mapFrom(resolved))
+//            print("StatisticsView ID of habits in preset:\(habitPresetIDs)")
         } catch {
             self.error = error
-            print("❌ Failed to load habits from preset: \(error)")
+//            print("❌ Failed to load habits from preset: \(error)")
         }
     }
 
@@ -75,15 +90,15 @@ final class StatisticsViewModel: ObservableObject {
     }
 
     func toggle(_ item: HabitFilterCollectionModel) {
-        guard let all = items.first else { return }
+        guard let all = filterItems.first else { return }
 
         if item.isAll {
             // If already fully selected, clear all; otherwise select all
-            let allRegularIDs = Set(items.dropFirst().map(\.id))
+            let allRegularIDs = Set(filterItems.dropFirst().map(\.id))
             if selected.isSuperset(of: allRegularIDs) && selected.contains(all.id) {
                 selected.removeAll()
             } else {
-                selected = Set(items.map(\.id))
+                selected = Set(filterItems.map(\.id))
             }
             return
         }
@@ -98,7 +113,7 @@ final class StatisticsViewModel: ObservableObject {
         }
 
         // Maintain "All" state consistency
-        let allRegularIDs = Set(items.dropFirst().map(\.id))
+        let allRegularIDs = Set(filterItems.dropFirst().map(\.id))
         if selected.isSuperset(of: allRegularIDs) {
             selected.insert(all.id)
         } else {
@@ -123,13 +138,13 @@ final class StatisticsViewModel: ObservableObject {
     
     /// Keeps `selected` consistent when `items` change (e.g., reload or cap to 4).
     private func pruneSelectionIfNeeded() {
-        let validIDs = Set(items.map(\.id))
+        let validIDs = Set(filterItems.map(\.id))
         if !selected.isSubset(of: validIDs) {
             selected = selected.intersection(validIDs)
         }
         // If all 4 regular are selected, re-sync "All"
-        if let all = items.first {
-            let allRegular = Set(items.dropFirst().map(\.id))
+        if let all = filterItems.first {
+            let allRegular = Set(filterItems.dropFirst().map(\.id))
             if selected.isSuperset(of: allRegular) {
                 selected.insert(all.id)
             } else {

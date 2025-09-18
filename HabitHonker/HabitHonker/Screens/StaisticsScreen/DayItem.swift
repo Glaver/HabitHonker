@@ -11,6 +11,7 @@ import SwiftUI
 
 struct Pill: Identifiable, Hashable {
     let id = UUID()
+    let habitID: UUID
     let color: Color
 }
 
@@ -27,7 +28,7 @@ struct DayItem: Identifiable, Hashable {
 
 struct MonthSection: Identifiable {
     let id = UUID()
-    let monthDate: Date // any date inside that month
-    let title: String   // "August 2025"
-    let days: [DayItem] // padded to a multiple of 7
+    let monthDate: Date
+    let title: String
+    let days: [DayItem]
 }

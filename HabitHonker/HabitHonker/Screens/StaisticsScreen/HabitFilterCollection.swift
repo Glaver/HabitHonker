@@ -22,13 +22,12 @@ struct HabitFilterCollectionModel: Identifiable, Hashable {
 struct HabitFilterCollection: View {
     @ObservedObject var viewModel: StatisticsViewModel
     
-    // Adaptive grid feels like a “collection” of chips
     private let columns = [GridItem(.adaptive(minimum: 120), spacing: 8)]
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(viewModel.items) { item in
+                ForEach(viewModel.filterItems) { item in
                     let selected = viewModel.isSelected(item)
                     let disabled = !selected && !item.isAll && !viewModel.canSelectMore
                     
@@ -63,9 +62,7 @@ struct HabitFilterCollection: View {
             .padding(.bottom, 14)
         }
         .background(.clear)
-        
     }
-    
 }
 
 // MARK: - Mapper
@@ -79,7 +76,7 @@ extension HabitFilterCollectionModel {
                 id: habit.id,
                 title: habit.title,
                 icon: habit.icon,
-                color: habit.priority.color, // TODO: Refactro when I will add color
+                color: habit.priority.color, // TODO: Refactro when I will add color picker
                 isAll: false
             )
             
@@ -89,22 +86,3 @@ extension HabitFilterCollectionModel {
         return output
     }
 }
-// MARK: - Example usage / Preview
-
-//struct HabitMultiPicker_Previews: PreviewProvider {
-//    static var sampleItems: [HabitFilterCollectionModel] = {
-//        let all = HabitFilterCollectionModel(id: UUID(), title: "All", icon: "empty_icon", color: .gray, isAll: true)
-//        let a = HabitFilterCollectionModel(id: UUID(), title: "Health", icon: "trash", color: .pink, isAll: false)
-//        let b = HabitFilterCollectionModel(id: UUID(), title: "Focus", icon: "brain.head.profile", color: .purple, isAll: false)
-//        let c = HabitFilterCollectionModel(id: UUID(), title: "Work", icon: "briefcase.fill", color: .blue, isAll: false)
-//        let d = HabitFilterCollectionModel(id: UUID(), title: "Home", icon: "house.fill", color: .green, isAll: false)
-//        return [all, a, b, c, d] // All must be first
-//    }()
-//
-//    static var previews: some View {
-//        HabitFilterCollection(viewModel: StatisticsViewModel())
-//            .padding()
-//            .background(Color.black)
-//            .previewLayout(.sizeThatFits)
-//    }
-//}
