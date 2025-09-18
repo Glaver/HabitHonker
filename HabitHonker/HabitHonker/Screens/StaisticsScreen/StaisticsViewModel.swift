@@ -10,146 +10,151 @@ import Foundation
 
 @MainActor
 final class StatisticsViewModel: ObservableObject {
-    @Published private(set) var habitPresetIDs: [UUID] = []
-    
-    @Published private(set) var selected: Set<UUID> = []
-    @Published var items: [HabitModel] = []
-    @Published var filterItems: [HabitFilterCollectionModel] = [] {
-        didSet { pruneSelectionIfNeeded() }
-    }
-    
-    @Published var months: [MonthSection] = []
-    
-    private let builder = CalendarBuilder()
-    
-    func reloadStatistic(anchor: Date = Date()) {
-        builder.updateHabits(items)
-        let todayKey = Calendar.current.startOfDay(for: Date())
-        let month = builder.makeMonth(for: Date())
-        months = builder.makeYear(for: anchor)
-    }
-    
+    @Published var items: [HabitModel] = []              // all resolved habits
+    @Published var filterItems: [HabitFilterCollectionModel] = []
+    @Published private(set) var months: [MonthSection] = []
+    @Published private(set) var selected: Set<UUID> = [] // selected filter IDs (includes "All" when appropriate)
+    @Published private(set) var isLoading = false
+    @Published private(set) var error: Error?
+    @Published var calendarAnchor: Date = Date()
     
     let maxRegularSelections = 4
-    
     private let allUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()
+
     
-    private var allID: UUID { filterItems.first?.id ?? UUID() }
-    
-    @Published private(set) var error: Error?
-    @Published private(set) var isLoading = false
-    
+    private let builder = CalendarBuilder()
     let repo: HabitsRepositorySwiftData
 
+    
+    private var bag = Set<AnyCancellable>()
+
+    // MARK: - Init
     init(repo: HabitsRepositorySwiftData) {
         self.repo = repo
+        setupPipelines()
     }
 
+    // MARK: - Public API
+    
+    func reloadStatistic(anchor: Date = Date()) {
+        calendarAnchor = anchor   // triggers the pipeline above
+    }
+    
     func loadPresetHabits() async {
         isLoading = true
         defer { isLoading = false }
 
         do {
             guard let preset = try await repo.fetchStatisticsPreset() else {
-                self.filterItems = makeListWithAll([])
                 self.items = []
+                self.filterItems = makeListWithAll([])
+                self.selected = []
                 return
             }
 
-            habitPresetIDs = preset.habitIDs
-            
+            // Resolve active or deleted habits for the preset
             var resolved: [HabitModel] = []
-            
-            for id in habitPresetIDs {
-                // Try active first
-                if let habit = try await repo.fetch(id: id) {
-                    resolved.append(habit)
-                }
-                // If not found, try deleted
-                else if let deleted = try await repo.fetchDeleted(id: id) {
-                    resolved.append(deleted)
-                }
-                // If not found at all, skip silently (or log)
+            for id in preset.habitIDs {
+                if let habit = try await repo.fetch(id: id) { resolved.append(habit) }
+                else if let deleted = try await repo.fetchDeleted(id: id) { resolved.append(deleted) }
             }
-            
+
+            // Update source lists (this will flow through the pipelines)
             self.items = resolved
             self.filterItems = makeListWithAll(HabitFilterCollectionModel.mapFrom(resolved))
-//            print("StatisticsView ID of habits in preset:\(habitPresetIDs)")
+
+            // Default selection → “All” (and implicitly every visible regular item)
+            if let all = filterItems.first { self.selected = [all.id] }
         } catch {
             self.error = error
-//            print("❌ Failed to load habits from preset: \(error)")
         }
-    }
-
-    func isSelected(_ item: HabitFilterCollectionModel) -> Bool {
-        selected.contains(item.id)
-    }
-
-    var canSelectMore: Bool {
-        selected.subtracting([allID]).count < maxRegularSelections
     }
 
     func toggle(_ item: HabitFilterCollectionModel) {
         guard let all = filterItems.first else { return }
 
+        // Toggle ALL
         if item.isAll {
-            // If already fully selected, clear all; otherwise select all
-            let allRegularIDs = Set(filterItems.dropFirst().map(\.id))
-            if selected.isSuperset(of: allRegularIDs) && selected.contains(all.id) {
+            // If already effectively "All", clear; else select "All" only
+            if isAllSelected() {
                 selected.removeAll()
             } else {
-                selected = Set(filterItems.map(\.id))
+                selected = [all.id] // hold only "All" → means "all regulars" in the pipeline
             }
             return
         }
 
-        // Toggle a regular item with max-4 enforcement
+        // Regular items
         if selected.contains(item.id) {
             selected.remove(item.id)
         } else {
-            // Enforce max regular selections
-            if !canSelectMore { return }
+            // Enforce max selections (ignoring the "All" sentinel)
+            let regularCount = selected.subtracting([all.id]).count
+            guard regularCount < maxRegularSelections else { return }
             selected.insert(item.id)
         }
 
-        // Maintain "All" state consistency
-        let allRegularIDs = Set(filterItems.dropFirst().map(\.id))
-        if selected.isSuperset(of: allRegularIDs) {
-            selected.insert(all.id)
-        } else {
-            selected.remove(all.id)
-        }
+        // Keep "All" in sync
+        resyncAllSentinel()
     }
+
+    func isSelected(_ item: HabitFilterCollectionModel) -> Bool { selected.contains(item.id) }
     
+    var canSelectMore: Bool {
+        guard let all = filterItems.first else { return false }
+        return selected.subtracting([all.id]).count < maxRegularSelections
+    }
+
+    // MARK: - PRIVATE
+
+    /// Wire the reactive graph:
+    /// items + filterItems + selected  ==> visibleHabits  ==> months
+    private func setupPipelines(anchor: Date = Date()) {
+        // items + filterItems + selected + calendarAnchor  ==> months
+        Publishers.CombineLatest4($items, $filterItems, $selected, $calendarAnchor)
+            .map { items, filters, selected, anchor -> [HabitModel] in
+                guard let all = filters.first else { return [] }
+                if selected.isEmpty || selected.contains(all.id) { return items }
+                let picked = Set(selected)
+                return items.filter { picked.contains($0.id) }
+            }
+            .removeDuplicates(by: { $0.map(\.id) == $1.map(\.id) })
+            .debounce(for: .milliseconds(80), scheduler: RunLoop.main)
+            .handleEvents(receiveOutput: { [weak self] visibles in
+                self?.builder.updateHabits(visibles)
+            })
+            .map { [weak self] _ in
+                guard let self else { return [] }
+                return self.builder.makeYear(for: self.calendarAnchor)
+            }
+            .receive(on: RunLoop.main)
+            .assign(to: &$months)
+
+    }
+
     private func makeListWithAll(_ regulars: [HabitFilterCollectionModel]) -> [HabitFilterCollectionModel] {
-        // Ensure your model can represent "All"
         let all = HabitFilterCollectionModel(
-            id: allUUID,
-            title: "All",
-            icon: "empty_icon",
-            color: .gray, // adapt to your type
-            isAll: true
+            id: allUUID, title: "All", icon: "empty_icon", color: .gray, isAll: true
         )
-        
-        // Choose which 4 to show; customize sorting if needed
         let top4 = Array(regulars.prefix(maxRegularSelections))
         return [all] + top4
     }
-    
-    /// Keeps `selected` consistent when `items` change (e.g., reload or cap to 4).
-    private func pruneSelectionIfNeeded() {
-        let validIDs = Set(filterItems.map(\.id))
-        if !selected.isSubset(of: validIDs) {
-            selected = selected.intersection(validIDs)
-        }
-        // If all 4 regular are selected, re-sync "All"
-        if let all = filterItems.first {
-            let allRegular = Set(filterItems.dropFirst().map(\.id))
-            if selected.isSuperset(of: allRegular) {
-                selected.insert(all.id)
-            } else {
-                selected.remove(all.id)
-            }
+
+    private func isAllSelected() -> Bool {
+        guard let all = filterItems.first else { return false }
+        if selected.contains(all.id) { return true }
+
+        let allRegularIDs = Set(filterItems.dropFirst().map(\.id))
+        return selected.isSuperset(of: allRegularIDs)
+    }
+
+    private func resyncAllSentinel() {
+        guard let all = filterItems.first else { return }
+        let allRegularIDs = Set(filterItems.dropFirst().map(\.id))
+        if selected.isSuperset(of: allRegularIDs) {
+            selected = [all.id] // collapse to "All" only (keeps state small)
+        } else {
+            selected.remove(all.id)
         }
     }
 }

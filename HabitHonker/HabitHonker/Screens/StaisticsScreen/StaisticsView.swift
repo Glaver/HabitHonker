@@ -24,8 +24,6 @@ struct StaisticsView: View {
         
         let year = Calendar.current.component(.year, from: anchor)
         _selectedYear = State(initialValue: year)
-//        let start = Calendar.current.date(from: DateComponents(year: year, month: 1, day: 1))!
-//        _months = State(initialValue: viewModel.makeYear(for: start))
     }
     
     // MARK: View
