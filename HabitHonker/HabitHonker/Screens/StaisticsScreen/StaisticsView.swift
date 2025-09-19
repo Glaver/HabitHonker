@@ -37,7 +37,7 @@ struct StaisticsView: View {
                         .padding(.horizontal)
                         .padding(.top, 7)
                         .padding(.bottom, 8)
-                        .background(Color(.systemGray6).opacity(0.68)) // REFACTOR: find best solution for background
+                        .background(Color(.systemGroupedBackground).ignoresSafeArea())//.background(Color(.systemGray6).opacity(0.68)) // REFACTOR: find best solution for background
                     Divider()
                     GeometryReader { geometry in
                         ScrollView {
@@ -150,29 +150,65 @@ struct WeekdayHeader: View {
 }
 
 // MARK: - PillStack
+//
+//struct PillStack: View {
+//    let pills: [Pill]
+//    private let maxVisible = 4
+//    
+//    var body: some View {
+//        HStack(spacing: 1) {
+//            ForEach(Array(pills.prefix(maxVisible))) { pill in
+//                RoundedRectangle(cornerRadius: 5, style: .continuous)
+//                    .fill(pill.color)
+//                    .frame(height: 40)
+//                    .frame(maxWidth: .infinity)
+//            }
+//            if pills.count > maxVisible {
+//                Text("+\(pills.count - maxVisible)")
+//                    .font(.caption2.weight(.bold))
+//                    .foregroundStyle(.secondary)
+//            }
+//        }
+//    }
+//}
 
 struct PillStack: View {
     let pills: [Pill]
     private let maxVisible = 4
+    @State private var shown = 0
     
     var body: some View {
         HStack(spacing: 1) {
-            ForEach(Array(pills.prefix(maxVisible))) { pill in
+            ForEach(Array(pills.prefix(min(shown, maxVisible)))) { pill in
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .fill(pill.color)
                     .frame(height: 40)
                     .frame(maxWidth: .infinity)
+                    .transition(.scale.combined(with: .opacity))
             }
+            
             if pills.count > maxVisible {
                 Text("+\(pills.count - maxVisible)")
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(.secondary)
+                    .transition(.opacity)
+            }
+        }
+        .onAppear { animateIn() }
+        .onChange(of: pills) {
+            shown = 0
+            animateIn()
+        }
+    }
+    
+    private func animateIn() {
+        for i in 0..<min(pills.count, maxVisible) {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.5).delay(0.25 * Double(i))) {
+                shown = i + 1
             }
         }
     }
 }
-
-
 
 // MARK: - Preview
 //

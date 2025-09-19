@@ -13,7 +13,7 @@ final class StatisticsViewModel: ObservableObject {
     @Published var items: [HabitModel] = []              // all resolved habits
     @Published var filterItems: [HabitFilterCollectionModel] = []
     @Published private(set) var months: [MonthSection] = []
-    @Published private(set) var selected: Set<UUID> = [] // selected filter IDs (includes "All" when appropriate)
+    @Published private(set) var selected: Set<UUID> = []
     @Published private(set) var isLoading = false
     @Published private(set) var error: Error?
     @Published var calendarAnchor: Date = Date()
@@ -47,7 +47,7 @@ final class StatisticsViewModel: ObservableObject {
         do {
             guard let preset = try await repo.fetchStatisticsPreset() else {
                 self.items = []
-                self.filterItems = makeListWithAll([])
+                self.filterItems = []//makeListWithAll([])
                 self.selected = []
                 return
             }
@@ -61,51 +61,32 @@ final class StatisticsViewModel: ObservableObject {
 
             // Update source lists (this will flow through the pipelines)
             self.items = resolved
-            self.filterItems = makeListWithAll(HabitFilterCollectionModel.mapFrom(resolved))
-
-            // Default selection → “All” (and implicitly every visible regular item)
-            if let all = filterItems.first { self.selected = [all.id] }
+            self.filterItems = HabitFilterCollectionModel.mapFrom(resolved)
+            self.selected = Set(filterItems.map { $0.id })
         } catch {
             self.error = error
         }
     }
 
     func toggle(_ item: HabitFilterCollectionModel) {
-        guard let all = filterItems.first else { return }
-
-        // Toggle ALL
-        if item.isAll {
-            // If already effectively "All", clear; else select "All" only
-            if isAllSelected() {
-                selected.removeAll()
-            } else {
-                selected = [all.id] // hold only "All" → means "all regulars" in the pipeline
-            }
-            return
-        }
-
-        // Regular items
         if selected.contains(item.id) {
             selected.remove(item.id)
         } else {
-            // Enforce max selections (ignoring the "All" sentinel)
-            let regularCount = selected.subtracting([all.id]).count
-            guard regularCount < maxRegularSelections else { return }
+            guard selected.count < maxRegularSelections else { return }
             selected.insert(item.id)
         }
-
-        // Keep "All" in sync
-        resyncAllSentinel()
     }
 
-    func isSelected(_ item: HabitFilterCollectionModel) -> Bool { selected.contains(item.id) }
+    func isSelected(_ item: HabitFilterCollectionModel) -> Bool {
+        selected.contains(item.id)
+    }
     
     var canSelectMore: Bool {
         guard let all = filterItems.first else { return false }
         return selected.subtracting([all.id]).count < maxRegularSelections
     }
 
-    // MARK: - PRIVATE
+    // MARK: - Private methods
 
     /// Wire the reactive graph:
     /// items + filterItems + selected  ==> visibleHabits  ==> months
@@ -113,8 +94,6 @@ final class StatisticsViewModel: ObservableObject {
         // items + filterItems + selected + calendarAnchor  ==> months
         Publishers.CombineLatest4($items, $filterItems, $selected, $calendarAnchor)
             .map { items, filters, selected, anchor -> [HabitModel] in
-                guard let all = filters.first else { return [] }
-                if selected.isEmpty || selected.contains(all.id) { return items }
                 let picked = Set(selected)
                 return items.filter { picked.contains($0.id) }
             }
@@ -130,31 +109,5 @@ final class StatisticsViewModel: ObservableObject {
             .receive(on: RunLoop.main)
             .assign(to: &$months)
 
-    }
-
-    private func makeListWithAll(_ regulars: [HabitFilterCollectionModel]) -> [HabitFilterCollectionModel] {
-        let all = HabitFilterCollectionModel(
-            id: allUUID, title: "All", icon: "empty_icon", color: .gray, isAll: true
-        )
-        let top4 = Array(regulars.prefix(maxRegularSelections))
-        return [all] + top4
-    }
-
-    private func isAllSelected() -> Bool {
-        guard let all = filterItems.first else { return false }
-        if selected.contains(all.id) { return true }
-
-        let allRegularIDs = Set(filterItems.dropFirst().map(\.id))
-        return selected.isSuperset(of: allRegularIDs)
-    }
-
-    private func resyncAllSentinel() {
-        guard let all = filterItems.first else { return }
-        let allRegularIDs = Set(filterItems.dropFirst().map(\.id))
-        if selected.isSuperset(of: allRegularIDs) {
-            selected = [all.id] // collapse to "All" only (keeps state small)
-        } else {
-            selected.remove(all.id)
-        }
     }
 }

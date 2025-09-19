@@ -123,28 +123,15 @@ extension HabitModel {
         var color: Color {
             switch self {
             case .importantAndUrgent:
-                return .purplion
+                return .purplion //pinky
             case .importantButNotUrgent:
-                return .fourth
+                return .fourth //navy
             case .urgentButNotImportant:
-                return .orangone
+                return .orangone //neon
             case .notUrgentAndNotImportant:
-                return .yellowone
+                return .yellowone //lilac
             }
         }
-        
-//        var colorsNasty: Color {
-//            switch self {
-//            case .importantAndUrgent:
-//                return Color.honkerRed
-//            case .importantButNotUrgent:
-//                return Color.goldenGooseYellow
-//            case .urgentButNotImportant:
-//                return Color.charcoalWingGray
-//            case .notUrgentAndNotImportant:
-//                return Color.warmFeatherBeige
-//            }
-//        }
     }
 }
 

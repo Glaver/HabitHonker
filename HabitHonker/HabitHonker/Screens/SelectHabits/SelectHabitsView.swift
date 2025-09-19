@@ -18,16 +18,14 @@ struct SelectHabitsView: View {
     }
     
     var body: some View {
-       
         ZStack {
             ScrollView {
                 VStack(spacing: 12) {
-                    // Subtitle
                     Text("Select maximum \(viewModel.selectionLimit) habits to show")
                         .font(.footnote)
                         .frame(maxWidth: .infinity)
                         .foregroundStyle(.secondary)
-                        .padding(.top, 4)
+                        .padding(.top, -20)
                     
                     // Card container
                     VStack(spacing: 0) {
@@ -79,6 +77,9 @@ struct SelectHabitsView: View {
             }
         }
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle("Select habits")
+        .navigationBarTitleDisplayMode(.inline)
+        .background(Color(.systemGray6))
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
             Task {

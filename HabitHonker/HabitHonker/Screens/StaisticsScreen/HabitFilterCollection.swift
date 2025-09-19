@@ -27,36 +27,31 @@ struct HabitFilterCollection: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(viewModel.filterItems) { item in
+                ForEach(viewModel.filterItems.indices, id: \.self) { index in
+                    let item = viewModel.filterItems[index]
                     let selected = viewModel.isSelected(item)
-                    let disabled = !selected && !item.isAll && !viewModel.canSelectMore
                     
                     Button(action: { viewModel.toggle(item) }) {
                         HStack(spacing: 6) {
                             Image(item.icon ?? "empty_icon")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 16, height: 16)
+                                .frame(width: 18, height: 18)
                             Text(item.title)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 15, weight: .semibold))
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 30)
-                        .foregroundColor(.white.opacity(disabled ? 0.6 : 1.0))
-                        
+                        .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 3)
-                        .background(
-                            (selected ? item.color.opacity(0.8) : item.color.opacity(0.5))
-                                .saturation(disabled ? 0.2 : 1.0)
-                        )
+                        .background(selected ? item.color.opacity(0.8) : item.color.opacity(0.5))
                         .clipShape(Capsule())
                         .glassEffect()
-                        .shadow(color: selected ? item.color.opacity(0.8) : .clear, radius: 5, x: 1, y: 1)
+                        .shadow(color: selected ? item.color.opacity(0.9) : .clear, radius: 5, x: 2, y: 2)
                     }
-                    .padding(.leading, item.isAll ? 8 : 0)
+                    .padding(.leading, index == 0 ? 8 : 0)
                     .buttonStyle(.plain)
-                    .disabled(disabled)
                 }
             }
             .padding(.bottom, 14)
