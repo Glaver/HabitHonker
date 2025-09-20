@@ -225,18 +225,9 @@ struct HabitDetailView: View {
                 .cornerRadius(26)
                 .padding(.horizontal, 10)
                 
-                Button(action: {
+                PrimaryButton(title: Constants.save, color: .blue, foregroundStyle: .white) {
                     saveAction(item)
                     dismiss()
-                }) {
-                    Text(Constants.save)
-                        .frame(maxWidth: .infinity, minHeight: 54)   // fills width + height
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white)                     // text color
-                        .background(.blue.opacity(0.6))              // background inside label
-                        .clipShape(Capsule())                        // rounded corners / capsule
-                        .glassEffect(.regular, in: Capsule())
-                        .shadow(color: .blue.opacity(0.7), radius: 5, x: 2, y: 2)
                 }
                 .padding(.horizontal, 10)
                 .padding(.bottom, 20)

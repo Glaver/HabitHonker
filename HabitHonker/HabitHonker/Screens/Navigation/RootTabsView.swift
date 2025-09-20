@@ -48,6 +48,13 @@ struct RootTabsView: View {
                     Image(systemName: "calendar")
                     Text(Constants.statistic)
                 }
+            
+            SettingsView(viewModel: SettingsViewModel(repo: HabitsRepositorySwiftData(container: container)))
+                
+                .tabItem {
+                    Image(systemName: "gearshape")
+                    Text("Settings")
+                }
         }
         .environmentObject(viewModel)
         .task { await viewModel.loadIfNeeded() }

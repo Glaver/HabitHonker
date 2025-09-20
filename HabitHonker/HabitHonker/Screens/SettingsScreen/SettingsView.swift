@@ -1,0 +1,101 @@
+
+//  SettingsView.swift
+//  HabitHonker
+//
+//  Created by Vladyslav on 9/19/25.
+//
+
+import SwiftUI
+
+struct SettingsView: View {
+    @State private var path = NavigationPath()
+    @StateObject private var viewModel: SettingsViewModel
+    
+    
+    
+    
+    init(viewModel: SettingsViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
+    
+    var body: some View {
+        NavigationStack(path: $path) {
+            List {
+                Section {
+                    Toggle(isOn: $viewModel.isLoggedIn) {
+                        Text("Sign in")
+                    }
+                    Toggle(isOn: $viewModel.isSynchronized) {
+                        Text("iCloud sync")
+                    }
+                }
+                Section {
+                    HStack {
+                        Text("Theme")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .scaledToFill()
+                            .frame(width: 6, height: 22)
+                            .tint(Color.gray.opacity(0.5))
+                    }
+                    .onTapGesture() {
+                        print("Check how to make swither inside app (auto/dark/light)")
+                    }
+                    HStack {
+                        Text("Change colors")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .scaledToFill()
+                            .frame(width: 6, height: 22)
+                            .tint(Color.gray.opacity(0.5))
+                    }
+                    .onTapGesture {
+                        print("Change colors link to next screen")
+                    }
+                    HStack {
+                        Text("Setup background")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .scaledToFill()
+                            .frame(width: 6, height: 22)
+                            .tint(Color.gray.opacity(0.5))
+                    }
+                    .onTapGesture {
+                        print("Need to check how to set up background in apps and how to advice presets for best fit liquid glass")
+                    }
+                }
+                Section("Support and Feedback") {
+                    VStack {
+                        ZStack(alignment: .topTrailing) {
+                            RoundedRectangle(cornerRadius: 10)
+                                .frame(maxWidth: .infinity)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 10)
+                            
+                            VStack(alignment: .center) {
+                                PrimaryButton(title: "Share With Frined", color: Color(.systemGray4), foregroundStyle: .black) {
+                                    print("Share app")
+                                }
+                                PrimaryButton(title: "Rate App support and Feedback", color: Color(.systemGray4), foregroundStyle: .black) {
+                                    print("Rate App")
+                                }
+                                PrimaryButton(title: "Send fast feedback", color: .blue, foregroundStyle: .white) {
+                                    print("Send fast feedback")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .safeAreaInset(edge: .bottom) {
+                        Text("Version \(Bundle.main.appVersion) (\(Bundle.main.buildNumber))")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                            .background(.clear)   // subtle, matches the screenshot vibe
+                    }
+        }
+    }
+}
