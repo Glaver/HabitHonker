@@ -1,13 +1,12 @@
-////
-////  AppStorage.swift
-////  HabitHonker
-////
-////  Created by Vladyslav on 9/20/25.
-////
 //
-//// PriorityThemeStorage.swift
+//  AppStorage.swift
+//  HabitHonker
+//
+//  Created by Vladyslav on 9/20/25.
+//
 
-// PriorityTheme.swift
+// PriorityThemeStorage.swift
+
 import SwiftUI
 
 
