@@ -14,6 +14,7 @@ enum Route: Hashable, Equatable {
     case detailHabit(UUID)
     case addNewHabit
     case choseHabitForStatistics
+    case priorityMatrixEditor
 }
 
 struct RootTabsView: View {
@@ -53,7 +54,7 @@ struct RootTabsView: View {
                 
                 .tabItem {
                     Image(systemName: "gearshape")
-                    Text("Settings")
+                    Text(Constants.settings)
                 }
         }
         .environmentObject(viewModel)
@@ -66,6 +67,7 @@ extension RootTabsView {
         static let list = "List"
         static let priority = "Priority"
         static let statistic = "Statistic"
+        static let settings = "Settings"
     }
 }
 

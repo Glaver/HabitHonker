@@ -100,47 +100,80 @@ extension HabitModel {
     }
 }
 
-extension HabitModel {
-    enum PriorityEisenhower: Int, CaseIterable {
-        case importantAndUrgent
-        case urgentButNotImportant
-        case importantButNotUrgent
-        case notUrgentAndNotImportant
-        
-        var text: String {
-            switch self {
-            case .importantAndUrgent:
-                return Constants.importantAndUrgent
-            case .importantButNotUrgent:
-                return Constants.importantButNotUrgent
-            case .urgentButNotImportant:
-                return Constants.urgentButNotImportant
-            case .notUrgentAndNotImportant:
-                return Constants.notUrgentAndNotImportant
-            }
+enum PriorityEisenhower: Int, CaseIterable {
+    case importantAndUrgent
+    case urgentButNotImportant
+    case importantButNotUrgent
+    case notUrgentAndNotImportant
+    
+    var text: String {
+        switch self {
+        case .importantAndUrgent:
+            return Constants.importantAndUrgent
+        case .importantButNotUrgent:
+            return Constants.importantButNotUrgent
+        case .urgentButNotImportant:
+            return Constants.urgentButNotImportant
+        case .notUrgentAndNotImportant:
+            return Constants.notUrgentAndNotImportant
         }
-        
-        var color: Color {
-            switch self {
-            case .importantAndUrgent:
-                return .purplion //pinky
-            case .importantButNotUrgent:
-                return .fourth //navy
-            case .urgentButNotImportant:
-                return .orangone //neon
-            case .notUrgentAndNotImportant:
-                return .yellowone //lilac
-            }
+    }
+    // TODO: Remove after refact
+    var color: Color {
+        switch self {
+        case .importantAndUrgent:        return .red
+        case .urgentButNotImportant:     return .yellow
+        case .importantButNotUrgent:     return .green
+        case .notUrgentAndNotImportant:  return .blue
         }
     }
 }
+
+//extension PriorityEisenhower {
+//    var key: String {
+//        switch self {
+//        case .importantAndUrgent: return "color_importantAndUrgent"
+//        case .urgentButNotImportant: return "color_urgentButNotImportant"
+//        case .importantButNotUrgent: return "color_importantButNotUrgent"
+//        case .notUrgentAndNotImportant: return "color_notUrgentAndNotImportant"
+//        }
+//    }
+//    
+//    var color: Color {
+//        if let hex = UserDefaults.standard.string(forKey: key),
+//           let color = Color(hex: hex) {
+//            print("get from User Defaults : \(color)")
+//            return color
+//        }
+//        
+//        print("Default values")
+//        switch self {
+//        case .importantAndUrgent:        return .red
+//        case .urgentButNotImportant:     return .yellow
+//        case .importantButNotUrgent:     return .blue
+//        case .notUrgentAndNotImportant:  return .green
+//        }
+//    }
+//    
+//    func save(_ color: Color) {
+//        let uiColor = UIColor(color)
+//        if let hex = uiColor.hexString {
+//            UserDefaults.standard.set(hex, forKey: key)
+//            print("New HEX saved: \(hex)")
+//        } else {
+//            print("⚠️ Failed to make HEX from \(color)")
+//        }
+//    }
+//}
+
+
 
 extension HabitModel {
     static func mock() -> HabitModel {
         .init(
             icon: "empty_icon",
             iconColor: .clear,
-            title: "",
+            title: "Habit Example",
             description: "",
             priority: .notUrgentAndNotImportant,
             type: .repeating,
@@ -153,7 +186,7 @@ extension HabitModel {
     static func mock() -> [HabitModel] {
         [.init(
             icon: "atom",
-            iconColor: HabitModel.PriorityEisenhower.importantButNotUrgent.color,
+            iconColor: .red,
             title: "Meditation",
             description: "",
             priority: .importantButNotUrgent,
@@ -162,7 +195,7 @@ extension HabitModel {
             dueDate: Date()
         ),
          .init(icon: "academic-cap",
-               iconColor: HabitModel.PriorityEisenhower.urgentButNotImportant.color,
+               iconColor:.green,
                title: "Wash dishes, vacuum floor, laundry, etc",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -171,7 +204,7 @@ extension HabitModel {
                dueDate: Date()
         ),
          .init(icon: "atom",
-               iconColor: HabitModel.PriorityEisenhower.importantAndUrgent.color,
+               iconColor: .red,
                title: "Learn System Design",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -181,7 +214,7 @@ extension HabitModel {
                notificationActivated: false
         ),
          .init(icon: "alien",
-               iconColor: HabitModel.PriorityEisenhower.importantButNotUrgent.color,
+               iconColor: .yellow,
                title: "Swift 6.2",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -191,7 +224,7 @@ extension HabitModel {
                notificationActivated: true
         ),
          .init(icon: "baby",
-               iconColor: HabitModel.PriorityEisenhower.importantButNotUrgent.color,
+               iconColor: .yellow,
                title: "Candle puring",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -201,7 +234,7 @@ extension HabitModel {
                notificationActivated: false
         ),
          .init(icon: "avocado",
-               iconColor: HabitModel.PriorityEisenhower.notUrgentAndNotImportant.color,
+               iconColor: .green,
                title: "Balance board",
                description: "",
                tags: [],
@@ -212,7 +245,7 @@ extension HabitModel {
                notificationActivated: false
         ),
          .init(icon: "alarm",
-               iconColor: HabitModel.PriorityEisenhower.importantAndUrgent.color,
+               iconColor: .red,
                title: "Algorithms",
                description: "",
                tags: [],
@@ -228,6 +261,11 @@ extension HabitModel {
     enum Constants {
         static let dueDate = "Due Date"
         static let repeating = "Repeating"
+    }
+}
+
+extension PriorityEisenhower {
+    enum Constants {
         static let importantAndUrgent = "Important / Urgent"
         static let importantButNotUrgent = "Important / Not Urgent"
         static let urgentButNotImportant = "Not Important / Urgent"

@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct PriorityCell: View {
-    @Binding var selectedType: HabitModel.PriorityEisenhower
-    var type: HabitModel.PriorityEisenhower
+    @Binding var selectedType: PriorityEisenhower
+    var type: PriorityEisenhower
     @Environment(\.colorScheme) var scheme
                         
     var isSelected: Bool {

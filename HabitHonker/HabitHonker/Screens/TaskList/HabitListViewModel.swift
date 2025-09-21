@@ -85,7 +85,7 @@ final class HabitListViewModel: ObservableObject {
         await saveCurrent()
     }
     
-    func changePrirorityFor(_ id: UUID, to newPriority: HabitModel.PriorityEisenhower) async {
+    func changePrirorityFor(_ id: UUID, to newPriority: PriorityEisenhower) async {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         var item = items[index]
         item.priority = newPriority

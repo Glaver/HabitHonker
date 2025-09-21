@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct PriorityPicker: View {
-    @Binding var priorityEisenhower: HabitModel.PriorityEisenhower {
+    @Binding var priorityEisenhower: PriorityEisenhower {
         didSet {
             print(priorityEisenhower)
         }
@@ -15,7 +15,7 @@ struct PriorityPicker: View {
     
     var body: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
-            ForEach(HabitModel.PriorityEisenhower.allCases, id: \.self) { priority in
+            ForEach(PriorityEisenhower.allCases, id: \.self) { priority in
                 PriorityCell(selectedType: $priorityEisenhower, type: priority)
             }
         }

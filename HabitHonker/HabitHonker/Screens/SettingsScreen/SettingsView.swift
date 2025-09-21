@@ -11,9 +11,6 @@ struct SettingsView: View {
     @State private var path = NavigationPath()
     @StateObject private var viewModel: SettingsViewModel
     
-    
-    
-    
     init(viewModel: SettingsViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
@@ -50,7 +47,7 @@ struct SettingsView: View {
                             .tint(Color.gray.opacity(0.5))
                     }
                     .onTapGesture {
-                        print("Change colors link to next screen")
+                        path.append(Route.priorityMatrixEditor)
                     }
                     HStack {
                         Text("Setup background")
@@ -87,6 +84,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            
             .listStyle(.insetGrouped)
             .safeAreaInset(edge: .bottom) {
                         Text("Version \(Bundle.main.appVersion) (\(Bundle.main.buildNumber))")
@@ -96,6 +94,14 @@ struct SettingsView: View {
                             .padding(.vertical, 6)
                             .background(.clear)   // subtle, matches the screenshot vibe
                     }
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .priorityMatrixEditor:
+                    PriorityMatrixEditorView()//viewModel: PriorityMatrixEditorViewModel())
+                default:
+                    EmptyView()
+                }
+            }
         }
     }
 }

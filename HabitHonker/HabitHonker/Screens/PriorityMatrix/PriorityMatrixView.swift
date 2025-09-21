@@ -21,9 +21,9 @@ struct HabitDragPayload: Identifiable, Hashable, Codable, Transferable {
 // MARK: - Priority Matrix
 struct PriorityMatrixView: View {
     @EnvironmentObject var viewModel: HabitListViewModel
-    var onMove: ((HabitModel, HabitModel.PriorityEisenhower) -> Void)?
+    var onMove: ((HabitModel, PriorityEisenhower) -> Void)?
     
-    init(onMove: ((HabitModel, HabitModel.PriorityEisenhower) -> Void)? = nil) {
+    init(onMove: ((HabitModel, PriorityEisenhower) -> Void)? = nil) {
         self.onMove = onMove
     }
     
@@ -70,7 +70,7 @@ struct PriorityMatrixView: View {
     
     // MARK: - Quadrant column
     
-    private func quadrant(_ priority: HabitModel.PriorityEisenhower,
+    private func quadrant(_ priority: PriorityEisenhower,
                           rowHeight: CGFloat) -> some View {
         let capsule = viewModel.items.filter { $0.priority == priority }
         
@@ -88,7 +88,7 @@ struct PriorityMatrixView: View {
                     .draggable(HabitDragPayload(id: habit.id))
                     .frame(maxWidth: .infinity, alignment: capsuleAlignment)
                     .onTapGesture { // TODO: link on detail screen
-                        print("Picked: \(habit.id)")
+                        print("Picked: \(habit.id)") // TODO: Link to details screen
 //                        path.append(Route.detailHabit(habit.id))
                     }
             }
@@ -109,7 +109,7 @@ struct PriorityMatrixView: View {
     // MARK: - Headers
     
     @ViewBuilder
-    private func header(for priority: HabitModel.PriorityEisenhower, alignRight: Bool) -> some View {
+    private func header(for priority: PriorityEisenhower, alignRight: Bool) -> some View {
         let priorityText = priority.text.components(separatedBy: "/ ")
         VStack(alignment: alignRight ? .trailing : .leading, spacing: 2) {
             Text(priorityText[0]).font(.callout.weight(.semibold)).foregroundStyle(priority.color)
@@ -118,7 +118,7 @@ struct PriorityMatrixView: View {
     }
     
     // MARK: - Helpers
-    private func alignmentForCapsule(_ priority: HabitModel.PriorityEisenhower) -> Alignment {
+    private func alignmentForCapsule(_ priority: PriorityEisenhower) -> Alignment {
         switch priority {
         case .importantAndUrgent:        return .bottomTrailing
         case .importantButNotUrgent:     return .topTrailing
@@ -127,7 +127,7 @@ struct PriorityMatrixView: View {
         }
     }
     
-    private func alignmentForHabitCapsule(_ priority: HabitModel.PriorityEisenhower) -> HorizontalAlignment {
+    private func alignmentForHabitCapsule(_ priority: PriorityEisenhower) -> HorizontalAlignment {
         switch priority {
         case .importantAndUrgent:        return .trailing
         case .importantButNotUrgent:     return .trailing
@@ -152,7 +152,7 @@ struct PriorityMatrixView: View {
         .allowsHitTesting(false)
     }
     
-    private func moveHabitWith(_ id: UUID, to newPriority: HabitModel.PriorityEisenhower) {
+    private func moveHabitWith(_ id: UUID, to newPriority: PriorityEisenhower) {
         Task {
             await viewModel.changePrirorityFor(id, to: newPriority)
         }
@@ -161,9 +161,9 @@ struct PriorityMatrixView: View {
 
 // MARK: - Chip (uses your HabitModel + colors)
 
-private struct HabitMatrixCapsuleView: View {
+struct HabitMatrixCapsuleView: View {
     let habit: HabitModel
-    let tint: Color
+    let tint: Color?
     
     var body: some View {
         HStack(spacing: 5) {
@@ -171,28 +171,35 @@ private struct HabitMatrixCapsuleView: View {
                 Image(icon)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 16, height: 16)
+                    .foregroundStyle(.white)
+                    .frame(width: 18, height: 18)
             } else {
                 Image(systemName: "diamond.fill")
                     .scaledToFit()
-                    .frame(width: 16, height: 16)
+                    .foregroundStyle(.white)
+                    .frame(width: 18, height: 18)
             }
             Text(habit.title)
                 .lineLimit(2)
-                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.white)
+                .font(.caption.weight(.semibold))
             
         }
         .padding(.horizontal, 5)
         .padding(.vertical, 5)
         .background(
             Capsule(style: .continuous)
-                .fill(tint.opacity(0.18))
+                .fill((tint ?? habit.priority.color).opacity(0.40))//18
         )
         .overlay(
             Capsule(style: .continuous)
-                .stroke(tint.opacity(0.35), lineWidth: 1)
+                .stroke((tint ?? habit.priority.color).opacity(0.35), lineWidth: 1)
         )
         .contentShape(Capsule())
+    }
+    
+    static func habitExample(with color: Color) -> Self {
+        .init(habit: HabitModel.mock(), tint: color)
     }
 }
 

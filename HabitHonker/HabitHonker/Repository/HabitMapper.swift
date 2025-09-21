@@ -41,14 +41,14 @@ enum HabitMapper {
 
     // MARK: SD -> Domain
     static func toDomain(_ sd: HabitSD) -> HabitModel {
-        let priority = HabitModel.PriorityEisenhower(rawValue: sd.priorityRaw)
+        let priority = PriorityEisenhower(rawValue: sd.priorityRaw)
             ?? .importantAndUrgent
         let type = HabitModel.HabitType(rawValue: sd.typeRaw)
             ?? .dueDate
 
         let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
 
-        var item = HabitModel(
+        let item = HabitModel(
             id: sd.id,
             icon: sd.icon,
             iconColor: color(from: sd.iconColorHex),
@@ -143,7 +143,7 @@ enum HabitMapper {
     
     // MARK: DeletedHabitSD -> Domain
     static func deletedToDomain(_ sd: DeletedHabitSD) -> HabitModel {
-        let priority = HabitModel.PriorityEisenhower(rawValue: sd.priorityRaw)
+        let priority = PriorityEisenhower(rawValue: sd.priorityRaw)
             ?? .importantAndUrgent
         let type = HabitModel.HabitType(rawValue: sd.typeRaw)
             ?? .dueDate
