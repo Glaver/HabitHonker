@@ -10,15 +10,7 @@ import SwiftUI
 // MARK: - Screen
 
 struct PriorityMatrixEditorView: View {
-    //    @State private var selectedColor: Color = .clear // Default color
-    @AppStorage(PriorityThemeKeys.colors) private var colorsBlob: Data = defaultColorsBlob
-    @AppStorage(PriorityThemeKeys.titles) private var titlesBlob: Data = defaultTitlesBlob
-    
-    // Local drafts (so you can edit and it writes immediately)
-    @State private var colors: [Color] = decodeColors(defaultColorsBlob)
-    @State private var titles: [String] = decodeTitles(defaultTitlesBlob)
-    
-//    let viewModel: PriorityMatrixEditorViewModel
+    @EnvironmentObject private var viewModel: HabitListViewModel
     
     var body: some View {
         ZStack {
@@ -58,7 +50,7 @@ struct PriorityMatrixEditorView: View {
                             .foregroundStyle(.white)
                             .frame(width: 60, height: 60)
                             .glassEffect()
-                        ColorPicker("Pick a color", selection: colorBinding(index), supportsOpacity: true)
+                        ColorPicker("Pick a color", selection: viewModel.colorBinding(index), supportsOpacity: true)
                             .labelsHidden()
                             .scaleEffect(1.3)                // visually larger well
                             .frame(width: 36, height: 36)    // bigger tap target
@@ -69,7 +61,7 @@ struct PriorityMatrixEditorView: View {
                 
                 ForEach(pillForColorButton.indices, id: \.self) { index in
                     let c = pillForColorButton[index]
-                    HabitMatrixCapsuleView.habitExample(with: colors[index])
+                    HabitMatrixCapsuleView.habitExample(with: viewModel.colors[index])
                     .position(c)
                 }
             }
@@ -77,19 +69,19 @@ struct PriorityMatrixEditorView: View {
             VStack {
                 HStack {
                     VStack (alignment: .leading) {
-                        PriorityNameView(position: .topLeft)
+                        PriorityNameView(position: .topLeft, text: viewModel.titleBinding(.importantAndUrgent))
                     }
                     Spacer()
                     VStack (alignment: .trailing) {
-                        PriorityNameView(position: .topRight)
+                        PriorityNameView(position: .topRight, text: viewModel.titleBinding(.urgentButNotImportant))
                     }
                 }
                 Spacer()
                 HStack {
-                    PriorityNameView(position: .bottomLeft)
+                    PriorityNameView(position: .bottomLeft, text: viewModel.titleBinding(.importantButNotUrgent))
 
                     Spacer()
-                    PriorityNameView(position: .bottomRight)
+                    PriorityNameView(position: .bottomRight, text: viewModel.titleBinding(.notUrgentAndNotImportant))
                 }
             }
         }
@@ -98,33 +90,14 @@ struct PriorityMatrixEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
-            colors = decodeColors(colorsBlob)
-            titles = decodeTitles(titlesBlob)
+            Task {
+                await viewModel.onAppear()
+            }
         }
     }
 }
 
-private extension PriorityMatrixEditorView {
-    // MARK: - Bindings
-    func colorBinding(_ index: Int) -> Binding<Color> {
-        Binding(
-            get: { colors[index] },
-            set: { new in
-                colors[index] = new
-                colorsBlob = encodeColors(colors)   // write to AppStorage
-            }
-        )
-    }
-    func titleBinding(_ prio: PriorityEisenhower) -> Binding<String> {
-        Binding(
-            get: { titles[prio.index] },
-            set: { new in
-                titles[prio.index] = new
-                titlesBlob = encodeTitles(titles)   // write to AppStorage
-            }
-        )
-    }
-}
+
 
 struct PriorityNameView: View {
     enum Position {
@@ -155,6 +128,7 @@ struct PriorityNameView: View {
     }
     
     let position: Position
+    @Binding var text: String
     
     var body: some View {
         VStack (alignment: position.alignment) {
@@ -162,7 +136,7 @@ struct PriorityNameView: View {
                 .foregroundStyle(.secondary)
                 .font(.caption2)
                 .padding(.leading, 10)
-            TextField(position.placeholder, text: .constant(""))
+            TextField(position.placeholder, text: $text)
                 .lineLimit(2)
                 .frame(height: 40)
                 .frame(maxWidth: 180)

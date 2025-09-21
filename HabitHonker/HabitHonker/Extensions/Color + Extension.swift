@@ -30,25 +30,3 @@ extension Color {
         }
     }
 }
-
-//struct RGBA: Codable, Equatable {
-//    var r: Double, g: Double, b: Double, a: Double
-//}
-//
-//extension Color {
-//    init(_ rgba: RGBA) { self.init(.sRGB, red: rgba.r, green: rgba.g, blue: rgba.b, opacity: rgba.a) }
-//    func rgba() -> RGBA {
-//        let ui = UIColor(self)
-//        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-//        ui.getRed(&r, green: &g, blue: &b, alpha: &a)
-//        return RGBA(r: r.double, g: g.double, b: b.double, a: a.double)
-//    }
-//}
-//private extension CGFloat { var double: Double { Double(self) } }
-//
-//extension Color {
-//    init?(hex: String) {
-//        guard let ui = UIColor(hex: hex) else { return nil }
-//        self = Color(ui)
-//    }
-//}

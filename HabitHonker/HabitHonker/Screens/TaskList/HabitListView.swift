@@ -26,8 +26,8 @@ struct HabitListView: View {
                     columns: [GridItem(.flexible(), spacing: 0)],
                     spacing: 16
                 ) { // Weekday filter is here for future improvemmts ↓
-                    ForEach(viewModel.items.filtered(by: currentDate)) { item in
-                        HabitCell(item: item)
+                    ForEach(viewModel.items.filtered(by: currentDate), id: \.id) { item in
+                        HabitCell(item: item, priorityColor: viewModel.colors[item.priority.index])
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 path.append(Route.detailHabit(item.id))
@@ -49,6 +49,7 @@ struct HabitListView: View {
                 Task {
                     await viewModel.onAppLaunch()
                     await viewModel.load()
+                    await viewModel.reloadTheme()
                 }
                 startDateTimer()
             }

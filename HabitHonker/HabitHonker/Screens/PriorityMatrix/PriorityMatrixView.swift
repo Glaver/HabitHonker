@@ -20,13 +20,15 @@ struct HabitDragPayload: Identifiable, Hashable, Codable, Transferable {
 
 // MARK: - Priority Matrix
 struct PriorityMatrixView: View {
+
     @EnvironmentObject var viewModel: HabitListViewModel
+    
     var onMove: ((HabitModel, PriorityEisenhower) -> Void)?
     
     init(onMove: ((HabitModel, PriorityEisenhower) -> Void)? = nil) {
         self.onMove = onMove
     }
-    
+  
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack {
@@ -35,9 +37,13 @@ struct PriorityMatrixView: View {
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
                 HStack {
-                    header(for: .importantAndUrgent, alignRight: false)
+                    header(for: viewModel.titles[PriorityEisenhower.importantAndUrgent.index],
+                           priorityColor: viewModel.colors[PriorityEisenhower.importantAndUrgent.index],
+                           alignRight: false)
                     Spacer()
-                    header(for: .urgentButNotImportant, alignRight: true)
+                    header(for: viewModel.titles[PriorityEisenhower.urgentButNotImportant.index],
+                           priorityColor: viewModel.colors[PriorityEisenhower.urgentButNotImportant.index],
+                           alignRight: true)
                 }
                 .padding(.horizontal, 8)
             }
@@ -59,9 +65,13 @@ struct PriorityMatrixView: View {
             }
             
             HStack {
-                header(for: .importantButNotUrgent, alignRight: false)
+                header(for: viewModel.titles[PriorityEisenhower.importantButNotUrgent.index],
+                       priorityColor: viewModel.colors[PriorityEisenhower.importantButNotUrgent.index],
+                       alignRight: false)
                 Spacer(minLength: 12)
-                header(for: .notUrgentAndNotImportant, alignRight: true)
+                header(for: viewModel.titles[PriorityEisenhower.notUrgentAndNotImportant.index],
+                       priorityColor: viewModel.colors[PriorityEisenhower.notUrgentAndNotImportant.index],
+                       alignRight: true)
             }
             .padding(.horizontal, 8)
         }
@@ -82,9 +92,22 @@ struct PriorityMatrixView: View {
             }
         }()
         
+        let pillColor: Color = {
+            switch priority {
+            case .importantAndUrgent:
+                return viewModel.colors[PriorityEisenhower.importantAndUrgent.index]
+            case .importantButNotUrgent:
+                return viewModel.colors[PriorityEisenhower.importantButNotUrgent.index]
+            case .urgentButNotImportant:
+                return viewModel.colors[PriorityEisenhower.urgentButNotImportant.index]
+            case .notUrgentAndNotImportant:
+                return viewModel.colors[PriorityEisenhower.notUrgentAndNotImportant.index]
+            }
+        }()
+        
         return VStack(alignment: .leading, spacing: 10) {
             ForEach(capsule) { habit in
-                HabitMatrixCapsuleView(habit: habit, tint: priority.color)
+                HabitMatrixCapsuleView(habit: habit, tint: pillColor)
                     .draggable(HabitDragPayload(id: habit.id))
                     .frame(maxWidth: .infinity, alignment: capsuleAlignment)
                     .onTapGesture { // TODO: link on detail screen
@@ -115,6 +138,13 @@ struct PriorityMatrixView: View {
             Text(priorityText[0]).font(.callout.weight(.semibold)).foregroundStyle(priority.color)
             Text(priorityText[1]).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
         }
+    }
+    
+    private func header(for text: String, priorityColor: Color, alignRight: Bool) -> some View {
+//        let priorityText = priority.text.components(separatedBy: "/ ")
+//        VStack(alignment: alignRight ? .trailing : .leading, spacing: 2) {
+            Text(text).font(.callout.weight(.semibold)).foregroundStyle(priorityColor)
+//        }
     }
     
     // MARK: - Helpers

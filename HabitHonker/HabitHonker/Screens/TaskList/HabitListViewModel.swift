@@ -6,22 +6,31 @@
 //
 
 import Foundation
+import Combine
+import SwiftUI
 
 @MainActor
 final class HabitListViewModel: ObservableObject {
+
     @Published private(set) var items: [HabitModel] = []
     @Published private(set) var item: HabitModel = .init()
     @Published private(set) var newTag: String = ""
     @Published private(set) var deletedItems: [HabitModel] = []
     @Published private(set) var isLoading = false
     @Published var error: String?
-    
+    @Published private(set) var colors: [Color] = [.red, .yellow, .blue, .green]
+    @Published private(set) var titles: [String] = ["", "", "", ""]
+
+
+    private let usedDefaultsRepo: RepositoryUserDefaults
     private let repo: HabitsRepositorySwiftData
     private let notifier: HabitNotificationScheduling
     private var didLoadOnce = false
     
-    init(repo: HabitsRepositorySwiftData,
+    init(usedDefaultsRepo: RepositoryUserDefaults = .shared,
+         repo: HabitsRepositorySwiftData,
          notifier: HabitNotificationScheduling = HabitNotificationService()) {
+        self.usedDefaultsRepo = RepositoryUserDefaults.shared
         self.repo = repo
         self.notifier = notifier
     }
@@ -29,6 +38,8 @@ final class HabitListViewModel: ObservableObject {
     // MARK: - Lifecycle
     func onAppear() async {
         await load()
+        await reloadTheme()
+        print("⭐️⭐️⭐️⭐️⭐️⭐️⭐️\(colors)")
     }
     
     func onAppLaunch() async {
@@ -200,6 +211,51 @@ private extension HabitListViewModel {
         
         Task { await notifier.cancel(for: id) }
     }
+}
+
+// MARK: - UsedDefaultsRepo
+
+extension HabitListViewModel {
+    // MARK: - Load / Reset
+       func reloadTheme() async {
+           colors = await usedDefaultsRepo.loadColors()
+           titles = await usedDefaultsRepo.loadTitles()
+       }
+
+       func resetToDefaults() {
+           Task {
+               await usedDefaultsRepo.resetToDefaults()
+               await reloadTheme()
+           }
+       }
+
+       // MARK: - Mutators (no computed props)
+       func setColor(_ color: Color, at index: Int) {
+           guard colors.indices.contains(index) else { return }
+           colors[index] = color                      // update stored state
+           Task { await usedDefaultsRepo.setColor(color, at: index) } // persist
+       }
+
+       func setTitle(_ title: String, for prio: PriorityEisenhower) {
+           titles[prio.index] = title
+           Task { await usedDefaultsRepo.setTitle(title, for: prio) }
+       }
+
+       // MARK: - Optional Bindings for SwiftUI controls
+       func colorBinding(_ index: Int) -> Binding<Color> {
+           Binding(
+               get: { self.colors[index] },
+               set: { self.setColor($0, at: index) }
+           )
+       }
+
+       func titleBinding(_ prio: PriorityEisenhower) -> Binding<String> {
+           Binding(
+               get: { self.titles[prio.index] },
+               set: { self.setTitle($0, for: prio) }
+           )
+       
+   }
 }
 
 // MARK: - Helpers
