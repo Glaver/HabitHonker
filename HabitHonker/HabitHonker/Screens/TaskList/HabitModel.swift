@@ -10,7 +10,7 @@ import SwiftUI
 struct HabitModel: Identifiable, Equatable {
     var id: UUID
     var icon: String?
-    var iconColor: Color?
+    var iconColor: Color
     var title: String
     var description: String
     var tags: [String?] = []
@@ -52,7 +52,7 @@ struct HabitModel: Identifiable, Equatable {
         return record.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) })?.count ?? 0
     }
     
-    init(id: UUID = UUID(), icon: String? = nil, iconColor: Color? = nil, title: String = "", description: String = "", tags: [String?] = [], priority: PriorityEisenhower = .importantAndUrgent, type: HabitType = .repeating, repeating: Set<Weekday> = Weekday.allSet, dueDate: Date = Date(), notificationActivated: Bool = false, record: [HabitRecord] = []) {
+    init(id: UUID = UUID(), icon: String? = nil, iconColor: Color, title: String = "", description: String = "", tags: [String?] = [], priority: PriorityEisenhower = .importantAndUrgent, type: HabitType = .repeating, repeating: Set<Weekday> = Weekday.allSet, dueDate: Date = Date(), notificationActivated: Bool = false, record: [HabitRecord] = []) {
         self.id = id
         self.icon = icon
         self.iconColor = iconColor
@@ -84,18 +84,16 @@ extension HabitModel {
     }
 }
 
-extension HabitModel {
-    enum HabitType: Int, CaseIterable {
-        case dueDate
-        case repeating
-        
-        var text: String {
-            switch self {
-            case .dueDate:
-                return Constants.dueDate
-            case .repeating:
-                return Constants.repeating
-            }
+enum HabitType: Int, CaseIterable {
+    case dueDate
+    case repeating
+    
+    var text: String {
+        switch self {
+        case .dueDate:
+            return Constants.dueDate
+        case .repeating:
+            return Constants.repeating
         }
     }
 }
@@ -169,11 +167,23 @@ enum PriorityEisenhower: Int, CaseIterable {
 
 
 extension HabitModel {
-    static func mock() -> HabitModel {
+    static func habitExample() -> HabitModel {
         .init(
             icon: "empty_icon",
             iconColor: .clear,
             title: "Habit Example",
+            description: "",
+            priority: .notUrgentAndNotImportant,
+            type: .repeating,
+            repeating: .init(Weekday.all),
+            dueDate: Date())
+    }
+    
+    static func mock() -> HabitModel {
+        .init(
+            icon: "empty_icon",
+            iconColor: .clear,
+            title: "",
             description: "",
             priority: .notUrgentAndNotImportant,
             type: .repeating,
@@ -257,12 +267,13 @@ extension HabitModel {
     }
 }
 
-extension HabitModel {
+extension HabitType {
     enum Constants {
         static let dueDate = "Due Date"
         static let repeating = "Repeating"
     }
 }
+
 
 extension PriorityEisenhower {
     enum Constants {

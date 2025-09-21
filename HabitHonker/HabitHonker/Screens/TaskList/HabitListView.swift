@@ -27,7 +27,7 @@ struct HabitListView: View {
                     spacing: 16
                 ) { // Weekday filter is here for future improvemmts ↓
                     ForEach(viewModel.items.filtered(by: currentDate), id: \.id) { item in
-                        HabitCell(item: item, priorityColor: viewModel.colors[item.priority.index])
+                        HabitCell(item: item, pillColor: viewModel.colors[item.priority.index])
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 path.append(Route.detailHabit(item.id))
@@ -75,10 +75,33 @@ struct HabitListView: View {
                 switch route {
                 case .detailHabit(let id):
                     let item = viewModel.items.first(where: { $0.id == id }) ?? HabitModel.mock()
-                    makeHabitDetailView(for: item, mode: .detailScreen)
-
+                    HabitDetailView.editItemView(from: item,
+                                                 priorityColors: viewModel.colors,
+                                                 priorityTitles: viewModel.titles,
+                                                 saveAction: { habit in
+                        Task {
+                            await viewModel.saveItem(habit)
+                        }
+                    },
+                                                 deleteAction: { habit in
+                        Task {
+                            await viewModel.deleteItem(habit)
+                        }
+                    })
+                    
                 case .addNewHabit:
-                    makeHabitDetailView(for: HabitModel.mock(), mode: .addNewHabit)
+                    HabitDetailView.creatNewItemView(priorityColors: viewModel.colors,
+                                                     priorityTitles: viewModel.titles,
+                                                     saveAction: { habit in
+                        Task {
+                            await viewModel.saveItem(habit)
+                        }
+                    },
+                                                     deleteAction: { habit in
+                        Task {
+                            await viewModel.deleteItem(habit)
+                        }
+                    })
                 default: EmptyView()
                         .background(Color.blue)
                 }
@@ -113,25 +136,6 @@ struct HabitListView: View {
     private func stopDateTimer() {
         timer?.invalidate()
         timer = nil
-    }
-}
-
-private extension HabitListView {
-    @ViewBuilder
-    func makeHabitDetailView(for item: HabitModel, mode: HabitDetailView.HabitScreenMode) -> some View {
-        HabitDetailView(
-            item: item,
-            mode: mode,
-            saveAction: { item in
-                Task { await viewModel.saveItem(item) }
-            },
-            deleteAction: { item in
-                Task { await viewModel.deleteItem(item) }
-            },
-            saveButton: {
-                SaveButton() {}
-            }
-        )
     }
 }
 

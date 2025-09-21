@@ -11,7 +11,7 @@ import SwiftData
 final class DeletedHabitSD {
     @Attribute(.unique) var id: UUID
     var icon: String?
-    var iconColorHex: String?
+    var iconColorHex: String
     var title: String
     var descriptionText: String
     var tags: [String?]
@@ -26,7 +26,7 @@ final class DeletedHabitSD {
     init(
         id: UUID,
         icon: String?,
-        iconColorHex: String?,
+        iconColorHex: String,
         title: String,
         descriptionText: String,
         tags: [String?],

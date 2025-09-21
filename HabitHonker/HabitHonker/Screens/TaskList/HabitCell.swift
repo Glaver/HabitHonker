@@ -11,7 +11,8 @@ import SwiftData
 
 struct HabitCell: View {
     let item: HabitModel
-    let priorityColor: Color
+    let pillColor: Color
+//    var pillColor: Color { priorityColor[item.priority.index] }
     private var isCompletedToday: Bool { item.isCompletedToday }
     @Environment(\.colorScheme) var scheme
     
@@ -20,7 +21,7 @@ struct HabitCell: View {
             HStack {
                 ZStack {
                     RoundedRectangle(cornerRadius: 23)
-                        .fill(isCompletedToday ? priorityColor.opacity(0.05) : priorityColor.opacity(Color.opacityForSheme(scheme)))
+                        .fill(isCompletedToday ? pillColor.opacity(0.05) : pillColor.opacity(Color.opacityForSheme(scheme)))
                         .frame(width: 56)
                         .zIndex(0)
                     

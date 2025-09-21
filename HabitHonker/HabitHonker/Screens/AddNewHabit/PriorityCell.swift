@@ -10,6 +10,9 @@ import SwiftUI
 struct PriorityCell: View {
     @Binding var selectedType: PriorityEisenhower
     var type: PriorityEisenhower
+    let color: Color
+    let text: String
+    
     @Environment(\.colorScheme) var scheme
                         
     var isSelected: Bool {
@@ -24,11 +27,11 @@ struct PriorityCell: View {
         } label: {
             HStack() {
                 Capsule()
-                    .fill(isSelected ? type.color.opacity(Color.opacityForSheme(scheme)) : .clear)
+                    .fill(isSelected ? color.opacity(Color.opacityForSheme(scheme)) : .clear)
                     .frame(width: 22, height: 48)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
                 
-                Text(type.text.replacingOccurrences(of: "/ ", with: "\n"))
+                Text(text.replacingOccurrences(of: "/ ", with: "\n"))
                     .font(.subheadline)
                     .foregroundColor(.primary.opacity(isSelected ? 1 : 0.8))
                     .lineLimit(2)
@@ -39,11 +42,11 @@ struct PriorityCell: View {
             .padding(5)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
-            .shadow(color: isSelected ? type.color.opacity(Color.opacityForSheme(scheme)) : .clear, radius: 5, x: 1, y: 1)
+            .shadow(color: isSelected ? color.opacity(Color.opacityForSheme(scheme)) : .clear, radius: 5, x: 1, y: 1)
             
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? type.color.opacity(0.4) : .clear, lineWidth: 0.3)
+                    .stroke(isSelected ? color.opacity(0.4) : .clear, lineWidth: 0.5)
             )
         }
         .buttonStyle(.plain)

@@ -229,7 +229,7 @@ struct HabitMatrixCapsuleView: View {
     }
     
     static func habitExample(with color: Color) -> Self {
-        .init(habit: HabitModel.mock(), tint: color)
+        .init(habit: HabitModel.habitExample(), tint: color)
     }
 }
 
