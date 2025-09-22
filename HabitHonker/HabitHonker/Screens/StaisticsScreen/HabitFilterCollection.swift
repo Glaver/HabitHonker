@@ -44,7 +44,7 @@ struct HabitFilterCollection: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 3)
-                        .background(.gray.opacity(0.5))//selected ? item.color.opacity(0.8) : item.color.opacity(0.5))
+                        .background(selected ? item.color.opacity(0.8) : item.color.opacity(0.5))
                         .clipShape(Capsule())
                         .glassEffect()
                         .shadow(color: selected ? item.color.opacity(0.9) : .clear, radius: 5, x: 2, y: 2)

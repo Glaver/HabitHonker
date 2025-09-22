@@ -16,7 +16,8 @@ final class HabitListViewModel: ObservableObject {
     @Published private(set) var item: HabitModel = .mock()
     @Published private(set) var newTag: String = ""
     @Published private(set) var deletedItems: [HabitModel] = []
-    @Published private(set) var isLoading = false
+    private var isLoading = false
+    private var isSaving = false
     @Published var error: String?
     @Published private(set) var colors: [Color] = [.red, .yellow, .blue, .green]
     @Published private(set) var titles: [String] = ["", "", "", ""]
@@ -30,24 +31,20 @@ final class HabitListViewModel: ObservableObject {
     init(usedDefaultsRepo: RepositoryUserDefaults = .shared,
          repo: HabitsRepositorySwiftData,
          notifier: HabitNotificationScheduling = HabitNotificationService()) {
-        self.usedDefaultsRepo = RepositoryUserDefaults.shared
+        self.usedDefaultsRepo = usedDefaultsRepo
         self.repo = repo
         self.notifier = notifier
     }
     
     // MARK: - Lifecycle
-//    func onAppear() async {
-//        await load()
-//        await reloadTheme()
-//        print("⭐️⭐️⭐️⭐️⭐️⭐️⭐️\(colors)")
-//    }
-    
+
     func onAppLaunch() async {
         try? await notifier.requestAuthorization()
     }
     
     // MARK: Public methods
     func load(mode: HabitLoadMode = .all) async {
+        guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
         
@@ -78,6 +75,9 @@ final class HabitListViewModel: ObservableObject {
     }
     
     func saveItem(_ item: HabitModel) async {
+        guard !isSaving else { return }
+        isSaving = true
+        defer { isSaving = false }
         setEditingItem(item)
         updateHabitNotification()
         await saveCurrent()

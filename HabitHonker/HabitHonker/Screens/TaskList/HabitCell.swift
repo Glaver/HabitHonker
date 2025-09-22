@@ -21,7 +21,7 @@ struct HabitCell: View {
             HStack {
                 ZStack {
                     RoundedRectangle(cornerRadius: 23)
-                        .fill(isCompletedToday ? pillColor.opacity(0.05) : pillColor.opacity(Color.opacityForSheme(scheme)))
+                        .fill(isCompletedToday ? pillColor.opacity(0.05) : pillColor)//.opacity(Color.opacityForSheme(scheme)))
                         .frame(width: 56)
                         .zIndex(0)
                     

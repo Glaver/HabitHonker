@@ -36,18 +36,14 @@ struct HabitDetailView: View {
     @State private var isIconsSheetPresented: Bool = false
     @State private var showDeleteConfirmation: Bool = false
     
-    
-    
     private let saveAction: (HabitModel) -> Void
     private let deleteAction: (HabitModel) -> Void
-//    @ViewBuilder private let saveButton: (() -> SaveButton)
     
     @Environment(\.colorScheme) var colorSchema
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.dismiss) private var dismiss
     
     private func savedItem() -> HabitModel {
-        
         if var oldItem = item {
             oldItem.icon = icon
             oldItem.iconColor = iconColor
@@ -169,9 +165,10 @@ struct HabitDetailView: View {
                             .frame(height: 22)
                     }
                     .padding(.vertical, 3)
-                }.padding(.horizontal, 10)
+                }
+                .padding(.horizontal, 10)
             }
-            .background(.white)
+            //            .background(Color(.secondarySystemBackground))
             .cornerRadius(26)
             
             // MARK: Icon picker
@@ -232,9 +229,9 @@ struct HabitDetailView: View {
                 .padding(.vertical, 10)
             }
             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
-            .background(.white)
+            //            .background(.white)
             .cornerRadius(26)
-
+            
             // MARK: Advanced Options
             
             Section {
@@ -262,7 +259,6 @@ struct HabitDetailView: View {
                 .padding(10)
             }
             .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 15, trailing: 0))
-            .background(.white)
             .cornerRadius(26)
             
             // MARK: Schedule notification
@@ -286,7 +282,6 @@ struct HabitDetailView: View {
                 }
                 .padding(.horizontal, 10)
             }
-            .background(.white)
             .cornerRadius(26)
             
             PrimaryButton(title: Constants.save, color: .blue, foregroundStyle: .white) {
@@ -294,10 +289,8 @@ struct HabitDetailView: View {
                 dismiss()
             }
             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-
+            
         }
-        .background(Color(.systemGray6))
-
         .sheet(isPresented: $isIconsSheetPresented) {
             // MARK: Icons bottom sheet view
             ScrollView { // REFACTOR NEED MOVE TO SEPARATE VIEW
@@ -321,13 +314,9 @@ struct HabitDetailView: View {
         }
         .navigationTitle(Constants.detailScreen)
         .navigationBarTitleDisplayMode(.inline)
-        
-        //            .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .environment(\.defaultMinListRowHeight, 0) // let custom rows be any height
-        //            .background(Color(.systemGray6))
-        
-        .background(Color(.systemGray6))
+        .background(Color("cellContentColor"))
         .toolbar { // MARK: ToolbarItem
             if mode == .detailScreen {
                 ToolbarItem(placement: .navigationBarTrailing) {

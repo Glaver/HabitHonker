@@ -104,10 +104,7 @@ final class StatisticsViewModel: ObservableObject {
             }
             .removeDuplicates(by: { $0.map(\.id) == $1.map(\.id) })
             .debounce(for: .milliseconds(150), scheduler: RunLoop.main)
-            .filter { [weak self] _ in
-                        // CHANGE: drop bursts while priming
-                        !(self?.isPriming ?? false)
-                    }
+            .filter { [weak self] _ in !(self?.isPriming ?? false) }
             .handleEvents(receiveOutput: { [weak self] visibles in
                 self?.builder.updateHabits(visibles)
             })

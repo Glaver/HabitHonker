@@ -127,45 +127,6 @@ enum PriorityEisenhower: Int, CaseIterable {
     }
 }
 
-//extension PriorityEisenhower {
-//    var key: String {
-//        switch self {
-//        case .importantAndUrgent: return "color_importantAndUrgent"
-//        case .urgentButNotImportant: return "color_urgentButNotImportant"
-//        case .importantButNotUrgent: return "color_importantButNotUrgent"
-//        case .notUrgentAndNotImportant: return "color_notUrgentAndNotImportant"
-//        }
-//    }
-//    
-//    var color: Color {
-//        if let hex = UserDefaults.standard.string(forKey: key),
-//           let color = Color(hex: hex) {
-//            print("get from User Defaults : \(color)")
-//            return color
-//        }
-//        
-//        print("Default values")
-//        switch self {
-//        case .importantAndUrgent:        return .red
-//        case .urgentButNotImportant:     return .yellow
-//        case .importantButNotUrgent:     return .blue
-//        case .notUrgentAndNotImportant:  return .green
-//        }
-//    }
-//    
-//    func save(_ color: Color) {
-//        let uiColor = UIColor(color)
-//        if let hex = uiColor.hexString {
-//            UserDefaults.standard.set(hex, forKey: key)
-//            print("New HEX saved: \(hex)")
-//        } else {
-//            print("⚠️ Failed to make HEX from \(color)")
-//        }
-//    }
-//}
-
-
-
 extension HabitModel {
     static func habitExample() -> HabitModel {
         .init(

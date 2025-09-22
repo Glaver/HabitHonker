@@ -63,12 +63,6 @@ struct SettingsView: View {
                 }
                 Section("Support and Feedback") {
                     VStack {
-                        ZStack(alignment: .topTrailing) {
-                            RoundedRectangle(cornerRadius: 10)
-                                .frame(maxWidth: .infinity)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 10)
-                            
                             VStack(alignment: .center) {
                                 PrimaryButton(title: "Share With Frined", color: Color(.systemGray4), foregroundStyle: .black) {
                                     print("Share app")
@@ -80,7 +74,6 @@ struct SettingsView: View {
                                     print("Send fast feedback")
                                 }
                             }
-                        }
                     }
                 }
             }

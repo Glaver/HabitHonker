@@ -20,7 +20,7 @@ struct HabitDragPayload: Identifiable, Hashable, Codable, Transferable {
 
 // MARK: - Priority Matrix
 struct PriorityMatrixView: View {
-
+    @State private var path = NavigationPath()
     @EnvironmentObject var viewModel: HabitListViewModel
     
     var onMove: ((HabitModel, PriorityEisenhower) -> Void)?
@@ -30,12 +30,9 @@ struct PriorityMatrixView: View {
     }
   
     public var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ZStack {
-                Text("Change priority")
-                    .font(.headline.bold())
-                    .foregroundColor(.primary)
-                    .multilineTextAlignment(.center)
+        
+        NavigationStack(path: $path) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     header(for: viewModel.titles[PriorityEisenhower.importantAndUrgent.index],
                            priorityColor: viewModel.colors[PriorityEisenhower.importantAndUrgent.index],
@@ -46,36 +43,41 @@ struct PriorityMatrixView: View {
                            alignRight: true)
                 }
                 .padding(.horizontal, 8)
-            }
-            // 2x2 matrix
-            GeometryReader { proxy in
-                let rowSpacing: CGFloat = 12
-                let rowHeight = (proxy.size.height - rowSpacing) / 2  // 2 rows
-                
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12),
-                                    GridItem(.flexible(), spacing: 12)],
-                          spacing: rowSpacing) {
-                    quadrant(.importantAndUrgent,  rowHeight: rowHeight)
-                    quadrant(.urgentButNotImportant, rowHeight: rowHeight)
-                    quadrant(.importantButNotUrgent, rowHeight: rowHeight)
-                    quadrant(.notUrgentAndNotImportant, rowHeight: rowHeight)
+                // 2x2 matrix
+                GeometryReader { proxy in
+                    let rowSpacing: CGFloat = 12
+                    let rowHeight = (proxy.size.height - rowSpacing) / 2  // 2 rows
+                    
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12),
+                                        GridItem(.flexible(), spacing: 12)],
+                              spacing: rowSpacing) {
+                        quadrant(.importantAndUrgent,  rowHeight: rowHeight)
+                        quadrant(.urgentButNotImportant, rowHeight: rowHeight)
+                        quadrant(.importantButNotUrgent, rowHeight: rowHeight)
+                        quadrant(.notUrgentAndNotImportant, rowHeight: rowHeight)
+                    }
+                              .frame(width: proxy.size.width, height: proxy.size.height) // fill the reader
+                              .overlay(dividers)
                 }
-                          .frame(width: proxy.size.width, height: proxy.size.height) // fill the reader
-                          .overlay(dividers)
+                
+                HStack {
+                    header(for: viewModel.titles[PriorityEisenhower.importantButNotUrgent.index],
+                           priorityColor: viewModel.colors[PriorityEisenhower.importantButNotUrgent.index],
+                           alignRight: false)
+                    Spacer(minLength: 12)
+                    header(for: viewModel.titles[PriorityEisenhower.notUrgentAndNotImportant.index],
+                           priorityColor: viewModel.colors[PriorityEisenhower.notUrgentAndNotImportant.index],
+                           alignRight: true)
+                }
+//                .padding(.horizontal, 8)
             }
-            
-            HStack {
-                header(for: viewModel.titles[PriorityEisenhower.importantButNotUrgent.index],
-                       priorityColor: viewModel.colors[PriorityEisenhower.importantButNotUrgent.index],
-                       alignRight: false)
-                Spacer(minLength: 12)
-                header(for: viewModel.titles[PriorityEisenhower.notUrgentAndNotImportant.index],
-                       priorityColor: viewModel.colors[PriorityEisenhower.notUrgentAndNotImportant.index],
-                       alignRight: true)
-            }
+            .padding(.top, -10)
+            .padding(.bottom, 10)
             .padding(.horizontal, 8)
+            .navigationTitle("Change priority")
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .padding(.horizontal, 10)
+        
     }
     
     // MARK: - Quadrant column
@@ -228,7 +230,7 @@ struct HabitMatrixCapsuleView: View {
         .padding(.vertical, 5)
         .background(
             Capsule(style: .continuous)
-                .fill((tint ?? habit.priority.color).opacity(0.40))//18
+                .fill((tint ?? habit.priority.color))//18
         )
         .overlay(
             Capsule(style: .continuous)
