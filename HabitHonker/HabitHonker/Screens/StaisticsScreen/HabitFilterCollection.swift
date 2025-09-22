@@ -14,7 +14,6 @@ struct HabitFilterCollectionModel: Identifiable, Hashable {
     let title: String
     let icon: String?
     let color: Color
-    let isAll: Bool
 }
 
 // MARK: - View
@@ -45,7 +44,7 @@ struct HabitFilterCollection: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 3)
-                        .background(selected ? item.color.opacity(0.8) : item.color.opacity(0.5))
+                        .background(.gray.opacity(0.5))//selected ? item.color.opacity(0.8) : item.color.opacity(0.5))
                         .clipShape(Capsule())
                         .glassEffect()
                         .shadow(color: selected ? item.color.opacity(0.9) : .clear, radius: 5, x: 2, y: 2)
@@ -71,10 +70,9 @@ extension HabitFilterCollectionModel {
                 id: habit.id,
                 title: habit.title,
                 icon: habit.icon,
-                color: habit.priority.color, // TODO: Refactro when I will add color picker
-                isAll: false
+                color: habit.iconColor
             )
-            
+            print("\(habit.title)mapFrom(_ habits: [HabitModel]) -> [HabitFilterCollectionModel]\(habit.iconColor)")
             output.append(model)
         }
         

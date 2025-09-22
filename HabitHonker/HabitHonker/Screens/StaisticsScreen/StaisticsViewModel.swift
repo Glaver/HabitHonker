@@ -17,6 +17,7 @@ final class StatisticsViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var error: Error?
     @Published var calendarAnchor: Date = Date()
+    @Published private var isPriming = false
     
     let maxRegularSelections = 4
     private let allUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000001") ?? UUID()
@@ -47,22 +48,26 @@ final class StatisticsViewModel: ObservableObject {
         do {
             guard let preset = try await repo.fetchStatisticsPreset() else {
                 self.items = []
-                self.filterItems = []//makeListWithAll([])
+                self.filterItems = []
                 self.selected = []
                 return
             }
 
-            // Resolve active or deleted habits for the preset
             var resolved: [HabitModel] = []
             for id in preset.habitIDs {
                 if let habit = try await repo.fetch(id: id) { resolved.append(habit) }
                 else if let deleted = try await repo.fetchDeleted(id: id) { resolved.append(deleted) }
             }
-
-            // Update source lists (this will flow through the pipelines)
-            self.items = resolved
-            self.filterItems = HabitFilterCollectionModel.mapFrom(resolved)
-            self.selected = Set(filterItems.map { $0.id })
+            
+            await MainActor.run {
+                self.isPriming = true
+                let filters = HabitFilterCollectionModel.mapFrom(resolved)
+                let sel = Set(filters.map { $0.id })
+                self.items = resolved
+                self.filterItems = filters
+                self.selected = sel
+                self.isPriming = false
+            }
         } catch {
             self.error = error
         }
@@ -98,7 +103,11 @@ final class StatisticsViewModel: ObservableObject {
                 return items.filter { picked.contains($0.id) }
             }
             .removeDuplicates(by: { $0.map(\.id) == $1.map(\.id) })
-            .debounce(for: .milliseconds(80), scheduler: RunLoop.main)
+            .debounce(for: .milliseconds(150), scheduler: RunLoop.main)
+            .filter { [weak self] _ in
+                        // CHANGE: drop bursts while priming
+                        !(self?.isPriming ?? false)
+                    }
             .handleEvents(receiveOutput: { [weak self] visibles in
                 self?.builder.updateHabits(visibles)
             })

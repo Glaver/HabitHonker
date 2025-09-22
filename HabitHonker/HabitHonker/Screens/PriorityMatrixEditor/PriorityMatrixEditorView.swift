@@ -89,11 +89,6 @@ struct PriorityMatrixEditorView: View {
         .navigationTitle("Customazie color and title")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .onAppear {
-            Task {
-                await viewModel.onAppear()
-            }
-        }
     }
 }
 

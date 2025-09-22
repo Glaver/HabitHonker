@@ -36,11 +36,11 @@ final class HabitListViewModel: ObservableObject {
     }
     
     // MARK: - Lifecycle
-    func onAppear() async {
-        await load()
-        await reloadTheme()
-        print("⭐️⭐️⭐️⭐️⭐️⭐️⭐️\(colors)")
-    }
+//    func onAppear() async {
+//        await load()
+//        await reloadTheme()
+//        print("⭐️⭐️⭐️⭐️⭐️⭐️⭐️\(colors)")
+//    }
     
     func onAppLaunch() async {
         try? await notifier.requestAuthorization()
@@ -116,31 +116,33 @@ final class HabitListViewModel: ObservableObject {
 private extension HabitListViewModel {
     func delete(at offsets: IndexSet) async {
         do {
-            for index in offsets {
-                try await repo.delete(id: items[index].id)
+            let ids = offsets.map { items[$0].id }
+            for id in ids {
+                try await repo.delete(id: id)
             }
-            await load()
+            items.removeAll { ids.contains($0.id) }
         } catch {
             self.error = error.localizedDescription
         }
     }
     
+    private func upsertInMemory(_ updated: HabitModel) {
+        if let idx = items.firstIndex(where: { $0.id == updated.id }) {
+            items[idx] = updated
+        } else {
+            items.append(updated)
+        }
+        items = sortItems(items)
+    }
+
     func saveCurrent() async {
         do {
-            for (index, record) in item.record.enumerated() {
-            }
-            
             if try await repo.fetch(id: item.id) != nil {
                 try await repo.update(item)
             } else {
                 try await repo.save(item)
             }
-            
-            // Small delay to ensure swipe action is completed
-            try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-            
-            // Reload items to apply sorting (completed tasks move to end)
-            await load()
+            upsertInMemory(item)
         } catch {
             self.error = error.localizedDescription
         }
@@ -149,7 +151,7 @@ private extension HabitListViewModel {
     func deleteCurrent() async {
         do {
             try await repo.delete(id: item.id)
-            await load()
+            items.removeAll { $0.id == item.id }
         } catch {
             self.error = error.localizedDescription
         }
@@ -159,8 +161,8 @@ private extension HabitListViewModel {
         do {
             try await repo.delete(id: id)
             // Small delay to ensure swipe action is completed
+            items.removeAll { $0.id == id }
             try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-            await load()
         } catch {
             self.error = error.localizedDescription
         }

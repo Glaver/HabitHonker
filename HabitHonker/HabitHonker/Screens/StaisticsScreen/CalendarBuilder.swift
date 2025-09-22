@@ -112,7 +112,7 @@ final class CalendarBuilder {
         var index: [Date: [DayEntry]] = [:]
 
         for habit in habits {
-            let color = habit.priority.color // TODO: Move color when color piker will be ready .iconColor ?? .accentColor
+            let color = habit.iconColor
             for rec in habit.record {
                 let day = calendar.startOfDay(for: rec.date)
 

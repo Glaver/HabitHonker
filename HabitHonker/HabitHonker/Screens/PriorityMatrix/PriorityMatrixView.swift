@@ -123,7 +123,7 @@ struct PriorityMatrixView: View {
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .dropDestination(for: HabitDragPayload.self) { payloads, _ in
             withAnimation(.spring) {
-                for payload in payloads { moveHabitWith(payload.id, to: priority) }
+                moveHabitWith(payloads.map { $0.id }, to: priority)
             }
             return true
         }
@@ -187,6 +187,15 @@ struct PriorityMatrixView: View {
             await viewModel.changePrirorityFor(id, to: newPriority)
         }
     }
+    
+    private func moveHabitWith(_ ids: [UUID], to newPriority: PriorityEisenhower) {
+        Task {
+            for id in ids {
+                await viewModel.changePrirorityFor(id, to: newPriority)
+            }
+        }
+    }
+
 }
 
 // MARK: - Chip (uses your HabitModel + colors)

@@ -72,14 +72,13 @@ struct StaisticsView: View {
                 .onChange(of: selectedYear) { _, _ in regenerateYear() }
 
                 .onAppear {
-                    
                     Task {
                         await viewModel.loadPresetHabits()
                         viewModel.reloadStatistic()
-                    }
-                    Task { @MainActor in
-                        try await Task.sleep(for: .seconds(1))
-                        if let idx = viewModel.months.firstIndex(where: { Calendar.current.isDate(Date(), equalTo: $0.monthDate, toGranularity: .month) }) {
+                        try? await Task.sleep(nanoseconds: 1_000_000_000)
+                        if let idx = viewModel.months.firstIndex(where: {
+                            Calendar.current.isDate(Date(), equalTo: $0.monthDate, toGranularity: .month)
+                        }) {
                             withAnimation {
                                 proxy.scrollTo(sectionID(viewModel.months[idx]), anchor: .top)
                             }

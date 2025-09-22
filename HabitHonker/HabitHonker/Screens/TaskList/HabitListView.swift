@@ -46,11 +46,6 @@ struct HabitListView: View {
                 }
             }
             .onAppear {
-                Task {
-                    await viewModel.onAppLaunch()
-                    await viewModel.load()
-                    await viewModel.reloadTheme()
-                }
                 startDateTimer()
             }
             .onDisappear {

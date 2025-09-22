@@ -58,7 +58,11 @@ struct RootTabsView: View {
                 }
         }
         .environmentObject(viewModel)
-        .task { await viewModel.loadIfNeeded() }
+        .task {
+                await viewModel.onAppLaunch()
+                await viewModel.reloadTheme()
+                await viewModel.loadIfNeeded()
+            }
     }
 }
 

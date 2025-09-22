@@ -47,6 +47,7 @@ struct HabitDetailView: View {
     @Environment(\.dismiss) private var dismiss
     
     private func savedItem() -> HabitModel {
+        
         if var oldItem = item {
             oldItem.icon = icon
             oldItem.iconColor = iconColor
@@ -58,9 +59,10 @@ struct HabitDetailView: View {
             oldItem.repeating = repeating
             oldItem.dueDate = dueDate
             oldItem.isNotificationActivated = isNotificationActivated
-            
+            print("savedItem() oldItem.iconColor:\(oldItem.iconColor)")
             return oldItem
         } else {
+            print("new habitModel.iconColor:\(iconColor)")
             return HabitModel(id: UUID(),
                               icon: icon,
                               iconColor: iconColor,
@@ -84,7 +86,8 @@ struct HabitDetailView: View {
         saveAction: @escaping (HabitModel) -> Void,
         deleteAction: @escaping (HabitModel) -> Void,
     ) -> Self {
-        .init(
+        print("model.iconColor init:\(model.iconColor)")
+        return .init(
             item: model,
             mode: .detailScreen,
             icon: model.icon,
@@ -411,4 +414,3 @@ extension View {
             .listRowSeparator(.hidden)
     }
 }
-

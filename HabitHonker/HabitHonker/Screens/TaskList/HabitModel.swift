@@ -182,7 +182,7 @@ extension HabitModel {
     static func mock() -> HabitModel {
         .init(
             icon: "empty_icon",
-            iconColor: .clear,
+            iconColor: Color.random,
             title: "",
             description: "",
             priority: .notUrgentAndNotImportant,
