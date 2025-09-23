@@ -72,7 +72,6 @@ extension HabitFilterCollectionModel {
                 icon: habit.icon,
                 color: habit.iconColor
             )
-            print("\(habit.title)mapFrom(_ habits: [HabitModel]) -> [HabitFilterCollectionModel]\(habit.iconColor)")
             output.append(model)
         }
         

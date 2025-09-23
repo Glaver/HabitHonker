@@ -19,6 +19,7 @@ struct SettingsView: View {
         NavigationStack(path: $path) {
             List {
                 Section {
+//                    SignInWithAppleView()
                     Toggle(isOn: $viewModel.isLoggedIn) {
                         Text("Sign in")
                     }
@@ -96,5 +97,32 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+}
+
+import AuthenticationServices
+
+struct SignInWithAppleView: View {
+    var body: some View {
+        SignInWithAppleButton(
+            .signIn,
+            onRequest: { request in
+                request.requestedScopes = [.fullName, .email]
+            },
+            onCompletion: { result in
+                switch result {
+                case .success(let authResults):
+                    if let credential = authResults.credential as? ASAuthorizationAppleIDCredential {
+                        let userID = credential.user  // unique per app + user
+                        print("Signed in with Apple ID: \(userID)")
+                        // Save userID in Keychain for persistence
+                    }
+                case .failure(let error):
+                    print("Authorization failed: \(error)")
+                }
+            }
+        )
+        .signInWithAppleButtonStyle(.black) // or .white, .whiteOutline
+        .frame(height: 50)
     }
 }

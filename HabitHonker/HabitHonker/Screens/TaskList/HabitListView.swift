@@ -11,7 +11,7 @@ import SwiftData
 struct HabitListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) var scheme
-    
+    @State private var resetSwipe = false
     @State private var path = NavigationPath()
     @State private var isDeleting = false
     @State private var currentDate = Date()
@@ -33,13 +33,19 @@ struct HabitListView: View {
                                 path.append(Route.detailHabit(item.id))
                             }
                             .padding(.horizontal, 10)
-                            .swipeActions {
-                                Action(symbolImage: "checkmark", tint: .black, background: .white) { resetPosition in
-                                    resetPosition.toggle()
-                                    Task {
-                                        await viewModel.habitCompleteWith(id: item.id)
+                            .swipeActions(edge: .trailing) {
+                                Button {
+                                        Task { await viewModel.habitCompleteWith(id: item.id) }
+                                    } label: {
+                                        Label("Complete", systemImage: "checkmark")
                                     }
-                                }
+                                    .tint(.green)
+//                                Action(symbolImage: "checkmark", tint: .black, background: .white) { resetPosition in
+//                                    resetPosition.toggle()
+//                                    Task {
+//                                        await viewModel.habitCompleteWith(id: item.id)
+//                                    }
+//                                }
                             }
                     }
                     .padding(.horizontal, 10)

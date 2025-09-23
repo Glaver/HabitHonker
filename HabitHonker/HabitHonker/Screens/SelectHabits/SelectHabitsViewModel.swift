@@ -40,16 +40,17 @@ final class SelectHabitsViewModel: ObservableObject {
     // Track whether selection changed (to avoid unnecessary writes)
     private var initialPresetIDs: Set<UUID> = []
     var isSelectionChanged: Bool { selectedHabitIDs != initialPresetIDs }
-    
+    private var didLoad = false
     init(repo: HabitsRepositorySwiftData, selectionLimit: Int = 4) {
         self.repo = repo
         self.selectionLimit = selectionLimit
     }
 
     func load() async {
+        if didLoad || isLoading { return }
         isLoading = true
         error = nil
-        defer { isLoading = false }
+        defer { isLoading = false; didLoad = true }
 
         do {
             async let existingTask = repo.fetchAll()

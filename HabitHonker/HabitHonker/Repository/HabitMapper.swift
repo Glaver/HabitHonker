@@ -69,7 +69,6 @@ enum HabitMapper {
             ?? .dueDate
 
         let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
-        print("\(sd.title) From SD: \(sd.iconColorHex) \n \(color(from: sd.iconColorHex))")
         let item = HabitModel(
             id: sd.id,
             icon: sd.icon,

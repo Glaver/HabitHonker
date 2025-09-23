@@ -21,8 +21,8 @@ final class HabitListViewModel: ObservableObject {
     @Published var error: String?
     @Published private(set) var colors: [Color] = [.red, .yellow, .blue, .green]
     @Published private(set) var titles: [String] = ["", "", "", ""]
-
-
+    private let log = Log.habitBeastVM
+    private var inFlightOps = Set<UUID>()
     private let usedDefaultsRepo: RepositoryUserDefaults
     private let repo: HabitsRepositorySwiftData
     private let notifier: HabitNotificationScheduling
@@ -44,12 +44,21 @@ final class HabitListViewModel: ObservableObject {
     
     // MARK: Public methods
     func load(mode: HabitLoadMode = .all) async {
-        guard !isLoading else { return }
+        guard !isLoading else {
+                    log.debug("load(\(String(describing: mode))) skipped — already loading")
+                    return
+                }
         isLoading = true
-        defer { isLoading = false }
+        let t0 = DispatchTime.now()
+        log.info("⬇️ load start mode=\(String(describing: mode))")
+        
+        defer { isLoading = false
+            let ns = DispatchTime.now().uptimeNanoseconds - t0.uptimeNanoseconds
+            log.info("✅ load end items=\(self.items.count) in \(Double(ns)/1_000_000.0, privacy: .public) ms")}
         
         do {
             let fetchedItems = try await repo.fetchAll()
+            log.debug("load fetched=\(fetchedItems.count)")
             let filteredItems: [HabitModel]
             
             switch mode {
@@ -65,19 +74,27 @@ final class HabitListViewModel: ObservableObject {
                         return true
                     }
                 }
+                log.debug("weekday filter=\(targetWeekday.rawValue) -> \(filteredItems.count)")
             }
 
             items = sortItems(filteredItems)
             
         } catch {
             self.error = error.localizedDescription
+            log.error("❌ load failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     
     func saveItem(_ item: HabitModel) async {
-        guard !isSaving else { return }
+        guard !isSaving else {
+                    log.debug("saveItem skipped — saving in progress")
+                    return
+                }
         isSaving = true
-        defer { isSaving = false }
+        let opID = UUID() // correlation id for this save action
+        log.info("💾 saveItem start id=\(item.id.uuidString, privacy: .public) title=\(item.title, privacy: .public) op=\(opID.uuidString, privacy: .public)")
+        defer { isSaving = false
+                log.info("✅ saveItem end op=\(opID.uuidString, privacy: .public)")}
         setEditingItem(item)
         updateHabitNotification()
         await saveCurrent()
@@ -89,12 +106,29 @@ final class HabitListViewModel: ObservableObject {
     }
     
     func habitCompleteWith(id: UUID) async {
-        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
-        var item = items[index]
-        item.completeHabitNow()
-        setEditingItem(item)
-        await saveCurrent()
-    }
+            guard !inFlightOps.contains(id),
+                  let index = items.firstIndex(where: { $0.id == id }) else { return }
+            inFlightOps.insert(id)
+            defer { inFlightOps.remove(id) }
+
+            var updated = items[index]
+            updated.completeHabitNow()
+
+            // Optimistic in-memory update FIRST (cheap, avoids extra fetch loops)
+            upsertInMemory(updated)
+
+            // Persist (no extra fetch before update, see #2)
+            setEditingItem(updated)
+            await saveCurrent()
+//        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        //        var item = items[index]
+        //        item.completeHabitNow()
+        //        setEditingItem(item)
+        //        await saveCurrent()
+        }
+        
+//
+    
     
     func changePrirorityFor(_ id: UUID, to newPriority: PriorityEisenhower) async {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
@@ -132,16 +166,15 @@ private extension HabitListViewModel {
         } else {
             items.append(updated)
         }
-        items = sortItems(items)
+        // Defer the expensive re-sort until after the swipe collapses
+        DispatchQueue.main.async { [items] in
+            self.items = self.sortItems(items)
+        }
     }
 
     func saveCurrent() async {
         do {
-            if try await repo.fetch(id: item.id) != nil {
-                try await repo.update(item)
-            } else {
-                try await repo.save(item)
-            }
+            try await repo.upsert(item)   
             upsertInMemory(item)
         } catch {
             self.error = error.localizedDescription
