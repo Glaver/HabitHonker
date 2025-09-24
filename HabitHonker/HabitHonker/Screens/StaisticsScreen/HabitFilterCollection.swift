@@ -47,13 +47,13 @@ struct HabitFilterCollection: View {
                         .background(selected ? item.color.opacity(0.8) : item.color.opacity(0.5))
                         .clipShape(Capsule())
                         .glassEffect()
-                        .shadow(color: selected ? item.color.opacity(0.9) : .clear, radius: 5, x: 2, y: 2)
+                        .shadow(color: selected ? item.color.opacity(0.9) : .clear, radius: 4, x: 1, y: 1)
                     }
                     .padding(.leading, index == 0 ? 8 : 0)
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.bottom, 14)
+            .padding(.bottom, 15)
         }
         .background(.clear)
     }

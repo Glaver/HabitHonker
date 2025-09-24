@@ -36,6 +36,13 @@ struct HabitDetailView: View {
     @State private var isIconsSheetPresented: Bool = false
     @State private var showDeleteConfirmation: Bool = false
     
+    var sectionBackgroundColor: Color {
+        colorSchema == .dark ? Color(UIColor.secondarySystemBackground) : Color(UIColor.systemBackground)
+    }
+    var backgroundColor: Color {
+        colorSchema == .dark ? Color(UIColor.systemBackground) : Color(UIColor.secondarySystemBackground)
+    }
+    
     private let saveAction: (HabitModel) -> Void
     private let deleteAction: (HabitModel) -> Void
     
@@ -139,12 +146,13 @@ struct HabitDetailView: View {
                             .foregroundColor(.secondary)
                             .frame(height: 20)
                         TextField("", text: $title)
-                            .textFieldStyle(.plain) // or .roundedBorder
+                            .textFieldStyle(.plain)
                             .font(.system(size: 17, weight: .medium, design: .rounded))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .frame(height: 22)
                     }
                     .padding(.vertical, 3)
+                    
                     Divider()
                         .frame(height: 1)
                         .foregroundColor(.gray.opacity(0.3))
@@ -156,7 +164,7 @@ struct HabitDetailView: View {
                             .frame(height: 20)
                         
                         TextField("", text: $description)
-                            .textFieldStyle(.plain) // or .roundedBorder
+                            .textFieldStyle(.plain)
                             .font(.system(size: 17, weight: .medium, design: .rounded))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .frame(height: 22)
@@ -165,7 +173,7 @@ struct HabitDetailView: View {
                 }
                 .padding(.horizontal, 10)
             }
-            //            .background(Color(.secondarySystemBackground))
+            .listRowBackground(sectionBackgroundColor)
             .cornerRadius(26)
             
             // MARK: Icon picker
@@ -198,7 +206,9 @@ struct HabitDetailView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                
                 // MARK: ColorPicker
+                
                 HStack {
                     ColorPicker("Select a color for Statistics", selection: $iconColor)
                         .padding(.trailing, 10)
@@ -208,8 +218,10 @@ struct HabitDetailView: View {
                     
                 }
             }
+            .listRowBackground(sectionBackgroundColor)
             
             // MARK: PriorityPicker
+            
             Section {
                 VStack {
                     Text(Constants.selectPriorit)
@@ -226,7 +238,7 @@ struct HabitDetailView: View {
                 .padding(.vertical, 10)
             }
             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
-            //            .background(.white)
+            .listRowBackground(sectionBackgroundColor)
             .cornerRadius(26)
             
             // MARK: Advanced Options
@@ -235,7 +247,7 @@ struct HabitDetailView: View {
                 VStack {
                     Text(Constants.advancedOption)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    
+                        .padding(10)
                     Picker(Constants.priority, selection: $type) {
                         ForEach(HabitType.allCases, id: \.self) { type in
                             Text(type.text)
@@ -257,6 +269,7 @@ struct HabitDetailView: View {
             }
             .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 15, trailing: 0))
             .cornerRadius(26)
+            .listRowBackground(sectionBackgroundColor)
             
             // MARK: Schedule notification
             Section {
@@ -280,6 +293,7 @@ struct HabitDetailView: View {
                 .padding(.horizontal, 10)
             }
             .cornerRadius(26)
+            .listRowBackground(sectionBackgroundColor)
             
             PrimaryButton(title: Constants.save, color: .blue, foregroundStyle: .white) {
                 saveAction(savedItem())
@@ -312,8 +326,9 @@ struct HabitDetailView: View {
         .navigationTitle(Constants.detailScreen)
         .navigationBarTitleDisplayMode(.inline)
         .scrollContentBackground(.hidden)
-        .environment(\.defaultMinListRowHeight, 0) // let custom rows be any height
-        .background(Color("cellContentColor"))
+        .environment(\.defaultMinListRowHeight, 0)
+        .background(backgroundColor)
+        .toolbar(.hidden, for: .tabBar)
         .toolbar { // MARK: ToolbarItem
             if mode == .detailScreen {
                 ToolbarItem(placement: .navigationBarTrailing) {

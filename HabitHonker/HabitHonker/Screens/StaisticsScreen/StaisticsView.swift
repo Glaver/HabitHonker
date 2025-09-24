@@ -37,8 +37,9 @@ struct StaisticsView: View {
                         .padding(.horizontal)
                         .padding(.top, 7)
                         .padding(.bottom, 8)
-                        .background(Color(.systemGroupedBackground).ignoresSafeArea())//.background(Color(.systemGray6).opacity(0.68)) // REFACTOR: find best solution for background
-                    Divider()
+//                        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+                    //.background(Color(.systemGray6).opacity(0.68)) // REFACTOR: find best solution for background
+//                    Divider()
                     GeometryReader { geometry in
                         ScrollView {
                             

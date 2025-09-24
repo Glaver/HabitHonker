@@ -9,21 +9,18 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var path = NavigationPath()
-    @StateObject private var viewModel: SettingsViewModel
-    
-    init(viewModel: SettingsViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-    }
+    @State private var isLoggedIn: Bool = false
+    @State private var isSynchronized: Bool = false
     
     var body: some View {
         NavigationStack(path: $path) {
             List {
                 Section {
 //                    SignInWithAppleView()
-                    Toggle(isOn: $viewModel.isLoggedIn) {
+                    Toggle(isOn: $isLoggedIn) {
                         Text("Sign in")
                     }
-                    Toggle(isOn: $viewModel.isSynchronized) {
+                    Toggle(isOn: $isSynchronized) {
                         Text("iCloud sync")
                     }
                 }

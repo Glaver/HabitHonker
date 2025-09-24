@@ -33,19 +33,13 @@ struct HabitListView: View {
                                 path.append(Route.detailHabit(item.id))
                             }
                             .padding(.horizontal, 10)
-                            .swipeActions(edge: .trailing) {
-                                Button {
-                                        Task { await viewModel.habitCompleteWith(id: item.id) }
-                                    } label: {
-                                        Label("Complete", systemImage: "checkmark")
+                            .swipeActions {
+                                Action(symbolImage: "checkmark", tint: .black, background: .white) { resetPosition in
+                                    resetPosition.toggle()
+                                    Task {
+                                        await viewModel.habitCompleteWith(id: item.id)
                                     }
-                                    .tint(.green)
-//                                Action(symbolImage: "checkmark", tint: .black, background: .white) { resetPosition in
-//                                    resetPosition.toggle()
-//                                    Task {
-//                                        await viewModel.habitCompleteWith(id: item.id)
-//                                    }
-//                                }
+                                }
                             }
                     }
                     .padding(.horizontal, 10)
@@ -142,18 +136,18 @@ struct HabitListView: View {
 
 // MARK: Preview
 
-#Preview {
-    // 1) Make an in-memory SwiftData container for previews
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(
-        for: HabitSD.self, HabitRecordSD.self,
-        configurations: config
-    )
-    
-    // 2) Build a repo for the VM factory
-    let repo = HabitsRepositorySwiftData(container: container)
-    
-    // 3) Pass the factory closure + attach the container to the view tree
-    HabitListView()
-    .modelContainer(container)
-}
+//#Preview {
+//    // 1) Make an in-memory SwiftData container for previews
+//    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+//    let container = try! ModelContainer(
+//        for: HabitSD.self, HabitRecordSD.self,
+//        configurations: config
+//    )
+//    
+//    // 2) Build a repo for the VM factory
+////    let repo = HabitsRepositorySwiftData(container: container)
+//    
+//    // 3) Pass the factory closure + attach the container to the view tree
+//    HabitListView()
+//    .modelContainer(container)
+//}

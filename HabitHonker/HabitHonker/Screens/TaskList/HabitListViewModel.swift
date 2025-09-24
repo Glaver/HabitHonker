@@ -9,26 +9,30 @@ import Foundation
 import Combine
 import SwiftUI
 
+
 @MainActor
 final class HabitListViewModel: ObservableObject {
-
     @Published private(set) var items: [HabitModel] = []
     @Published private(set) var item: HabitModel = .mock()
     @Published private(set) var newTag: String = ""
     @Published private(set) var deletedItems: [HabitModel] = []
-    private var isLoading = false
-    private var isSaving = false
+
     @Published var error: String?
     @Published private(set) var colors: [Color] = [.red, .yellow, .blue, .green]
     @Published private(set) var titles: [String] = ["", "", "", ""]
+    @Published var themeDraft: ThemeDraft? = nil
+    
     private let log = Log.habitBeastVM
     private var inFlightOps = Set<UUID>()
+    
     private let usedDefaultsRepo: RepositoryUserDefaults
     private let repo: HabitsRepositorySwiftData
     private let notifier: HabitNotificationScheduling
     private var didLoadOnce = false
+    private var isLoading = false
+    private var isSaving = false
     
-    init(usedDefaultsRepo: RepositoryUserDefaults = .shared,
+    init(usedDefaultsRepo: RepositoryUserDefaults,
          repo: HabitsRepositorySwiftData,
          notifier: HabitNotificationScheduling = HabitNotificationService()) {
         self.usedDefaultsRepo = usedDefaultsRepo
@@ -37,7 +41,7 @@ final class HabitListViewModel: ObservableObject {
     }
     
     // MARK: - Lifecycle
-
+    
     func onAppLaunch() async {
         try? await notifier.requestAuthorization()
     }
@@ -45,9 +49,9 @@ final class HabitListViewModel: ObservableObject {
     // MARK: Public methods
     func load(mode: HabitLoadMode = .all) async {
         guard !isLoading else {
-                    log.debug("load(\(String(describing: mode))) skipped — already loading")
-                    return
-                }
+            log.debug("load(\(String(describing: mode))) skipped — already loading")
+            return
+        }
         isLoading = true
         let t0 = DispatchTime.now()
         log.info("⬇️ load start mode=\(String(describing: mode))")
@@ -76,7 +80,7 @@ final class HabitListViewModel: ObservableObject {
                 }
                 log.debug("weekday filter=\(targetWeekday.rawValue) -> \(filteredItems.count)")
             }
-
+            
             items = sortItems(filteredItems)
             
         } catch {
@@ -87,14 +91,14 @@ final class HabitListViewModel: ObservableObject {
     
     func saveItem(_ item: HabitModel) async {
         guard !isSaving else {
-                    log.debug("saveItem skipped — saving in progress")
-                    return
-                }
+            log.debug("saveItem skipped — saving in progress")
+            return
+        }
         isSaving = true
         let opID = UUID() // correlation id for this save action
         log.info("💾 saveItem start id=\(item.id.uuidString, privacy: .public) title=\(item.title, privacy: .public) op=\(opID.uuidString, privacy: .public)")
         defer { isSaving = false
-                log.info("✅ saveItem end op=\(opID.uuidString, privacy: .public)")}
+            log.info("✅ saveItem end op=\(opID.uuidString, privacy: .public)")}
         setEditingItem(item)
         updateHabitNotification()
         await saveCurrent()
@@ -106,28 +110,28 @@ final class HabitListViewModel: ObservableObject {
     }
     
     func habitCompleteWith(id: UUID) async {
-            guard !inFlightOps.contains(id),
-                  let index = items.firstIndex(where: { $0.id == id }) else { return }
-            inFlightOps.insert(id)
-            defer { inFlightOps.remove(id) }
-
-            var updated = items[index]
-            updated.completeHabitNow()
-
-            // Optimistic in-memory update FIRST (cheap, avoids extra fetch loops)
-            upsertInMemory(updated)
-
-            // Persist (no extra fetch before update, see #2)
-            setEditingItem(updated)
-            await saveCurrent()
-//        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        guard !inFlightOps.contains(id),
+              let index = items.firstIndex(where: { $0.id == id }) else { return }
+        inFlightOps.insert(id)
+        defer { inFlightOps.remove(id) }
+        
+        var updated = items[index]
+        updated.completeHabitNow()
+        
+        // Optimistic in-memory update FIRST (cheap, avoids extra fetch loops)
+        upsertInMemory(updated)
+        
+        // Persist (no extra fetch before update, see #2)
+        setEditingItem(updated)
+        await saveCurrent()
+        //        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         //        var item = items[index]
         //        item.completeHabitNow()
         //        setEditingItem(item)
         //        await saveCurrent()
-        }
-        
-//
+    }
+    
+    //
     
     
     func changePrirorityFor(_ id: UUID, to newPriority: PriorityEisenhower) async {
@@ -142,6 +146,71 @@ final class HabitListViewModel: ObservableObject {
         guard !didLoadOnce else { return }
         didLoadOnce = true
         await load()
+    }
+}
+
+// MARK: - Color theme
+
+extension HabitListViewModel {
+    func startThemeEditing() {
+        themeDraft = ThemeDraft(colors: colors, titles: titles)
+    }
+    
+    func draftColorBinding(_ index: Int) -> Binding<Color> {
+        Binding(
+            get: { self.themeDraft?.colors[safe: index] ?? .clear },
+            set: { newValue in
+                guard self.themeDraft?.colors.indices.contains(index) == true else { return }
+                self.themeDraft?.colors[index] = newValue
+            }
+        )
+    }
+
+    func draftTitleBinding(_ prio: PriorityEisenhower) -> Binding<String> {
+        Binding(
+            get: { self.themeDraft?.titles[safe: prio.index] ?? "" },
+            set: { newValue in
+                guard self.themeDraft?.titles.indices.contains(prio.index) == true else { return }
+                self.themeDraft?.titles[prio.index] = newValue
+            }
+        )
+    }
+
+    // 3) Commit (persist once, then publish live)
+    func commitThemeChanges() {
+        guard var draft = themeDraft else { return }
+        normalize(&draft)
+
+        // Persist once
+        Task {
+            await usedDefaultsRepo.setColors(draft.colors)
+            await usedDefaultsRepo.setTitles(draft.titles)
+            // Reflect in live state for the rest of the app
+            await MainActor.run {
+                self.colors = draft.colors
+                self.titles = draft.titles
+                self.themeDraft = nil
+            }
+        }
+    }
+
+    // 4) Cancel
+    func cancelThemeChanges() {
+        themeDraft = nil
+    }
+
+    // Ensure arrays are exactly 4 elements, clamp/extend to defaults if needed
+    private func normalize(_ draft: inout ThemeDraft) {
+        draft.colors = padOrTrim(draft.colors, to: 4, fill: .gray)
+        draft.titles = padOrTrim(draft.titles, to: 4, fill: "")
+    }
+
+    private func padOrTrim<T>(_ array: [T], to len: Int, fill: @autoclosure () -> T) -> [T] {
+        if array.count == len { return array }
+        if array.count > len { return Array(array.prefix(len)) }
+        var out = array
+        out.append(contentsOf: Array(repeating: fill(), count: len - array.count))
+        return out
     }
 }
 // MARK: Private methods
@@ -171,10 +240,10 @@ private extension HabitListViewModel {
             self.items = self.sortItems(items)
         }
     }
-
+    
     func saveCurrent() async {
         do {
-            try await repo.upsert(item)   
+            try await repo.upsert(item)
             upsertInMemory(item)
         } catch {
             self.error = error.localizedDescription
@@ -252,45 +321,46 @@ private extension HabitListViewModel {
 
 extension HabitListViewModel {
     // MARK: - Load / Reset
-       func reloadTheme() async {
-           colors = await usedDefaultsRepo.loadColors()
-           titles = await usedDefaultsRepo.loadTitles()
-       }
-
-       func resetToDefaults() {
-           Task {
-               await usedDefaultsRepo.resetToDefaults()
-               await reloadTheme()
-           }
-       }
-
-       // MARK: - Mutators (no computed props)
-       func setColor(_ color: Color, at index: Int) {
-           guard colors.indices.contains(index) else { return }
-           colors[index] = color                      // update stored state
-           Task { await usedDefaultsRepo.setColor(color, at: index) } // persist
-       }
-
-       func setTitle(_ title: String, for prio: PriorityEisenhower) {
-           titles[prio.index] = title
-           Task { await usedDefaultsRepo.setTitle(title, for: prio) }
-       }
-
-       // MARK: - Optional Bindings for SwiftUI controls
-       func colorBinding(_ index: Int) -> Binding<Color> {
-           Binding(
-               get: { self.colors[index] },
-               set: { self.setColor($0, at: index) }
-           )
-       }
-
-       func titleBinding(_ prio: PriorityEisenhower) -> Binding<String> {
-           Binding(
-               get: { self.titles[prio.index] },
-               set: { self.setTitle($0, for: prio) }
-           )
-       
-   }
+    func reloadTheme() async {
+        colors = await usedDefaultsRepo.loadColors()
+        titles = await usedDefaultsRepo.loadTitles()
+    }
+    
+    func resetToDefaults() {
+        Task {
+            await usedDefaultsRepo.resetToDefaults()
+            await reloadTheme()
+        }
+    }
+    
+    // MARK: - Mutators (no computed props)
+    func setColor(_ color: Color, at index: Int) {
+        guard colors.indices.contains(index) else { return }
+        colors[index] = color                      // update stored state
+        Task { await usedDefaultsRepo.setColor(color, at: index) } // persist
+    }
+    
+    func setTitle(_ title: String, for prio: PriorityEisenhower) {
+        titles[prio.index] = title
+        Task { await usedDefaultsRepo.setTitle(title, for: prio) }
+    }
+    
+    // MARK: - Optional Bindings for SwiftUI controls
+    func colorBinding(_ index: Int) -> Binding<Color> {
+        Binding(
+            get: { self.colors[index] },
+            set: { self.setColor($0, at: index) }
+        )
+    }
+    
+    func titleBinding(_ prio: PriorityEisenhower) -> Binding<String> {
+        Binding(
+            get: { self.titles[prio.index] },
+            set: { self.setTitle($0, for: prio) }
+        )
+    }
+    
+    
 }
 
 // MARK: - Helpers
@@ -320,5 +390,18 @@ extension [HabitModel] {
         return self.filter {
             $0.type != .repeating || $0.repeating.contains(weekday)
         }
+    }
+}
+
+// MARK: - Theme Draft
+struct ThemeDraft {
+    var colors: [Color]
+    var titles: [String]
+}
+
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }

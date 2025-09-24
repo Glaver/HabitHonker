@@ -11,6 +11,13 @@ import SwiftUI
 
 struct PriorityMatrixEditorView: View {
     @EnvironmentObject private var viewModel: HabitListViewModel
+//    @State private var priorityColors: [Color] = [.red, .yellow, .blue, .green]
+//    @State private var priorityTitles: [String] = ["Low", "Medium", "High", "Critical"]
+//    
+//    
+    @Environment(\.dismiss) private var dismiss
+    
+    private var didLoad: Bool = false
     
     var body: some View {
         ZStack {
@@ -50,7 +57,7 @@ struct PriorityMatrixEditorView: View {
                             .foregroundStyle(.white)
                             .frame(width: 60, height: 60)
                             .glassEffect()
-                        ColorPicker("Pick a color", selection: viewModel.colorBinding(index), supportsOpacity: true)
+                        ColorPicker("Pick a color", selection: viewModel.draftColorBinding(index), supportsOpacity: true)
                             .labelsHidden()
                             .scaleEffect(1.3)                // visually larger well
                             .frame(width: 36, height: 36)    // bigger tap target
@@ -66,28 +73,43 @@ struct PriorityMatrixEditorView: View {
                 }
             }
             
+            
             VStack {
                 HStack {
                     VStack (alignment: .leading) {
-                        PriorityNameView(position: .topLeft, text: viewModel.titleBinding(.importantAndUrgent))
+                        PriorityNameView(position: .topLeft, text: viewModel.draftTitleBinding(.importantAndUrgent))
                     }
                     Spacer()
                     VStack (alignment: .trailing) {
-                        PriorityNameView(position: .topRight, text: viewModel.titleBinding(.urgentButNotImportant))
+                        PriorityNameView(position: .topRight, text: viewModel.draftTitleBinding(.urgentButNotImportant))
                     }
                 }
                 Spacer()
                 HStack {
-                    PriorityNameView(position: .bottomLeft, text: viewModel.titleBinding(.importantButNotUrgent))
+                    PriorityNameView(position: .bottomLeft, text: viewModel.draftTitleBinding(.importantButNotUrgent))
 
                     Spacer()
-                    PriorityNameView(position: .bottomRight, text: viewModel.titleBinding(.notUrgentAndNotImportant))
+                    PriorityNameView(position: .bottomRight, text: viewModel.draftTitleBinding(.notUrgentAndNotImportant))
                 }
+            }
+            
+            ZStack {
+                Circle()
+                    .foregroundStyle(.blue)
+                    .frame(width: 90, height: 90)
+                    .glassEffect()
+                    .onTapGesture {
+                        viewModel.commitThemeChanges()
+                        dismiss()
+                    }
+                Text("Save")
+                    .foregroundColor(.white)
             }
         }
         .background(Color(.secondarySystemBackground))
         .navigationTitle("Customazie color and title")
         .navigationBarTitleDisplayMode(.inline)
+        .task { viewModel.startThemeEditing() }
         .toolbar(.hidden, for: .tabBar)
     }
 }

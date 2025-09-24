@@ -18,16 +18,23 @@ enum Route: Hashable, Equatable {
 }
 
 struct RootTabsView: View {
-    @StateObject private var viewModel: HabitListViewModel
+    @StateObject private var listViewModel: HabitListViewModel
+    @StateObject private var statisticsViewModel: StatisticsViewModel
+    
     private let container: ModelContainer
+    private let repo: HabitsRepositorySwiftData
     
     init(container: ModelContainer) {
         self.container = container
-        _viewModel = StateObject(
-            wrappedValue: HabitListViewModel(
-                repo: HabitsRepositorySwiftData(container: container)
-            )
-        )
+        
+        let localRepo = HabitsRepositorySwiftData(container: container)
+        let defaults = RepositoryUserDefaults.shared
+        
+        _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults,
+                                                                      repo: localRepo))
+        _statisticsViewModel = StateObject(wrappedValue: StatisticsViewModel(repo: localRepo))
+        
+        self.repo = localRepo
     }
 
     var body: some View {
@@ -44,24 +51,23 @@ struct RootTabsView: View {
                     Text(Constants.priority)
                 }
             
-            StaisticsView(viewModel: StatisticsViewModel(repo: HabitsRepositorySwiftData(container: container)))
+            StaisticsView(viewModel: statisticsViewModel)
                 .tabItem {
                     Image(systemName: "calendar")
                     Text(Constants.statistic)
                 }
             
-            SettingsView(viewModel: SettingsViewModel(repo: HabitsRepositorySwiftData(container: container)))
-                
+            SettingsView()
                 .tabItem {
                     Image(systemName: "gearshape")
                     Text(Constants.settings)
                 }
         }
-        .environmentObject(viewModel)
+        .environmentObject(listViewModel)
         .task {
-                await viewModel.onAppLaunch()
-                await viewModel.reloadTheme()
-                await viewModel.loadIfNeeded()
+                await listViewModel.onAppLaunch()
+                await listViewModel.reloadTheme()
+                await listViewModel.loadIfNeeded()
             }
     }
 }

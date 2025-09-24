@@ -34,13 +34,21 @@ struct PriorityMatrixView: View {
         NavigationStack(path: $path) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    header(for: viewModel.titles[PriorityEisenhower.importantAndUrgent.index],
-                           priorityColor: viewModel.colors[PriorityEisenhower.importantAndUrgent.index],
-                           alignRight: false)
+                    Text(viewModel.titles[PriorityEisenhower.importantAndUrgent.index])
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(viewModel.colors[PriorityEisenhower.importantAndUrgent.index])
                     Spacer()
-                    header(for: viewModel.titles[PriorityEisenhower.urgentButNotImportant.index],
-                           priorityColor: viewModel.colors[PriorityEisenhower.urgentButNotImportant.index],
-                           alignRight: true)
+                    Text(viewModel.titles[PriorityEisenhower.urgentButNotImportant.index])
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(viewModel.colors[PriorityEisenhower.urgentButNotImportant.index])
                 }
                 .padding(.horizontal, 8)
                 // 2x2 matrix
@@ -61,15 +69,23 @@ struct PriorityMatrixView: View {
                 }
                 
                 HStack {
-                    header(for: viewModel.titles[PriorityEisenhower.importantButNotUrgent.index],
-                           priorityColor: viewModel.colors[PriorityEisenhower.importantButNotUrgent.index],
-                           alignRight: false)
+                    Text(viewModel.titles[PriorityEisenhower.importantButNotUrgent.index])
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(viewModel.colors[PriorityEisenhower.importantButNotUrgent.index])
                     Spacer(minLength: 12)
-                    header(for: viewModel.titles[PriorityEisenhower.notUrgentAndNotImportant.index],
-                           priorityColor: viewModel.colors[PriorityEisenhower.notUrgentAndNotImportant.index],
-                           alignRight: true)
+                    Text(viewModel.titles[PriorityEisenhower.notUrgentAndNotImportant.index])
+                        .lineLimit(2)
+                        .multilineTextAlignment(.trailing)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(viewModel.colors[PriorityEisenhower.notUrgentAndNotImportant.index])
                 }
-//                .padding(.horizontal, 8)
+                .padding(.horizontal, 8)
             }
             .padding(.top, -10)
             .padding(.bottom, 10)
@@ -140,13 +156,6 @@ struct PriorityMatrixView: View {
             Text(priorityText[0]).font(.callout.weight(.semibold)).foregroundStyle(priority.color)
             Text(priorityText[1]).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
         }
-    }
-    
-    private func header(for text: String, priorityColor: Color, alignRight: Bool) -> some View {
-//        let priorityText = priority.text.components(separatedBy: "/ ")
-//        VStack(alignment: alignRight ? .trailing : .leading, spacing: 2) {
-            Text(text).font(.callout.weight(.semibold)).foregroundStyle(priorityColor)
-//        }
     }
     
     // MARK: - Helpers
@@ -246,21 +255,21 @@ struct HabitMatrixCapsuleView: View {
 
 // MARK: - Preview / Example usage
 
-struct PriorityMatrixView_Previews: PreviewProvider {
-    static var previews: some View {
-        let container = try! ModelContainer(
-            for: Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self]),
-            configurations: .init(isStoredInMemoryOnly: true)
-        )
-
-        let repo = HabitsRepositorySwiftData(container: container)
-        let vm = HabitListViewModel(repo: repo)
-
-        // ✅ Inject mock habits into the preview view model
-
-        return PriorityMatrixView()
-            .environmentObject(vm)
-            .padding()
-            .previewLayout(.sizeThatFits)
-    }
-}
+//struct PriorityMatrixView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        let container = try! ModelContainer(
+//            for: Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self]),
+//            configurations: .init(isStoredInMemoryOnly: true)
+//        )
+//
+//        let repo = HabitsRepositorySwiftData(container: container)
+//        let vm = HabitListViewModel(repo: repo)
+//
+//        // ✅ Inject mock habits into the preview view model
+//
+//        return PriorityMatrixView()
+//            .environmentObject(vm)
+//            .padding()
+//            .previewLayout(.sizeThatFits)
+//    }
+//}

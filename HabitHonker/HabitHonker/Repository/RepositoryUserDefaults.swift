@@ -46,3 +46,13 @@ actor RepositoryUserDefaults {
         ud.set(defaultTitlesData, forKey: titlesKey)
     }
 }
+// MARK: - Array writes
+extension RepositoryUserDefaults {
+    func setColors(_ colors: [Color]) {
+        ud.set(encodeColors(colors), forKey: colorsKey)
+    }
+    
+    func setTitles(_ titles: [String]) {
+        ud.set(encodeTitles(titles), forKey: titlesKey)
+    }
+}
