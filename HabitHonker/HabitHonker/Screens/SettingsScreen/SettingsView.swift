@@ -6,11 +6,15 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct SettingsView: View {
+    @AppStorage("appearance") private var appearanceRaw: String = HonkerColorSchema.auto.rawValue
     @State private var path = NavigationPath()
     @State private var isLoggedIn: Bool = false
     @State private var isSynchronized: Bool = false
+
+    @EnvironmentObject private var viewModel: HabitListViewModel
     
     var body: some View {
         NavigationStack(path: $path) {
@@ -25,40 +29,106 @@ struct SettingsView: View {
                     }
                 }
                 Section {
+                    VStack {
+                        Text("Color schema")
+                        let options: [HonkerColorSchema] = [.auto, .light, .dark]
+                                Picker("", selection: $appearanceRaw) {
+                                    ForEach(options) { opt in
+                                        Text(opt.title).tag(opt.rawValue)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+//                        Divider()
+                            .padding(.top, 15)
+                    }
+                    VStack {
+                        HStack {
+                            Text("Change colors")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .scaledToFill()
+                                .frame(width: 6, height: 22)
+                                .tint(Color.gray.opacity(0.5))
+                        }
+                        .onTapGesture {
+                            path.append(Route.priorityMatrixEditor)
+                        }
+                        
+                    }
+                    
+                    
+                    // ... your color schema + "Change colors" UI ...
+                    
                     HStack {
-                        Text("Theme")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .scaledToFill()
-                            .frame(width: 6, height: 22)
-                            .tint(Color.gray.opacity(0.5))
-                    }
-                    .onTapGesture() {
-                        print("Check how to make swither inside app (auto/dark/light)")
-                    }
-                    HStack {
-                        Text("Change colors")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .scaledToFill()
-                            .frame(width: 6, height: 22)
-                            .tint(Color.gray.opacity(0.5))
-                    }
-                    .onTapGesture {
-                        path.append(Route.priorityMatrixEditor)
-                    }
-                    HStack {
-                        Text("Setup background")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .scaledToFill()
-                            .frame(width: 6, height: 22)
-                            .tint(Color.gray.opacity(0.5))
-                    }
-                    .onTapGesture {
-                        print("Need to check how to set up background in apps and how to advice presets for best fit liquid glass")
+                        PhotosPicker(
+                            selection: $viewModel.backgroundPickerItem,
+                            matching: .images
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "photo.on.rectangle")
+                                Text("Choose Background")
+                                    .font(.headline)
+                            }
+//                            .padding(.horizontal, 160)
+//                            .padding(.vertical, 120)
+                            .clipShape(Capsule())
+                            .glassEffect(.regular, in: Capsule())
+                            .background(.ultraThinMaterial, in: Capsule())
+                        }
+                        .tint(.primary)
+                        
+                        if viewModel.hasCustomBackground {
+                            Button {
+                                viewModel.clearBackground()
+                            } label: {
+                                Label("Remove Background", systemImage: "trash")
+                            }
+                            .frame(width: 100, height: 60)
+                            .buttonStyle(.bordered)
+                        }
                     }
                 }
+                .listRowSeparator(.hidden)
+//                    HStack {
+//                        ZStack {
+//                            RoundedRectangle(cornerRadius: 26)
+//                                .frame(width: 150, height: 50)
+//                            
+//                            PhotosPicker("", selection: $viewModel.backgroundPickerItem, matching: .images)
+//                                .buttonStyle(.plain)
+//                                .background(.clear)
+//                                .frame(width: 160)
+//                        }
+//                           
+//                        PhotosPicker(selection: $viewModel.backgroundPickerItem, matching: .images) {
+//                            HStack(spacing: 8) {
+//                                Image(systemName: "photo.on.rectangle")
+//                                Text("Choose Background")
+//                                    .font(.headline)
+//                            }
+//                            .padding(.horizontal, 160).padding(.vertical, 120)
+//                            .clipShape(Capsule())
+//                            .glassEffect(.regular, in: Capsule())
+//                            .background(.ultraThinMaterial, in: Capsule())
+//                        }
+//                        .tint(.primary)
+//                        
+//                        
+//                        if imageData != nil {
+//                            Button {
+//                                imageData = nil
+//                                BackgroundStorage.clear()
+//                            } label: {
+//                                Label("Remove Background", systemImage: "trash")
+//                                    
+//                            }
+//                            .frame(width: 160, height: 60)
+//                            
+//                            .buttonStyle(.bordered)
+//                        }
+//                    }
+//                }
+//                .listRowSeparator(.hidden)
                 Section("Support and Feedback") {
                     VStack {
                             VStack(alignment: .center) {
@@ -75,8 +145,14 @@ struct SettingsView: View {
                     }
                 }
             }
-            
+            .navigationTitle("Settings")
             .listStyle(.insetGrouped)
+            .task {
+                // Fires every time backgroundPickerItem changes (regardless of identifier)
+                for await _ in viewModel.$backgroundPickerItem.values {
+                    await viewModel.processPickedBackgroundIfNeeded()
+                }
+            }
             .safeAreaInset(edge: .bottom) {
                         Text("Version \(Bundle.main.appVersion) (\(Bundle.main.buildNumber))")
                             .font(.footnote)

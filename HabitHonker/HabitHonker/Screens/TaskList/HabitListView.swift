@@ -16,7 +16,8 @@ struct HabitListView: View {
     @State private var isDeleting = false
     @State private var currentDate = Date()
     @State private var timer: Timer?
-    
+    @State private var imageData: Data? = BackgroundStorage.load()
+    private var hasCustomBackground: Bool { imageData != nil }
     @EnvironmentObject private var viewModel: HabitListViewModel
     
     var body: some View {
@@ -100,14 +101,31 @@ struct HabitListView: View {
                 default: EmptyView()
                         .background(Color.blue)
                 }
-            }
-            .background(Image("Wallpaper")// Refactor later: background on change custom
-                .resizable()
-                .scaledToFill()
-                .edgesIgnoringSafeArea(.all)
-                .overlay(
-                    scheme == .dark ? Color.black.opacity(0.4) : Color.clear
-                ))
+            }//BackgroundView(imageData: imageData)
+//            .background((hasCustomBackground ? Image(uiImage: UIImage(data: imageData!) ?? UIImage()) : Image("Wallpaper"))// Refactor later: background on change custom
+//                .resizable()
+//                .scaledToFill()
+//                .edgesIgnoringSafeArea(.all)
+//                .overlay(
+//                    scheme == .dark ? Color.black.opacity(0.4) : Color.clear
+//                ))
+            .background(
+                Group {
+                    if let ui = viewModel.backgroundUIImage {
+                        Image(uiImage: ui)
+                            .resizable()
+                            .scaledToFill()
+                            .edgesIgnoringSafeArea(.all)
+                            .overlay(scheme == .dark ? Color.black.opacity(0.4) : .clear)
+                    } else {
+                        Image("Wallpaper")
+                            .resizable()
+                            .scaledToFill()
+                            .edgesIgnoringSafeArea(.all)
+                            .overlay(scheme == .dark ? Color.black.opacity(0.4) : .clear)
+                    }
+                }
+            )
         }
     }
     

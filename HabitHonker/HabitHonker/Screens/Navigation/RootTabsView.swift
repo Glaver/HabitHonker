@@ -44,6 +44,7 @@ struct RootTabsView: View {
                     Image(systemName: "line.3.horizontal")
                     Text(Constants.list)
                 }
+            
 
             PriorityMatrixView()
                 .tabItem {

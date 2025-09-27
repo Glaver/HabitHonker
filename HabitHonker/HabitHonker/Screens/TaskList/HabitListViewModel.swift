@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 import SwiftUI
-
+import PhotosUI
 
 @MainActor
 final class HabitListViewModel: ObservableObject {
@@ -21,7 +21,16 @@ final class HabitListViewModel: ObservableObject {
     @Published private(set) var colors: [Color] = [.red, .yellow, .blue, .green]
     @Published private(set) var titles: [String] = ["", "", "", ""]
     @Published var themeDraft: ThemeDraft? = nil
-    
+    @Published var backgroundImageData: Data? = BackgroundStorage.load()
+    @Published var backgroundPickerItem: PhotosPickerItem? = nil
+
+    var hasCustomBackground: Bool { backgroundImageData != nil }
+
+    /// Convenience for Views that need a UIImage
+    var backgroundUIImage: UIImage? {
+        guard let data = backgroundImageData else { return nil }
+        return UIImage(data: data)
+    }
     private let log = Log.habitBeastVM
     private var inFlightOps = Set<UUID>()
     
@@ -359,9 +368,33 @@ extension HabitListViewModel {
             set: { self.setTitle($0, for: prio) }
         )
     }
-    
-    
 }
+
+// MARK: 
+
+extension HabitListViewModel {
+    /// Call this when `backgroundPickerItem` changes.
+    func processPickedBackgroundIfNeeded() async {
+        guard let item = backgroundPickerItem else { return }
+        do {
+            if let raw = try await item.loadTransferable(type: Data.self) {
+                let optimized = ImageOptimizer.downscaleIfNeeded(data: raw, maxDimension: 3000)
+                backgroundImageData = optimized
+                BackgroundStorage.save(optimized)          // persist via your existing repo
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+        // Reset selection so the same photo can be picked again if needed
+        backgroundPickerItem = nil
+    }
+
+    func clearBackground() {
+        backgroundImageData = nil
+        BackgroundStorage.clear()
+    }
+}
+
 
 // MARK: - Helpers
 
