@@ -10,11 +10,7 @@ import SwiftUI
 // MARK: - Screen
 
 struct PriorityMatrixEditorView: View {
-    @EnvironmentObject private var viewModel: HabitListViewModel
-//    @State private var priorityColors: [Color] = [.red, .yellow, .blue, .green]
-//    @State private var priorityTitles: [String] = ["Low", "Medium", "High", "Critical"]
-//    
-//    
+    @EnvironmentObject private var viewModel: HabitListViewModel   
     @Environment(\.dismiss) private var dismiss
     
     private var didLoad: Bool = false

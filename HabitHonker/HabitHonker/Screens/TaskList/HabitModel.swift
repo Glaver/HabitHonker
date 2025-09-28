@@ -116,7 +116,7 @@ enum PriorityEisenhower: Int, CaseIterable {
             return Constants.notUrgentAndNotImportant
         }
     }
-    // TODO: Remove after refact
+    // TODO: Remove after refactor // No don't remove leave mock color
     var color: Color {
         switch self {
         case .importantAndUrgent:        return .red

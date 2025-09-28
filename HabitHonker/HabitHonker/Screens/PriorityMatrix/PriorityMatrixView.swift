@@ -44,7 +44,7 @@ struct PriorityMatrixView: View {
                     Spacer()
                     Text(viewModel.titles[PriorityEisenhower.urgentButNotImportant.index])
                         .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+                        .multilineTextAlignment(.trailing)
                         .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .font(.system(size: 16, weight: .semibold))
@@ -54,7 +54,8 @@ struct PriorityMatrixView: View {
                 // 2x2 matrix
                 GeometryReader { proxy in
                     let rowSpacing: CGFloat = 12
-                    let rowHeight = (proxy.size.height - rowSpacing) / 2  // 2 rows
+                    let availableH = max(proxy.size.height, 0)          // never negative
+                    let rowHeight = max((availableH - rowSpacing) / 2, 0)  // 2 rows
                     
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 12),
                                         GridItem(.flexible(), spacing: 12)],
@@ -64,9 +65,10 @@ struct PriorityMatrixView: View {
                         quadrant(.importantButNotUrgent, rowHeight: rowHeight)
                         quadrant(.notUrgentAndNotImportant, rowHeight: rowHeight)
                     }
-                              .frame(width: proxy.size.width, height: proxy.size.height) // fill the reader
+//                              .frame(width: proxy.size.width, height: proxy.size.height) // fill the reader
                               .overlay(dividers)
                 }
+                .frame(minHeight: 220)
                 
                 HStack {
                     Text(viewModel.titles[PriorityEisenhower.importantButNotUrgent.index])
@@ -150,10 +152,10 @@ struct PriorityMatrixView: View {
     // MARK: - Headers
     
     @ViewBuilder
-    private func header(for priority: PriorityEisenhower, alignRight: Bool) -> some View {
+    private func header(for priority: PriorityEisenhower, color: Color, alignRight: Bool) -> some View {
         let priorityText = priority.text.components(separatedBy: "/ ")
         VStack(alignment: alignRight ? .trailing : .leading, spacing: 2) {
-            Text(priorityText[0]).font(.callout.weight(.semibold)).foregroundStyle(priority.color)
+            Text(priorityText[0]).font(.callout.weight(.semibold)).foregroundStyle(color)
             Text(priorityText[1]).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
         }
     }

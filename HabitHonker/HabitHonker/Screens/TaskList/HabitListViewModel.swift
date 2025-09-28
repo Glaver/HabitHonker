@@ -175,12 +175,14 @@ extension HabitListViewModel {
         )
     }
 
-    func draftTitleBinding(_ prio: PriorityEisenhower) -> Binding<String> {
+    func draftTitleBinding(_ priority: PriorityEisenhower) -> Binding<String> {
         Binding(
-            get: { self.themeDraft?.titles[safe: prio.index] ?? "" },
+            get: { self.themeDraft?.titles[safe: priority.index] ?? priority.text },
             set: { newValue in
-                guard self.themeDraft?.titles.indices.contains(prio.index) == true else { return }
-                self.themeDraft?.titles[prio.index] = newValue
+                var value = newValue
+                if value.isEmpty { value = priority.text } // Safe deafult name priority name when empty
+                guard self.themeDraft?.titles.indices.contains(priority.index) == true else { return }
+                self.themeDraft?.titles[priority.index] = value
             }
         )
     }

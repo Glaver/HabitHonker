@@ -116,7 +116,7 @@ enum HabitMapperUI {
         Habit(
             id: model.id,
             name: model.title,
-            color: model.priority.color, // replace on color when colorPicker will be ready
+            color: model.iconColor, // replace on color when colorPicker will be ready
             systemImage: model.icon ?? "empty_icon",
             isEnabled: model.type == .repeating ? true : false, // DueDate tasks not avalible
             isSelected: false

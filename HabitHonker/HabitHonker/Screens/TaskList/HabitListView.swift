@@ -101,14 +101,7 @@ struct HabitListView: View {
                 default: EmptyView()
                         .background(Color.blue)
                 }
-            }//BackgroundView(imageData: imageData)
-//            .background((hasCustomBackground ? Image(uiImage: UIImage(data: imageData!) ?? UIImage()) : Image("Wallpaper"))// Refactor later: background on change custom
-//                .resizable()
-//                .scaledToFill()
-//                .edgesIgnoringSafeArea(.all)
-//                .overlay(
-//                    scheme == .dark ? Color.black.opacity(0.4) : Color.clear
-//                ))
+            }
             .background(
                 Group {
                     if let ui = viewModel.backgroundUIImage {
