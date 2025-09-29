@@ -8,6 +8,7 @@
 import SwiftUI
 import PhotosUI
 
+@MainActor
 struct SettingsView: View {
     @AppStorage("appearance") private var appearanceRaw: String = HonkerColorSchema.auto.rawValue
     @State private var path = NavigationPath()
@@ -42,6 +43,7 @@ struct SettingsView: View {
                             .padding(.top, 15)
                     }
                     VStack {
+                        Divider()
                         HStack {
                             Text("Change colors")
                             Spacer()
@@ -53,82 +55,51 @@ struct SettingsView: View {
                         .onTapGesture {
                             path.append(Route.priorityMatrixEditor)
                         }
+                        .padding(.vertical, 10)
+                        Divider()
                         
-                    }
-                    
-                    
-                    // ... your color schema + "Change colors" UI ...
-                    
-                    HStack {
-                        PhotosPicker(
-                            selection: $viewModel.backgroundPickerItem,
-                            matching: .images
-                        ) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "photo.on.rectangle")
-                                Text("Choose Background")
-                                    .font(.headline)
-                            }
-//                            .padding(.horizontal, 160)
-//                            .padding(.vertical, 120)
-                            .clipShape(Capsule())
-                            .glassEffect(.regular, in: Capsule())
-                            .background(.ultraThinMaterial, in: Capsule())
-                        }
-                        .tint(.primary)
+                        // MARK: - Choose background
                         
-                        if viewModel.hasCustomBackground {
-                            Button {
-                                viewModel.clearBackground()
-                            } label: {
-                                Label("Remove Background", systemImage: "trash")
+                        HStack {
+                            PhotosPicker(
+                                selection: $viewModel.backgroundPickerItem,
+                                matching: .images
+                            ) {
+                                HStack(spacing: 12) {
+                                    Text("Choose background")
+                                        .tint(.primary)
+                                    Spacer()
+                                    if viewModel.hasCustomBackground {
+                                        ZStack {
+                                            Image(systemName: "trash")
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .foregroundStyle(.primary)
+                                                .frame(width: 24, height: 24)
+                                                .zIndex(2)
+                                            
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .frame(width: 42, height: 42)
+                                                .foregroundStyle(Color("cellContentColor"))
+                                                .shadow(color: .gray.opacity(0.3), radius: 6, x: 1, y: 1)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 20)
+                                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                                )
+                                                .onTapGesture {
+                                                    viewModel.clearBackground()
+                                                }
+                                        }
+                                    }
+                                    Image(systemName: "chevron.right").frame(width: 6, height: 22)
+                                        .tint(.black)
+                                }.frame(minHeight: 44)
                             }
-                            .frame(width: 100, height: 60)
-                            .buttonStyle(.bordered)
                         }
                     }
                 }
                 .listRowSeparator(.hidden)
-//                    HStack {
-//                        ZStack {
-//                            RoundedRectangle(cornerRadius: 26)
-//                                .frame(width: 150, height: 50)
-//                            
-//                            PhotosPicker("", selection: $viewModel.backgroundPickerItem, matching: .images)
-//                                .buttonStyle(.plain)
-//                                .background(.clear)
-//                                .frame(width: 160)
-//                        }
-//                           
-//                        PhotosPicker(selection: $viewModel.backgroundPickerItem, matching: .images) {
-//                            HStack(spacing: 8) {
-//                                Image(systemName: "photo.on.rectangle")
-//                                Text("Choose Background")
-//                                    .font(.headline)
-//                            }
-//                            .padding(.horizontal, 160).padding(.vertical, 120)
-//                            .clipShape(Capsule())
-//                            .glassEffect(.regular, in: Capsule())
-//                            .background(.ultraThinMaterial, in: Capsule())
-//                        }
-//                        .tint(.primary)
-//                        
-//                        
-//                        if imageData != nil {
-//                            Button {
-//                                imageData = nil
-//                                BackgroundStorage.clear()
-//                            } label: {
-//                                Label("Remove Background", systemImage: "trash")
-//                                    
-//                            }
-//                            .frame(width: 160, height: 60)
-//                            
-//                            .buttonStyle(.bordered)
-//                        }
-//                    }
-//                }
-//                .listRowSeparator(.hidden)
+                
                 Section("Support and Feedback") {
                     VStack {
                             VStack(alignment: .center) {
