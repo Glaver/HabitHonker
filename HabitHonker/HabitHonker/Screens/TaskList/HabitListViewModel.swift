@@ -21,16 +21,9 @@ final class HabitListViewModel: ObservableObject {
     @Published private(set) var colors: [Color] = [.red, .yellow, .blue, .green]
     @Published private(set) var titles: [String] = ["", "", "", ""]
     @Published var themeDraft: ThemeDraft? = nil
-    @Published var backgroundImageData: Data? = BackgroundStorage.load()
+    @Published var backgroundImageData: Data? = nil
     @Published var backgroundPickerItem: PhotosPickerItem? = nil
 
-    var hasCustomBackground: Bool { backgroundImageData != nil }
-
-    /// Convenience for Views that need a UIImage
-    var backgroundUIImage: UIImage? {
-        guard let data = backgroundImageData else { return nil }
-        return UIImage(data: data)
-    }
     private let log = Log.habitBeastVM
     private var inFlightOps = Set<UUID>()
     
@@ -40,6 +33,19 @@ final class HabitListViewModel: ObservableObject {
     private var didLoadOnce = false
     private var isLoading = false
     private var isSaving = false
+    private var resortWorkItem: DispatchWorkItem?
+    var hasCustomBackground: Bool { backgroundImageData != nil }
+
+    var backgroundUIImage: UIImage? {
+        guard let data = backgroundImageData else { return nil }
+        // Pre-decode: draw into CGImage once so UIKit doesn’t do it lazily on the first render
+        guard let img = UIImage(data: data) else { return nil }
+        UIGraphicsBeginImageContextWithOptions(img.size, true, img.scale)
+        img.draw(at: .zero)
+        let decoded = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return decoded
+    }
     
     init(usedDefaultsRepo: RepositoryUserDefaults,
          repo: HabitsRepositorySwiftData,
@@ -50,6 +56,13 @@ final class HabitListViewModel: ObservableObject {
     }
     
     // MARK: - Lifecycle
+    
+    func primeBackgroundFromDisk() {
+        Task.detached(priority: .utility) { [weak self] in
+            let data = BackgroundStorage.load()
+            await MainActor.run { self?.backgroundImageData = data }
+        }
+    }
     
     func onAppLaunch() async {
         try? await notifier.requestAuthorization()
@@ -70,7 +83,10 @@ final class HabitListViewModel: ObservableObject {
             log.info("✅ load end items=\(self.items.count) in \(Double(ns)/1_000_000.0, privacy: .public) ms")}
         
         do {
-            let fetchedItems = try await repo.fetchAll()
+            let fetchedItems: [HabitModel] = try await Task.detached(priority: .userInitiated) { [repo] in
+                        try await repo.fetchAll()
+            }.value
+            
             log.debug("load fetched=\(fetchedItems.count)")
             let filteredItems: [HabitModel]
             
@@ -246,10 +262,14 @@ private extension HabitListViewModel {
         } else {
             items.append(updated)
         }
-        // Defer the expensive re-sort until after the swipe collapses
-        DispatchQueue.main.async { [items] in
-            self.items = self.sortItems(items)
-        }
+        // Coalesce multiple updates within 60ms
+            resortWorkItem?.cancel()
+            let work = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.items = self.sortItems(self.items)
+            }
+            resortWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06, execute: work)
     }
     
     func saveCurrent() async {

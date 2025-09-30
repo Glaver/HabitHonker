@@ -13,16 +13,27 @@ struct HabitHonkerApp: App {
     @AppStorage("appearance") private var appearanceRaw: String = HonkerColorSchema.auto.rawValue
     private var appearance: HonkerColorSchema { HonkerColorSchema(rawValue: appearanceRaw) ?? .auto }
 
-    private let container: ModelContainer = {
-        let schema = Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self, StatisticsPresetSD.self])
-        return try! ModelContainer(for: schema)
-    }()
+    @State private var container: ModelContainer?
 
     var body: some Scene {
         WindowGroup {
-            RootTabsView(container: container)
-                .modelContainer(container)
-                .preferredColorScheme(appearance.colorScheme)
+            Group {
+                if let container {
+                    RootTabsView(container: container)
+                        .modelContainer(container)
+                } else {
+                    // ultra-light placeholder; system splash stays vivid
+                    Color(.systemBackground)
+                        .ignoresSafeArea()
+                }
+            }
+            .preferredColorScheme(appearance.colorScheme)
+            .task(priority: .userInitiated) {
+                if container == nil {
+                    container = try? ModelContainer(for: Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self, StatisticsPresetSD.self]))
+                }
+            }
         }
     }
 }
+

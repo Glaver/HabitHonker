@@ -16,8 +16,7 @@ struct HabitListView: View {
     @State private var isDeleting = false
     @State private var currentDate = Date()
     @State private var timer: Timer?
-    @State private var imageData: Data? = BackgroundStorage.load()
-    private var hasCustomBackground: Bool { imageData != nil }
+    
     @EnvironmentObject private var viewModel: HabitListViewModel
     
     var body: some View {

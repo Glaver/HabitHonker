@@ -36,7 +36,7 @@ struct RootTabsView: View {
         
         self.repo = localRepo
     }
-
+    
     var body: some View {
         TabView {
             HabitListView()
@@ -45,7 +45,7 @@ struct RootTabsView: View {
                     Text(Constants.list)
                 }
             
-
+            
             PriorityMatrixView()
                 .tabItem {
                     Image(systemName: "square.grid.2x2.fill")
@@ -65,11 +65,22 @@ struct RootTabsView: View {
                 }
         }
         .environmentObject(listViewModel)
-        .task {
-                await listViewModel.onAppLaunch()
-                await listViewModel.reloadTheme()
-                await listViewModel.loadIfNeeded()
+        .task(priority: .userInitiated) {
+            // Run all three in parallel
+            async let auth: Void = listViewModel.onAppLaunch()
+            async let theme: Void = listViewModel.reloadTheme()
+            async let load:  Void = listViewModel.loadIfNeeded()
+            _ = await (auth, theme, load)
+        }
+        .onAppear {
+            // background, non-blocking priming
+            listViewModel.primeBackgroundFromDisk()
+
+            // Optional: warm statistics preset so opening that tab is instant
+            Task.detached(priority: .utility) { [statisticsViewModel] in
+                await statisticsViewModel.loadPresetHabits()
             }
+        }
     }
 }
 
