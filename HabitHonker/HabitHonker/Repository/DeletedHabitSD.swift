@@ -11,9 +11,10 @@ import SwiftData
 final class DeletedHabitSD {
     @Attribute(.unique) var id: UUID
     var icon: String?
-    var iconColorHex: String?
+    var iconColorHex: String
     var title: String
     var descriptionText: String
+    var tags: [String?]
     var priorityRaw: Int
     var typeRaw: Int
     var repeatingWeekdays: [Int]
@@ -25,9 +26,10 @@ final class DeletedHabitSD {
     init(
         id: UUID,
         icon: String?,
-        iconColorHex: String?,
+        iconColorHex: String,
         title: String,
         descriptionText: String,
+        tags: [String?],
         priorityRaw: Int,
         typeRaw: Int,
         repeatingWeekdays: [Int],
@@ -41,6 +43,7 @@ final class DeletedHabitSD {
         self.iconColorHex = iconColorHex
         self.title = title
         self.descriptionText = descriptionText
+        self.tags = tags
         self.priorityRaw = priorityRaw
         self.typeRaw = typeRaw
         self.repeatingWeekdays = repeatingWeekdays

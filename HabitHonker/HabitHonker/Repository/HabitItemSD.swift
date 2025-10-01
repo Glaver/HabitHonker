@@ -14,6 +14,7 @@ final class HabitSD {
     var iconColorHex: String?       // hex like "#FFA500FF"
     var title: String
     var descriptionText: String     // avoid name "description" to sidestep clashes
+    var tags: [String?]
     var priorityRaw: Int
     var typeRaw: Int
     var repeatingWeekdays: [Int]    // e.g. [1,3,5]
@@ -27,6 +28,7 @@ final class HabitSD {
         iconColorHex: String?,
         title: String,
         descriptionText: String,
+        tags: [String?],
         priorityRaw: Int,
         typeRaw: Int,
         repeatingWeekdays: [Int],
@@ -39,6 +41,7 @@ final class HabitSD {
         self.iconColorHex = iconColorHex
         self.title = title
         self.descriptionText = descriptionText
+        self.tags = tags
         self.priorityRaw = priorityRaw
         self.typeRaw = typeRaw
         self.repeatingWeekdays = repeatingWeekdays

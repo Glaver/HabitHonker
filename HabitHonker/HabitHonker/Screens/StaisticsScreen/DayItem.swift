@@ -1,0 +1,34 @@
+//
+//  DayItem.swift
+//  HabitHonker
+//
+//  Created by Vladyslav on 9/6/25.
+//
+
+import SwiftUI
+
+// MARK: - Models
+
+struct Pill: Identifiable, Hashable {
+    let id = UUID()
+    let habitID: UUID
+    let color: Color
+}
+
+struct DayItem: Identifiable, Hashable {
+    let id: UUID
+    let date: Date?
+    let inCurrentMonth: Bool
+    let isToday: Bool
+    let pills: [Pill]
+    let isEmpty: Bool
+    
+    static let blank = DayItem(id: UUID(), date: nil, inCurrentMonth: false, isToday: false, pills: [], isEmpty: true)
+}
+
+struct MonthSection: Identifiable {
+    let id = UUID()
+    let monthDate: Date
+    let title: String
+    let days: [DayItem]
+}

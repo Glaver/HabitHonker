@@ -10,15 +10,30 @@ import SwiftData
 
 @main
 struct HabitHonkerApp: App {
-    private let container: ModelContainer = {
-        let schema = Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self])
-        return try! ModelContainer(for: schema)
-    }()
+    @AppStorage("appearance") private var appearanceRaw: String = HonkerColorSchema.auto.rawValue
+    private var appearance: HonkerColorSchema { HonkerColorSchema(rawValue: appearanceRaw) ?? .auto }
+
+    @State private var container: ModelContainer?
 
     var body: some Scene {
         WindowGroup {
-            RootTabsView(container: container)
-                .modelContainer(container)
+            Group {
+                if let container {
+                    RootTabsView(container: container)
+                        .modelContainer(container)
+                } else {
+                    // ultra-light placeholder; system splash stays vivid
+                    Color(.systemBackground)
+                        .ignoresSafeArea()
+                }
+            }
+            .preferredColorScheme(appearance.colorScheme)
+            .task(priority: .userInitiated) {
+                if container == nil {
+                    container = try? ModelContainer(for: Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self, StatisticsPresetSD.self]))
+                }
+            }
         }
     }
 }
+

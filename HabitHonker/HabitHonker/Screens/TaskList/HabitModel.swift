@@ -10,9 +10,10 @@ import SwiftUI
 struct HabitModel: Identifiable, Equatable {
     var id: UUID
     var icon: String?
-    var iconColor: Color?
+    var iconColor: Color
     var title: String
     var description: String
+    var tags: [String?] = []
     var priority: PriorityEisenhower
     var type: HabitType
     var repeating: Set<Weekday>
@@ -51,12 +52,13 @@ struct HabitModel: Identifiable, Equatable {
         return record.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) })?.count ?? 0
     }
     
-    init(id: UUID = UUID(), icon: String? = nil, iconColor: Color? = nil, title: String = "", description: String = "", priority: PriorityEisenhower = .importantAndUrgent, type: HabitType = .repeating, repeating: Set<Weekday> = Weekday.allSet, dueDate: Date = Date(), notificationActivated: Bool = false, record: [HabitRecord] = []) {
+    init(id: UUID = UUID(), icon: String? = nil, iconColor: Color, title: String = "", description: String = "", tags: [String?] = [], priority: PriorityEisenhower = .importantAndUrgent, type: HabitType = .repeating, repeating: Set<Weekday> = Weekday.allSet, dueDate: Date = Date(), notificationActivated: Bool = false, record: [HabitRecord] = []) {
         self.id = id
         self.icon = icon
         self.iconColor = iconColor
         self.title = title
         self.description = description
+        self.tags = tags
         self.priority = priority
         self.type = type
         self.repeating = repeating
@@ -82,75 +84,66 @@ extension HabitModel {
     }
 }
 
-extension HabitModel {
-    enum HabitType: Int, CaseIterable {
-        case dueDate
-        case repeating
-        
-        var text: String {
-            switch self {
-            case .dueDate:
-                return Constants.dueDate
-            case .repeating:
-                return Constants.repeating
-            }
+enum HabitType: Int, CaseIterable {
+    case dueDate
+    case repeating
+    
+    var text: String {
+        switch self {
+        case .dueDate:
+            return Constants.dueDate
+        case .repeating:
+            return Constants.repeating
+        }
+    }
+}
+
+enum PriorityEisenhower: Int, CaseIterable {
+    case importantAndUrgent
+    case urgentButNotImportant
+    case importantButNotUrgent
+    case notUrgentAndNotImportant
+    
+    var text: String {
+        switch self {
+        case .importantAndUrgent:
+            return Constants.importantAndUrgent
+        case .importantButNotUrgent:
+            return Constants.importantButNotUrgent
+        case .urgentButNotImportant:
+            return Constants.urgentButNotImportant
+        case .notUrgentAndNotImportant:
+            return Constants.notUrgentAndNotImportant
+        }
+    }
+    // TODO: Remove after refactor // No don't remove leave mock color
+    var color: Color {
+        switch self {
+        case .importantAndUrgent:        return .red
+        case .urgentButNotImportant:     return .yellow
+        case .importantButNotUrgent:     return .green
+        case .notUrgentAndNotImportant:  return .blue
         }
     }
 }
 
 extension HabitModel {
-    enum PriorityEisenhower: Int, CaseIterable {
-        case importantAndUrgent
-        case urgentButNotImportant
-        case importantButNotUrgent
-        case notUrgentAndNotImportant
-        
-        var text: String {
-            switch self {
-            case .importantAndUrgent:
-                return Constants.importantAndUrgent
-            case .importantButNotUrgent:
-                return Constants.importantButNotUrgent
-            case .urgentButNotImportant:
-                return Constants.urgentButNotImportant
-            case .notUrgentAndNotImportant:
-                return Constants.notUrgentAndNotImportant
-            }
-        }
-        
-        var color: Color {
-            switch self {
-            case .importantAndUrgent:
-                return .goldenGooseYellow
-            case .importantButNotUrgent:
-                return .honkerRed
-            case .urgentButNotImportant:
-                return .warmFeatherBeige
-            case .notUrgentAndNotImportant:
-                return .charcoalWingGray
-            }
-        }
-        
-        var colorsNasty: Color {
-            switch self {
-            case .importantAndUrgent:
-                return Color.honkerRed
-            case .importantButNotUrgent:
-                return Color.goldenGooseYellow
-            case .urgentButNotImportant:
-                return Color.charcoalWingGray
-            case .notUrgentAndNotImportant:
-                return Color.warmFeatherBeige
-            }
-        }
-    }
-}
-
-extension HabitModel {
-    static func mock() -> HabitModel {
+    static func habitExample() -> HabitModel {
         .init(
             icon: "empty_icon",
             iconColor: .clear,
+            title: "Habit Example",
+            description: "",
+            priority: .notUrgentAndNotImportant,
+            type: .repeating,
+            repeating: .init(Weekday.all),
+            dueDate: Date())
+    }
+    
+    static func mock() -> HabitModel {
+        .init(
+            icon: "empty_icon",
+            iconColor: Color.random,
             title: "",
             description: "",
             priority: .notUrgentAndNotImportant,
@@ -164,7 +157,7 @@ extension HabitModel {
     static func mock() -> [HabitModel] {
         [.init(
             icon: "atom",
-            iconColor: HabitModel.PriorityEisenhower.importantButNotUrgent.color,
+            iconColor: .red,
             title: "Meditation",
             description: "",
             priority: .importantButNotUrgent,
@@ -173,7 +166,7 @@ extension HabitModel {
             dueDate: Date()
         ),
          .init(icon: "academic-cap",
-               iconColor: HabitModel.PriorityEisenhower.urgentButNotImportant.color,
+               iconColor:.green,
                title: "Wash dishes, vacuum floor, laundry, etc",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -182,7 +175,7 @@ extension HabitModel {
                dueDate: Date()
         ),
          .init(icon: "atom",
-               iconColor: HabitModel.PriorityEisenhower.importantAndUrgent.color,
+               iconColor: .red,
                title: "Learn System Design",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -192,7 +185,7 @@ extension HabitModel {
                notificationActivated: false
         ),
          .init(icon: "alien",
-               iconColor: HabitModel.PriorityEisenhower.importantButNotUrgent.color,
+               iconColor: .yellow,
                title: "Swift 6.2",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -202,7 +195,7 @@ extension HabitModel {
                notificationActivated: true
         ),
          .init(icon: "baby",
-               iconColor: HabitModel.PriorityEisenhower.importantButNotUrgent.color,
+               iconColor: .yellow,
                title: "Candle puring",
                description: "",
                priority: .notUrgentAndNotImportant,
@@ -212,9 +205,10 @@ extension HabitModel {
                notificationActivated: false
         ),
          .init(icon: "avocado",
-               iconColor: HabitModel.PriorityEisenhower.notUrgentAndNotImportant.color,
+               iconColor: .green,
                title: "Balance board",
                description: "",
+               tags: [],
                priority: .notUrgentAndNotImportant,
                type: .dueDate,
                repeating: Set<Weekday>(),
@@ -222,9 +216,10 @@ extension HabitModel {
                notificationActivated: false
         ),
          .init(icon: "alarm",
-               iconColor: HabitModel.PriorityEisenhower.importantAndUrgent.color,
+               iconColor: .red,
                title: "Algorithms",
                description: "",
+               tags: [],
                priority: .importantAndUrgent,
                type: .repeating,
                repeating: Set<Weekday>(),
@@ -233,10 +228,16 @@ extension HabitModel {
     }
 }
 
-extension HabitModel {
+extension HabitType {
     enum Constants {
         static let dueDate = "Due Date"
         static let repeating = "Repeating"
+    }
+}
+
+
+extension PriorityEisenhower {
+    enum Constants {
         static let importantAndUrgent = "Important / Urgent"
         static let importantButNotUrgent = "Important / Not Urgent"
         static let urgentButNotImportant = "Not Important / Urgent"

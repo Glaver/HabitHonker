@@ -44,6 +44,6 @@ struct WeekdayPicker: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal)
+        .padding(.vertical, 10)
     }
 }

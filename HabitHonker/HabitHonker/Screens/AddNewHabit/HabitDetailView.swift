@@ -16,315 +16,359 @@ extension HabitDetailView {
 }
 
 struct HabitDetailView: View {
-    @State var item: HabitModel
+    private let item: HabitModel?
+    private let mode: HabitScreenMode
+    
+    @State var icon: String?
+    @State var iconColor: Color
+    @State var title: String
+    @State var description: String
+    @State var tags: [String?] = []
+    @State var priority: PriorityEisenhower
+    @State var type: HabitType
+    @State var repeating: Set<Weekday>
+    @State var dueDate: Date
+    @State var isNotificationActivated: Bool
+
+    private(set) var colors: [Color] = [.red, .yellow, .blue, .green]
+    private(set) var titles: [String] = ["", "", "", ""]
+    
     @State private var isIconsSheetPresented: Bool = false
     @State private var showDeleteConfirmation: Bool = false
-    @ViewBuilder private let saveButton: (() -> SaveButton)
+    
+    var sectionBackgroundColor: Color {
+        colorSchema == .dark ? Color(UIColor.secondarySystemBackground) : Color(UIColor.systemBackground)
+    }
+    var backgroundColor: Color {
+        colorSchema == .dark ? Color(UIColor.systemBackground) : Color(UIColor.secondarySystemBackground)
+    }
+    
     private let saveAction: (HabitModel) -> Void
     private let deleteAction: (HabitModel) -> Void
     
     @Environment(\.colorScheme) var colorSchema
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.dismiss) private var dismiss
-
-    private let mode: HabitScreenMode
     
-    init(item: HabitModel,
-         mode: HabitScreenMode,
-         saveAction: @escaping (HabitModel) -> Void,
-         deleteAction: @escaping (HabitModel) -> Void,
-         @ViewBuilder saveButton: @escaping () -> SaveButton) {
-        self._item = State(initialValue: item)
-        self.mode = mode
-        self.deleteAction = deleteAction
-        self.saveAction = saveAction
-        self.saveButton = saveButton
+    private func savedItem() -> HabitModel {
+        if var oldItem = item {
+            oldItem.icon = icon
+            oldItem.iconColor = iconColor
+            oldItem.title = title
+            oldItem.description = description
+            oldItem.tags = tags
+            oldItem.priority = priority
+            oldItem.type = type
+            oldItem.repeating = repeating
+            oldItem.dueDate = dueDate
+            oldItem.isNotificationActivated = isNotificationActivated
+            return oldItem
+        } else {
+            return HabitModel(id: UUID(),
+                              icon: icon,
+                              iconColor: iconColor,
+                              title: title,
+                              description: description,
+                              tags: tags,
+                              priority: priority,
+                              type: type,
+                              repeating: repeating,
+                              dueDate: dueDate,
+                              notificationActivated: isNotificationActivated,
+                              record: [])
+        }
+        
     }
+    
+    static func editItemView(
+        from model: HabitModel,
+        priorityColors: [Color],
+        priorityTitles: [String],
+        saveAction: @escaping (HabitModel) -> Void,
+        deleteAction: @escaping (HabitModel) -> Void,
+    ) -> Self {
+        return .init(
+            item: model,
+            mode: .detailScreen,
+            icon: model.icon,
+            iconColor: model.iconColor,
+            title: model.title,
+            description: model.description,
+            tags: model.tags,
+            priority: model.priority,
+            type: model.type,
+            repeating: model.repeating,
+            dueDate: model.dueDate,
+            isNotificationActivated: model.isNotificationActivated,
+            colors: priorityColors,
+            titles: priorityTitles,
+            saveAction: saveAction,
+            deleteAction: deleteAction
+        )
+    }
+
+    
+    
+    static func creatNewItemView(
+        priorityColors: [Color],
+        priorityTitles: [String],
+        saveAction: @escaping (HabitModel) -> Void,
+        deleteAction: @escaping (HabitModel) -> Void,
+    ) -> Self {
+        .init(
+            item: nil,
+            mode: .addNewHabit,
+            icon: nil,
+            iconColor: Color.random,
+            title: "",
+            description: "",
+            tags: [],
+            priority: .importantAndUrgent,
+            type: .repeating,
+            repeating: Weekday.allSet,
+            dueDate: Date(),
+            isNotificationActivated: false,
+            colors: priorityColors,
+            titles: priorityTitles,
+            saveAction: saveAction,
+            deleteAction: deleteAction
+        )
+    }
+    
     // MARK: View
     var body: some View {
-        
-        ScrollView {
-            LazyVStack (spacing: 20) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 26)
-                        .frame(maxWidth: .infinity)
-                        .foregroundStyle(Color("cellContentColor"))
+        List {
+            Section {
+                VStack() {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(Constants.name)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .frame(height: 20)
+                        TextField("", text: $title)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 17, weight: .medium, design: .rounded))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(height: 22)
+                    }
+                    .padding(.vertical, 3)
                     
-                    VStack() {
-                        VStack(alignment: .leading) {
-                            Text(Constants.name)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .frame(height: 22)
-                            
-                            TextField("", text: $item.title)
-                                .textFieldStyle(.plain) // or .roundedBorder
-                                .font(.system(size: 17, weight: .medium, design: .rounded))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .frame(height: 30)
-                        }
+                    Divider()
+                        .frame(height: 1)
+                        .foregroundColor(.gray.opacity(0.3))
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(Constants.description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .frame(height: 20)
                         
+                        TextField("", text: $description)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 17, weight: .medium, design: .rounded))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(height: 22)
+                    }
+                    .padding(.vertical, 3)
+                }
+                .padding(.horizontal, 10)
+            }
+            .listRowBackground(sectionBackgroundColor)
+            .cornerRadius(26)
+            
+            // MARK: Icon picker
+            Section {
+                Button {
+                    isIconsSheetPresented.toggle()
+                } label: {
+                    HStack(spacing: 12) {
+                        Text(Constants.icon)
+                        Spacer()
+                        ZStack {
+                            Image(icon ?? "empty_icon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .foregroundStyle(.primary)
+                                .frame(width: 24, height: 24)
+                                .zIndex(2)
+                            
+                            RoundedRectangle(cornerRadius: 20)
+                                .frame(width: 42, height: 42)
+                                .foregroundStyle(Color("cellContentColor"))
+                                .shadow(color: .gray.opacity(0.3), radius: 6, x: 1, y: 1)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
+                        }
+                        Image(systemName: "chevron.right").frame(width: 6, height: 22)
+                            .tint(.gray.opacity(0.5))
+                    }
+                }
+                .buttonStyle(.plain)
+                
+                // MARK: ColorPicker
+                
+                HStack {
+                    ColorPicker("Select a color for Statistics", selection: $iconColor)
+                        .padding(.trailing, 10)
+                        .padding(.vertical, 5)
+                    Image(systemName: "chevron.right").frame(width: 6, height: 22)
+                        .tint(.gray.opacity(0.5))
+                    
+                }
+            }
+            .listRowBackground(sectionBackgroundColor)
+            
+            // MARK: PriorityPicker
+            
+            Section {
+                VStack {
+                    Text(Constants.selectPriorit)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                    PriorityPicker(priorityEisenhower: $priority,
+                                   priorityColors: colors,
+                                   priorityTitles: titles)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(15)
+                .padding(.vertical, 10)
+            }
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
+            .listRowBackground(sectionBackgroundColor)
+            .cornerRadius(26)
+            
+            // MARK: Advanced Options
+            
+            Section {
+                VStack {
+                    Text(Constants.advancedOption)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                    Picker(Constants.priority, selection: $type) {
+                        ForEach(HabitType.allCases, id: \.self) { type in
+                            Text(type.text)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    if type == .dueDate {
+                        DatePicker(
+                            Constants.startDate,
+                            selection: $dueDate,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .datePickerStyle(.graphical)
+                    } else {
+                        WeekdayPicker(selection: $repeating, color: colors[priority.index])
+                    }
+                }
+                .padding(10)
+            }
+            .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 15, trailing: 0))
+            .cornerRadius(26)
+            .listRowBackground(sectionBackgroundColor)
+            
+            // MARK: Schedule notification
+            Section {
+                VStack {
+                    Toggle(Constants.scheduleNotificatio, isOn: $isNotificationActivated)
+                        .padding(.vertical, 10)
+                    if type != .dueDate {
                         Rectangle()
                             .foregroundStyle(.gray.opacity(0.3))
                             .frame(maxWidth: .infinity)
                             .frame(height: 1)
+                        DatePicker(
+                            Constants.time,
+                            selection: $dueDate,
+                            displayedComponents: [.hourAndMinute]
+                        )
+                        .disabled(!isNotificationActivated)
                         
-                        VStack(alignment: .leading) {
-                            Text(Constants.description)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .frame(height: 22)
-                            
-                            TextField("", text: $item.description)
-                                .textFieldStyle(.plain) // or .roundedBorder
-                                .font(.system(size: 17, weight: .medium, design: .rounded))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .frame(height: 30)
-                        }
                     }
-                    .padding(10)
                 }
                 .padding(.horizontal, 10)
-                
-                // MARK: Icon picker
-                
-                Button {
-                    isIconsSheetPresented.toggle()
-                } label: {
-                    ZStack{
-                        RoundedRectangle(cornerRadius: 26)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 62)
-                            .foregroundStyle(Color("cellContentColor"))
-                        
-                        HStack {
-                            Text(Constants.icon)
-                                .multilineTextAlignment(.leading)
-                            
-                            Spacer()
-                            ZStack {
-                                Image(item.icon ?? "empty_icon")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .foregroundColor(.primary)
-                                    .frame(width: 24, height: 24)
-                                    .zIndex(2)
-                                
-                                RoundedRectangle(cornerRadius: 20)
-                                    .frame(width: 42, height: 42)
-                                    .foregroundStyle(Color("cellContentColor"))
-                                    .shadow(color: .gray.opacity(0.3), radius: 6, x: 1, y: 1)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                                    )
-                                    .zIndex(1)
-                                
-                            }
-                            Image(systemName: "chevron.right")
-                                .scaledToFill()
-                                .frame(width: 6, height: 22)
-                                .tint(Color.gray.opacity(0.5))
-                        }
-                        .padding(.horizontal, 10)
-                    }
-                    .padding(.horizontal, 10)
-                }
-                .buttonStyle(.plain) // prevents shrinking/tinting
-                .frame(maxWidth: .infinity)
-                .zIndex(3)
-                
-                
-                // MARK: PriorityPicker
-                
-                ZStack {
-                    RoundedRectangle(cornerRadius: 26)
-                        .frame(maxWidth: .infinity)
-                        .foregroundStyle(Color("cellContentColor"))
-                    VStack {
-                        Text(Constants.selectPriorit)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
-                        PriorityPicker(priorityEisenhower: $item.priority)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(10)
-                    .padding(.vertical, 10)
-                }
-                
-                .background(.white)
-                .cornerRadius(26)
-                .padding(.horizontal, 10)
-                
-                // MARK: Advanced Options
-                
-                ZStack {
-                    RoundedRectangle(cornerRadius: 26)
-                        .frame(maxWidth: .infinity)
-                        .foregroundStyle(Color("cellContentColor"))
-                    
-                    VStack {
-                        Text(Constants.advancedOption)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Picker(Constants.priority, selection: $item.type) {
-                            ForEach(HabitModel.HabitType.allCases, id: \.self) { type in
-                                Text(type.text)
-                                
-                            }
-                        }
-                        
-                        .pickerStyle(.palette)
-                        if item.type == .dueDate {
-                            DatePicker(
-                                Constants.startDate,
-                                selection: $item.dueDate,
-                                displayedComponents: [.date, .hourAndMinute]
-                            )
-                            .datePickerStyle(.graphical)
-                        } else {
-                            WeekdayPicker(selection: $item.repeating, color: item.priority.color)
-                        }
-                    }
-                    //                    .padding(.horizontal, 10)
-                    .padding(10)
-                }
-                .background(.white)
-                .cornerRadius(26)
-                .padding(.horizontal, 10)
-                
-                // MARK: Schedule notification
-                ZStack {
-                    RoundedRectangle(cornerRadius: 26)
-                        .frame(maxWidth: .infinity)
-                        .foregroundColor(Color("cellContentColor"))
-                    VStack {
-                        Toggle(Constants.scheduleNotificatio, isOn: $item.isNotificationActivated)
-                            .padding(.vertical, 10)
-                        if item.type != .dueDate {
-                            Rectangle()
-                                .foregroundStyle(.gray.opacity(0.3))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 1)
-                            DatePicker(
-                                Constants.time,
-                                selection: $item.dueDate,
-                                displayedComponents: [.hourAndMinute]
-                            )
-                            .datePickerStyle(.graphical)
-                            .disabled(!item.isNotificationActivated)
-                            
-                        }
-                    }
-                    .padding(.horizontal, 10)
-                }
-                //                .padding(.horizontal, 10)
-                .background(.white)
-                .cornerRadius(26)
-                .padding(.horizontal, 10)
-                
-                Button(action: {
-                    saveAction(item)
-                    dismiss()
-                }) {
-                    Text(Constants.save)
-                        .frame(maxWidth: .infinity, minHeight: 54)   // fills width + height
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white)                     // text color
-                        .background(.blue.opacity(0.6))              // background inside label
-                        .clipShape(Capsule())                        // rounded corners / capsule
-                        .glassEffect(.regular, in: Capsule())
-                        .shadow(color: .blue.opacity(0.7), radius: 5, x: 2, y: 2)
-                }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 20)
             }
-            .background(Color(.systemGray6))
+            .cornerRadius(26)
+            .listRowBackground(sectionBackgroundColor)
+            
+            PrimaryButton(title: Constants.save, color: .blue, foregroundStyle: .white) {
+                saveAction(savedItem())
+                dismiss()
+            }
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+            
         }
         .sheet(isPresented: $isIconsSheetPresented) {
             // MARK: Icons bottom sheet view
             ScrollView { // REFACTOR NEED MOVE TO SEPARATE VIEW
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                        ForEach(HabitDetailView.icons, id: \.self) { icon in
-                            Image(icon)
-                                .font(.system(size: 35))
-                                .font(.largeTitle)
-                                .frame(maxWidth: .infinity, minHeight: 80)
-                                .cornerRadius(10)
-                                .onTapGesture {
-                                    item.icon = icon
-                                    print(icon)
-                                    isIconsSheetPresented = false
-                                }
-                        }
+                    ForEach(HabitDetailView.icons, id: \.self) { icon in
+                        Image(icon)
+                            .font(.system(size: 35))
+                            .font(.largeTitle)
+                            .frame(maxWidth: .infinity, minHeight: 80)
+                            .cornerRadius(10)
+                            .onTapGesture {
+                                self.icon = icon
+                                isIconsSheetPresented = false
+                            }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .presentationDetents([.large])
             }
-            .navigationTitle(Constants.detailScreen)
-            .navigationBarTitleDisplayMode(.inline)
-            .background(Color(.systemGray6))
-            .toolbar { // MARK: ToolbarItem
-                if mode == .detailScreen {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: {
-                            showDeleteConfirmation.toggle()
-                        }) {
-                            Image(systemName: "trash")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .foregroundColor(Color(UIColor.systemRed).opacity(0.7))
-                                .frame(width: 24, height: 24)
-                        }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .presentationDetents([.large])
+        }
+        .navigationTitle(Constants.detailScreen)
+        .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .environment(\.defaultMinListRowHeight, 0)
+        .background(backgroundColor)
+        .toolbar(.hidden, for: .tabBar)
+        .toolbar { // MARK: ToolbarItem
+            if mode == .detailScreen {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showDeleteConfirmation.toggle()
+                    }) {
+                        Image(systemName: "trash")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .foregroundColor(Color(UIColor.systemRed).opacity(0.7))
+                            .frame(width: 24, height: 24)
                     }
                 }
-            }// MARK: Alert Delete Habit
-            .alert(Constants.deleteHabit, isPresented: $showDeleteConfirmation) {
-                Button(Constants.delete, role: .destructive) {
-                    deleteAction(item)
-                    dismiss()
-                }
-                Button(Constants.cancel, role: .cancel) { }
-            } message: {
-                Text(Constants.areYouSureDelete)
             }
+        }// MARK: Alert Delete Habit
+        .alert(Constants.deleteHabit, isPresented: $showDeleteConfirmation) {
+            Button(Constants.delete, role: .destructive) {
+                deleteAction(savedItem())
+                dismiss()
+            }
+            Button(Constants.cancel, role: .cancel) { }
+        } message: {
+            Text(Constants.areYouSureDelete)
+        }
     }
 }
 
 // MARK: Preview
 #Preview {
-    HabitDetailView(
-        item: HabitModel(icon: "atom",
-                         iconColor: .red,
-                         title: "Fly on a dragon",
-                         description: "That is the only way",
-                         priority: .importantAndUrgent,
-                         type: .repeating,
-                         repeating: Set<Weekday>(),
-                         dueDate: Date()),
-        mode: .detailScreen,
-        saveAction: { _ in },
-        deleteAction: { _ in},
-        saveButton: {
-            SaveButton() {
-                print("sss")
+    NavigationView {
+        HabitDetailView.creatNewItemView(
+            priorityColors: [.red, .yellow, .blue, .green],
+            priorityTitles: ["Urgent", "Important", "Later", "Optional"],
+            saveAction: { model in
+                print("Save new habit:", model.title)
+            },
+            deleteAction: { model in
+                print("Delete habit:", model.title)
             }
-        }
-    )
-}
-
-
-struct SaveButton: View {
-    let action: () -> Void
-    
-    var body: some View {
-        Button("Save") {
-            action()
-        }
+        )
     }
 }
 
@@ -350,4 +394,24 @@ extension HabitDetailView {
 // Icon pack
 extension HabitDetailView {
     static let icons: [String] = ["academic-cap","alarm","alien","archive-box","atom","attachment","augmented-reality","avocado","axe","baby-carriage","baby","backpack","balloon","bank-card-fill","bank","bao-bun","basketball","bathroom","battery-charging","bed","biceps-flexed","bill","bluetooth","boarding-pass","boat","bolt","bone","brand-dropbox-fill","brand-github-fill","brand-github-mascot-fill","brand-instagram-fill","brand-linkedin-fill","brand-open-ai-fill","brandy","bread","cable-car","calendar-dates","call","campfire","car-alt-2","cell-signal","checklist","cheers","chef-hat","clover","club","cocktail","coffee-bean","coin","cornflakes","cyclist","disconnect","discount-alt","dna","dress","drill","drone","drop","drum","electric-car-charging","elephant","eye","face-angry","face-love","face-very-happy","fan","film-slate","fingerprint","fire-extinguisher","fire-truck","fishing","flask","flying-saucer","game-controller","generate","ghost","give","guitar","hammer","head-circuit","headphones","ice-cream","justice","magic-wand-ai","mailbox","navigation-north-east","office-chair","office","paint-roller","passport","pig","pizza-slice","plane","planet","plant","print","rain","rocket-ship","satellite","savings","scissors","speakers","split","sunrise","sunset","surveillance-cameras-two","sword-alt","telescope","temperature","tire","toilet-paper","toilet","tooth","tour-bus","train","transfer","tulip","tv","umbrella","university-hat-simple","unlock","vault","vial","virus","wallet","washing-machine","weight","wheelchair-alt","wifi","wind","world","yen"]
+}
+
+
+
+extension View {
+    func pillRow(height: CGFloat = 62) -> some View {
+        self
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: height) // single source of truth
+            .background(
+                RoundedRectangle(cornerRadius: 26)
+                    .fill(Color("cellContentColor"))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 26)) // full-surface tap
+        // make List not add its own spacing/background:
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 12, trailing: 0))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
 }

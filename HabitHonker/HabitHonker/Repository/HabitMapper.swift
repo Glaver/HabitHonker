@@ -17,16 +17,28 @@ enum HabitMapper {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard ui.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
         func to255(_ x: CGFloat) -> Int { Int(round(x * 255)) }
-        return String(format: "#%02X%02X%02X%02X", to255(r), to255(g), to255(b), to255(a))
+        let A = max(1, to255(a)) // avoid 0 -> invisible
+        return String(format: "#%02X%02X%02X%02X", to255(r), to255(g), to255(b), A)
         #else
         return nil
         #endif
     }
 
     static func color(from hex: String?) -> Color? {
-        guard let hex, let rgba = rgbaFromHex(hex) else { return nil }
-        return Color(.sRGB, red: rgba.r, green: rgba.g, blue: rgba.b, opacity: rgba.a)
+        guard let hex else { return nil }
+        // Try RGBA
+        if let rgba = rgbaFromHex(hex) {
+            let a = (rgba.a == 0) ? 1 : rgba.a
+            return Color(.sRGB, red: rgba.r, green: rgba.g, blue: rgba.b, opacity: a)
+        }
+        // Fallback ARGB (#AARRGGBB)
+        if let argb = argbFromHex(hex) {
+            let a = (argb.a == 0) ? 1 : argb.a
+            return Color(.sRGB, red: argb.r, green: argb.g, blue: argb.b, opacity: a)
+        }
+        return nil
     }
+
 
     private static func rgbaFromHex(_ hex: String) -> (r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat)? {
         var h = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
@@ -38,22 +50,32 @@ enum HabitMapper {
         let a = CGFloat( v & 0x0000_00FF)       / 255.0
         return (r,g,b,a)
     }
-
+    
+    private static func argbFromHex(_ hex: String) -> (a: CGFloat, r: CGFloat, g: CGFloat, b: CGFloat)? {
+        var h = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if h.hasPrefix("#") { h.removeFirst() }
+        guard h.count == 8, let v = UInt32(h, radix: 16) else { return nil }
+        let a = CGFloat((v & 0xFF00_0000) >> 24) / 255.0
+        let r = CGFloat((v & 0x00FF_0000) >> 16) / 255.0
+        let g = CGFloat((v & 0x0000_FF00) >> 8)  / 255.0
+        let b = CGFloat( v & 0x0000_00FF)       / 255.0
+        return (a,r,g,b)
+    }
     // MARK: SD -> Domain
     static func toDomain(_ sd: HabitSD) -> HabitModel {
-        let priority = HabitModel.PriorityEisenhower(rawValue: sd.priorityRaw)
+        let priority = PriorityEisenhower(rawValue: sd.priorityRaw)
             ?? .importantAndUrgent
-        let type = HabitModel.HabitType(rawValue: sd.typeRaw)
+        let type = HabitType(rawValue: sd.typeRaw)
             ?? .dueDate
 
         let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
-
-        var item = HabitModel(
+        let item = HabitModel(
             id: sd.id,
             icon: sd.icon,
-            iconColor: color(from: sd.iconColorHex),
+            iconColor: color(from: sd.iconColorHex) ?? .orange,
             title: sd.title,
             description: sd.descriptionText,
+            tags: sd.tags,
             priority: priority,
             type: type,
             repeating: weekdays,
@@ -77,6 +99,7 @@ enum HabitMapper {
             iconColorHex: hex(from: domain.iconColor),
             title: domain.title,
             descriptionText: domain.description,
+            tags: domain.tags,
             priorityRaw: domain.priority.rawValue,
             typeRaw: domain.type.rawValue,
             repeatingWeekdays: domain.repeating.map(\.rawValue),
@@ -98,6 +121,7 @@ enum HabitMapper {
         sd.iconColorHex = hex(from: domain.iconColor)
         sd.title = domain.title
         sd.descriptionText = domain.description
+        sd.tags = domain.tags
         sd.priorityRaw = domain.priority.rawValue
         sd.typeRaw = domain.type.rawValue
         sd.repeatingWeekdays = domain.repeating.map(\.rawValue)
@@ -118,9 +142,10 @@ enum HabitMapper {
         DeletedHabitSD(
             id: domain.id,
             icon: domain.icon,
-            iconColorHex: hex(from: domain.iconColor),
+            iconColorHex: hex(from: domain.iconColor) ?? "#000000FF",
             title: domain.title,
             descriptionText: domain.description,
+            tags: domain.tags,
             priorityRaw: domain.priority.rawValue,
             typeRaw: domain.type.rawValue,
             repeatingWeekdays: domain.repeating.map(\.rawValue),
@@ -139,19 +164,20 @@ enum HabitMapper {
     
     // MARK: DeletedHabitSD -> Domain
     static func deletedToDomain(_ sd: DeletedHabitSD) -> HabitModel {
-        let priority = HabitModel.PriorityEisenhower(rawValue: sd.priorityRaw)
+        let priority = PriorityEisenhower(rawValue: sd.priorityRaw)
             ?? .importantAndUrgent
-        let type = HabitModel.HabitType(rawValue: sd.typeRaw)
+        let type = HabitType(rawValue: sd.typeRaw)
             ?? .dueDate
 
         let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
 
-        var item = HabitModel(
+        let item = HabitModel(
             id: sd.id,
             icon: sd.icon,
-            iconColor: color(from: sd.iconColorHex),
+            iconColor: color(from: sd.iconColorHex) ?? .orange,
             title: sd.title,
             description: sd.descriptionText,
+            tags: sd.tags,
             priority: priority,
             type: type,
             repeating: weekdays,
