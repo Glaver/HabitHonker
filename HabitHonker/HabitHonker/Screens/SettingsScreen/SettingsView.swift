@@ -14,14 +14,14 @@ struct SettingsView: View {
     @State private var path = NavigationPath()
     @State private var isLoggedIn: Bool = false
     @State private var isSynchronized: Bool = false
-
+    
     @EnvironmentObject private var viewModel: HabitListViewModel
     
     var body: some View {
         NavigationStack(path: $path) {
             List {
                 Section {
-//                    SignInWithAppleView()
+                    //                    SignInWithAppleView()
                     Toggle(isOn: $isLoggedIn) {
                         Text("Sign in")
                     }
@@ -29,18 +29,18 @@ struct SettingsView: View {
                         Text("iCloud sync")
                     }
                 }
-                Section {
+                Section("Color schema") {
                     VStack {
-                        Text("Color schema")
+                        
                         let options: [HonkerColorSchema] = [.auto, .light, .dark]
-                                Picker("", selection: $appearanceRaw) {
-                                    ForEach(options) { opt in
-                                        Text(opt.title).tag(opt.rawValue)
-                                    }
-                                }
-                                .pickerStyle(.segmented)
-//                        Divider()
-                            .padding(.top, 15)
+                        Picker("", selection: $appearanceRaw) {
+                            ForEach(options) { opt in
+                                Text(opt.title).tag(opt.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        //                        Divider()
+                        .padding(.top, 15)
                     }
                     VStack {
                         Divider()
@@ -91,8 +91,9 @@ struct SettingsView: View {
                                                 }
                                         }
                                     }
-                                    Image(systemName: "chevron.right").frame(width: 6, height: 22)
-                                        .tint(.black)
+                                    Image(systemName: "chevron.right")
+                                        .frame(width: 6, height: 22)
+                                        .tint(.primary)
                                 }.frame(minHeight: 44)
                             }
                         }
@@ -100,19 +101,20 @@ struct SettingsView: View {
                 }
                 .listRowSeparator(.hidden)
                 
+                
                 Section("Support and Feedback") {
                     VStack {
-                            VStack(alignment: .center) {
-                                PrimaryButton(title: "Share With Frined", color: Color(.systemGray4), foregroundStyle: .black) {
-                                    print("Share app")
-                                }
-                                PrimaryButton(title: "Rate App support and Feedback", color: Color(.systemGray4), foregroundStyle: .black) {
-                                    print("Rate App")
-                                }
-                                PrimaryButton(title: "Send fast feedback", color: .blue, foregroundStyle: .white) {
-                                    print("Send fast feedback")
-                                }
+                        VStack(alignment: .center) {
+                            PrimaryButton(title: "Share With Frined", color: Color(.systemGray4), foregroundStyle: .black) {
+                                print("Share app")
                             }
+                            PrimaryButton(title: "Rate App support and Feedback", color: Color(.systemGray4), foregroundStyle: .black) {
+                                print("Rate App")
+                            }
+                            PrimaryButton(title: "Send fast feedback", color: .blue, foregroundStyle: .white) {
+                                print("Send fast feedback")
+                            }
+                        }
                     }
                 }
             }
@@ -125,13 +127,13 @@ struct SettingsView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                        Text("Version \(Bundle.main.appVersion) (\(Bundle.main.buildNumber))")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
-                            .background(.clear)   // subtle, matches the screenshot vibe
-                    }
+                Text("Version \(Bundle.main.appVersion) (\(Bundle.main.buildNumber))")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background(.clear)   // subtle, matches the screenshot vibe
+            }
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .priorityMatrixEditor:
