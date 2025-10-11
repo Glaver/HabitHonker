@@ -10,13 +10,15 @@ import Foundation
 
 @Model
 final class StatisticsPresetSD {
-    @Attribute(.unique) var id: UUID
+    var id: UUID = UUID()
+    var name: String = ""
+    var isActive: Bool = false
     var habitIDs: [UUID] = []
-    var presetName: String? // For future feature
-    
-    init(id: UUID = UUID(), habitIDs: [UUID], presetName: String? = nil) {
+
+    init(id: UUID = UUID(), name: String = "", isActive: Bool = false, habitIDs: [UUID] = []) {
         self.id = id
+        self.name = name
+        self.isActive = isActive
         self.habitIDs = habitIDs
-        self.presetName = presetName
     }
 }

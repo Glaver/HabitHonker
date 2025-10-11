@@ -121,7 +121,7 @@ actor HabitsRepositorySwiftData {
             throw error
         }
     }
-
+   
     // MARK: - Deleted Habits
     func fetchAllDeleted() throws -> [HabitModel] {
         let t0 = DispatchTime.now()
@@ -218,33 +218,24 @@ actor HabitsRepositorySwiftData {
             defer { inflightPreset = nil }         // allow a new one after completion
             return try await t.value
         }
-//    func fetchStatisticsPreset() async throws -> StatisticsPresetSD? {
-//        let t0 = DispatchTime.now()
-//        log.info("📊 fetchPreset start")
-//        do {
-//            let ctx = makeContext()
-//            let d = FetchDescriptor<StatisticsPresetSD>(sortBy: [SortDescriptor(\.id)])
-//            let first = try ctx.fetch(d).first
-//            log.info("✅ fetchPreset end found=\(first != nil) in \(elapsedMS(from: t0), privacy: .public) ms")
-//            return first
-//        } catch {
-//            log.error("❌ fetchPreset failed: \(error.localizedDescription, privacy: .public)")
-//            throw error
-//        }
-//    }
 
     func saveStatisticsPreset(_ habitIDs: [UUID], presetName: String? = nil) async throws {
         let t0 = DispatchTime.now()
         log.info("💾 savePreset ids=\(habitIDs.count) name=\(presetName ?? "nil", privacy: .public)")
+
         do {
             let ctx = makeContext()
             let d = FetchDescriptor<StatisticsPresetSD>(sortBy: [SortDescriptor(\.id)])
+
             if let existing = try ctx.fetch(d).first {
                 existing.habitIDs = habitIDs
-                existing.presetName = presetName
+                if let presetName { existing.name = presetName }      // ← presetName → name
             } else {
-                ctx.insert(StatisticsPresetSD(habitIDs: habitIDs, presetName: presetName))
+                // ← правильный init: name / isActive / habitIDs
+                let preset = StatisticsPresetSD(name: presetName ?? "", isActive: true, habitIDs: habitIDs)
+                ctx.insert(preset)
             }
+
             try ctx.save()
             log.info("✅ savePreset ok in \(elapsedMS(from: t0), privacy: .public) ms")
         } catch {
@@ -252,6 +243,7 @@ actor HabitsRepositorySwiftData {
             throw error
         }
     }
+
 
     func deleteStatisticsPreset() async throws {
         let t0 = DispatchTime.now()

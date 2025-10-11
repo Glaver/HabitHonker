@@ -7,28 +7,34 @@
 
 import SwiftUI
 import PhotosUI
+import AuthenticationServices
 
 @MainActor
 struct SettingsView: View {
     @AppStorage("appearance") private var appearanceRaw: String = HonkerColorSchema.auto.rawValue
     @State private var path = NavigationPath()
-    @State private var isLoggedIn: Bool = false
-    @State private var isSynchronized: Bool = false
+    @EnvironmentObject private var sync: SyncManager
+    @State private var showiCloudHint = false
     
     @EnvironmentObject private var viewModel: HabitListViewModel
     
     var body: some View {
         NavigationStack(path: $path) {
             List {
-                Section {
-                    //                    SignInWithAppleView()
-                    Toggle(isOn: $isLoggedIn) {
-                        Text("Sign in")
-                    }
-                    Toggle(isOn: $isSynchronized) {
-                        Text("iCloud sync")
-                    }
-                }
+                Section("Sync") {
+                                    Toggle("iCloud sync", isOn: Binding(
+                                        get: { sync.isOn },
+                                        set: { newVal in
+                                            if newVal && !sync.iCloudAvailable {
+                                                showiCloudHint = true
+                                            } else {
+                                                sync.isOn = newVal
+                                            }
+                                        }
+                                    ))
+                                    Text(sync.iCloudAvailable ? "iCloud: Available" : "iCloud: not available")
+                                        .font(.footnote).foregroundStyle(.secondary)
+                                }
                 Section("Color schema") {
                     VStack {
                         
@@ -39,7 +45,6 @@ struct SettingsView: View {
                             }
                         }
                         .pickerStyle(.segmented)
-                        //                        Divider()
                         .padding(.top, 15)
                     }
                     VStack {
@@ -120,6 +125,16 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .listStyle(.insetGrouped)
+            .alert("Sign in to iCloud", isPresented: $showiCloudHint) {
+                            Button("Open Settings") {
+                                if let url = URL(string: UIApplication.openSettingsURLString) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
+                            Button("OK", role: .cancel) { }
+                        } message: {
+                            Text("To enable sync, sign in to iCloud on this device.")
+                        }
             .task {
                 // Fires every time backgroundPickerItem changes (regardless of identifier)
                 for await _ in viewModel.$backgroundPickerItem.values {
@@ -137,38 +152,11 @@ struct SettingsView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .priorityMatrixEditor:
-                    PriorityMatrixEditorView()//viewModel: PriorityMatrixEditorViewModel())
+                    PriorityMatrixEditorView()
                 default:
                     EmptyView()
                 }
             }
         }
-    }
-}
-
-import AuthenticationServices
-
-struct SignInWithAppleView: View {
-    var body: some View {
-        SignInWithAppleButton(
-            .signIn,
-            onRequest: { request in
-                request.requestedScopes = [.fullName, .email]
-            },
-            onCompletion: { result in
-                switch result {
-                case .success(let authResults):
-                    if let credential = authResults.credential as? ASAuthorizationAppleIDCredential {
-                        let userID = credential.user  // unique per app + user
-                        print("Signed in with Apple ID: \(userID)")
-                        // Save userID in Keychain for persistence
-                    }
-                case .failure(let error):
-                    print("Authorization failed: \(error)")
-                }
-            }
-        )
-        .signInWithAppleButtonStyle(.black) // or .white, .whiteOutline
-        .frame(height: 50)
     }
 }

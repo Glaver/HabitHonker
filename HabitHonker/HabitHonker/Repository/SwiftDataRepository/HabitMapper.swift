@@ -11,7 +11,7 @@ enum HabitMapper {
     // MARK: SwiftUI.Color <-> Hex
     static func hex(from color: Color?) -> String? {
         guard let color else { return nil }
-        #if canImport(UIKit)
+#if canImport(UIKit)
         // Simple best-effort conversion; customize if you have a Color extension
         let ui = UIColor(color)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
@@ -19,11 +19,11 @@ enum HabitMapper {
         func to255(_ x: CGFloat) -> Int { Int(round(x * 255)) }
         let A = max(1, to255(a)) // avoid 0 -> invisible
         return String(format: "#%02X%02X%02X%02X", to255(r), to255(g), to255(b), A)
-        #else
+#else
         return nil
-        #endif
+#endif
     }
-
+    
     static func color(from hex: String?) -> Color? {
         guard let hex else { return nil }
         // Try RGBA
@@ -38,8 +38,8 @@ enum HabitMapper {
         }
         return nil
     }
-
-
+    
+    
     private static func rgbaFromHex(_ hex: String) -> (r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat)? {
         var h = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if h.hasPrefix("#") { h.removeFirst() }
@@ -63,13 +63,15 @@ enum HabitMapper {
     }
     // MARK: SD -> Domain
     static func toDomain(_ sd: HabitSD) -> HabitModel {
-        let priority = PriorityEisenhower(rawValue: sd.priorityRaw)
-            ?? .importantAndUrgent
-        let type = HabitType(rawValue: sd.typeRaw)
-            ?? .dueDate
-
-        let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
-        let item = HabitModel(
+        let priority = PriorityEisenhower(rawValue: sd.priorityRaw) ?? .importantAndUrgent
+        let type     = HabitType(rawValue: sd.typeRaw) ?? .repeating
+        let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue:)))
+        
+        let domainRecords: [HabitModel.HabitRecord] = (sd.records ?? []).map {
+            HabitModel.HabitRecord(id: $0.id, date: $0.date, count: $0.count)
+        }
+        
+        return HabitModel(
             id: sd.id,
             icon: sd.icon,
             iconColor: color(from: sd.iconColorHex) ?? .orange,
@@ -81,19 +83,21 @@ enum HabitMapper {
             repeating: weekdays,
             dueDate: sd.dueDate,
             notificationActivated: sd.notificationActivated,
-            record: sd.records.compactMap { record in
-                guard let id = record.id, let date = record.date, let count = record.count else {
-                    return nil
-                }
-                return HabitModel.HabitRecord(id: id, date: date, count: count)
-            }
+            record: domainRecords
         )
-        return item
     }
-
+    
     // MARK: Domain -> SD (create new)
     static func makeSD(from domain: HabitModel) -> HabitSD {
-        HabitSD(
+        let sdRecords: [HabitRecordSD] = domain.record.map { r in
+            let rec = HabitRecordSD()
+            rec.id = r.id
+            rec.date = r.date
+            rec.count = r.count
+            return rec
+        }
+        
+        let sd = HabitSD(
             id: domain.id,
             icon: domain.icon,
             iconColorHex: hex(from: domain.iconColor),
@@ -105,16 +109,13 @@ enum HabitMapper {
             repeatingWeekdays: domain.repeating.map(\.rawValue),
             dueDate: domain.dueDate,
             notificationActivated: domain.isNotificationActivated,
-            records: domain.record.map { record in
-                let habitRecord = HabitRecordSD()
-                habitRecord.id = record.id
-                habitRecord.date = record.date
-                habitRecord.count = record.count
-                return habitRecord
-            }
+            records: sdRecords
         )
+        
+        sd.records?.forEach { $0.habit = sd }
+        return sd
     }
-
+    
     // MARK: Update existing SD with domain values
     static func apply(_ domain: HabitModel, to sd: HabitSD) {
         sd.icon = domain.icon
@@ -127,51 +128,59 @@ enum HabitMapper {
         sd.repeatingWeekdays = domain.repeating.map(\.rawValue)
         sd.dueDate = domain.dueDate
         sd.notificationActivated = domain.isNotificationActivated
-        // Replace records (simple strategy; optimize as needed)
-        sd.records = domain.record.map { record in
-            let habitRecord = HabitRecordSD()
-            habitRecord.id = record.id
-            habitRecord.date = record.date
-            habitRecord.count = record.count
-            return habitRecord
+        
+        let newRecords: [HabitRecordSD] = domain.record.map { r in
+            let rec = HabitRecordSD()
+            rec.id = r.id
+            rec.date = r.date
+            rec.count = r.count
+            return rec
         }
+        sd.records = newRecords
+        sd.records?.forEach { $0.habit = sd }
     }
     
-    // MARK: Domain -> DeletedHabitSD (for archiving deleted habits)
+    // MARK: Domain -> DeletedHabitSD (archive)
     static func makeDeletedSD(from domain: HabitModel) -> DeletedHabitSD {
-        DeletedHabitSD(
-            id: domain.id,
-            icon: domain.icon,
-            iconColorHex: hex(from: domain.iconColor) ?? "#000000FF",
-            title: domain.title,
-            descriptionText: domain.description,
-            tags: domain.tags,
-            priorityRaw: domain.priority.rawValue,
-            typeRaw: domain.type.rawValue,
-            repeatingWeekdays: domain.repeating.map(\.rawValue),
-            dueDate: domain.dueDate,
-            notificationActivated: domain.isNotificationActivated,
-            deletedAt: Date(),
-            records: domain.record.map { record in
-                let habitRecord = HabitRecordSD()
-                habitRecord.id = record.id
-                habitRecord.date = record.date
-                habitRecord.count = record.count
-                return habitRecord
+        let deleted = DeletedHabitSD(
+                id: domain.id,
+                icon: domain.icon,
+                iconColorHex: hex(from: domain.iconColor) ?? "#000000FF",
+                title: domain.title,
+                descriptionText: domain.description,
+                tags: domain.tags,
+                priorityRaw: domain.priority.rawValue,
+                typeRaw: domain.type.rawValue,
+                repeatingWeekdays: domain.repeating.map(\.rawValue),
+                dueDate: domain.dueDate,
+                notificationActivated: domain.isNotificationActivated,
+                deletedAt: Date()
+            )
+
+            let recs: [HabitRecordSD] = domain.record.map { r in
+                let sd = HabitRecordSD()
+                sd.id   = r.id
+                sd.date = r.date
+                sd.count = r.count
+                sd.deletedHabit = deleted
+                return sd
             }
-        )
+
+            deleted.records = recs
+            return deleted
     }
     
     // MARK: DeletedHabitSD -> Domain
     static func deletedToDomain(_ sd: DeletedHabitSD) -> HabitModel {
-        let priority = PriorityEisenhower(rawValue: sd.priorityRaw)
-            ?? .importantAndUrgent
-        let type = HabitType(rawValue: sd.typeRaw)
-            ?? .dueDate
-
-        let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue: )))
-
-        let item = HabitModel(
+        let priority = PriorityEisenhower(rawValue: sd.priorityRaw) ?? .importantAndUrgent
+        let type     = HabitType(rawValue: sd.typeRaw) ?? .dueDate
+        let weekdays = Set(sd.repeatingWeekdays.compactMap(Weekday.init(rawValue:)))
+        
+        let domainRecords: [HabitModel.HabitRecord] = (sd.records ?? []).map {
+            HabitModel.HabitRecord(id: $0.id, date: $0.date, count: $0.count)
+        }
+        
+        return HabitModel(
             id: sd.id,
             icon: sd.icon,
             iconColor: color(from: sd.iconColorHex) ?? .orange,
@@ -183,13 +192,7 @@ enum HabitMapper {
             repeating: weekdays,
             dueDate: sd.dueDate,
             notificationActivated: sd.notificationActivated,
-            record: sd.records.compactMap { record in
-                guard let id = record.id, let date = record.date, let count = record.count else {
-                    return nil
-                }
-                return HabitModel.HabitRecord(id: id, date: date, count: count)
-            }
+            record: domainRecords
         )
-        return item
     }
 }

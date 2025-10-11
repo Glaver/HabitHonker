@@ -27,7 +27,7 @@ final class HabitListViewModel: ObservableObject {
     private let log = Log.habitBeastVM
     private var inFlightOps = Set<UUID>()
     
-    private let usedDefaultsRepo: RepositoryUserDefaults
+    private let usedDefaultsRepo: UserDefaultsStore
     private let repo: HabitsRepositorySwiftData
     private let notifier: HabitNotificationScheduling
     private var didLoadOnce = false
@@ -47,7 +47,7 @@ final class HabitListViewModel: ObservableObject {
         return decoded
     }
     
-    init(usedDefaultsRepo: RepositoryUserDefaults,
+    init(usedDefaultsRepo: UserDefaultsStore,
          repo: HabitsRepositorySwiftData,
          notifier: HabitNotificationScheduling = HabitNotificationService()) {
         self.usedDefaultsRepo = usedDefaultsRepo

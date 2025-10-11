@@ -28,10 +28,9 @@ struct RootTabsView: View {
         self.container = container
         
         let localRepo = HabitsRepositorySwiftData(container: container)
-        let defaults = RepositoryUserDefaults.shared
+        let defaults = UserDefaultsStore.shared
         
-        _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults,
-                                                                      repo: localRepo))
+        _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults, repo: localRepo))
         _statisticsViewModel = StateObject(wrappedValue: StatisticsViewModel(repo: localRepo))
         
         self.repo = localRepo
@@ -44,7 +43,6 @@ struct RootTabsView: View {
                     Image(systemName: "line.3.horizontal")
                     Text(Constants.list)
                 }
-            
             
             PriorityMatrixView()
                 .tabItem {
@@ -73,10 +71,7 @@ struct RootTabsView: View {
             _ = await (auth, theme, load)
         }
         .onAppear {
-            // background, non-blocking priming
             listViewModel.primeBackgroundFromDisk()
-
-            // Optional: warm statistics preset so opening that tab is instant
             Task.detached(priority: .utility) { [statisticsViewModel] in
                 await statisticsViewModel.loadPresetHabits()
             }

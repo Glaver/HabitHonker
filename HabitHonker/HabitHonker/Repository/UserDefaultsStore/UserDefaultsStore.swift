@@ -8,8 +8,8 @@
 // PriorityThemeRepository.swift
 import SwiftUI
 
-actor RepositoryUserDefaults {
-    static let shared = RepositoryUserDefaults()
+actor UserDefaultsStore {
+    static let shared = UserDefaultsStore()
 
     private let ud: UserDefaults
     private let colorsKey = PriorityThemeKeys.colors
@@ -47,7 +47,7 @@ actor RepositoryUserDefaults {
     }
 }
 // MARK: - Array writes
-extension RepositoryUserDefaults {
+extension UserDefaultsStore {
     func setColors(_ colors: [Color]) {
         ud.set(encodeColors(colors), forKey: colorsKey)
     }

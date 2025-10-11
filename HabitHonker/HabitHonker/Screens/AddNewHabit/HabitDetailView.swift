@@ -23,7 +23,7 @@ struct HabitDetailView: View {
     @State var iconColor: Color
     @State var title: String
     @State var description: String
-    @State var tags: [String?] = []
+    @State var tags: [String] = []
     @State var priority: PriorityEisenhower
     @State var type: HabitType
     @State var repeating: Set<Weekday>
@@ -149,7 +149,7 @@ struct HabitDetailView: View {
                             .textFieldStyle(.plain)
                             .font(.system(size: 17, weight: .medium, design: .rounded))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .frame(height: 22)
+                            .frame(minHeight: 36)
                     }
                     .padding(.vertical, 3)
                     
@@ -167,7 +167,7 @@ struct HabitDetailView: View {
                             .textFieldStyle(.plain)
                             .font(.system(size: 17, weight: .medium, design: .rounded))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .frame(height: 22)
+                            .frame(minHeight: 36)
                     }
                     .padding(.vertical, 3)
                 }
@@ -326,7 +326,9 @@ struct HabitDetailView: View {
         .navigationTitle(Constants.detailScreen)
         .navigationBarTitleDisplayMode(.inline)
         .scrollContentBackground(.hidden)
-        .environment(\.defaultMinListRowHeight, 0)
+        .scrollDismissesKeyboard(.interactively)     // smoother scroll/keyb interaction
+        .ignoresSafeArea(.keyboard, edges: .bottom)  // avoid layout fights with insets
+        .listStyle(.insetGrouped)
         .background(backgroundColor)
         .toolbar(.hidden, for: .tabBar)
         .toolbar { // MARK: ToolbarItem
