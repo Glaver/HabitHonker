@@ -22,16 +22,12 @@ struct Habit: Identifiable, Hashable {
 
 @MainActor
 final class SelectHabitsViewModel: ObservableObject {
-    // UI state
     @Published private(set) var isLoading = false
     @Published private(set) var error: Error?
-    @Published var habits: [Habit] = []
-
-    private var existing: [HabitModel] = []
-    private var deleted: [HabitModel] = []
-    private var all: [HabitModel] = []
-
+    @Published private(set) var activeHabits: [Habit] = []
+    @Published private(set) var deletedHabits: [Habit] = []
     @Published private(set) var selectedHabitIDs: Set<UUID> = []
+    
     var selectedCount: Int { selectedHabitIDs.count }
     let selectionLimit: Int
     
@@ -59,12 +55,9 @@ final class SelectHabitsViewModel: ObservableObject {
 
             let (existing, deleted, preset) = try await (existingTask, deletedTask, presetTask)
 
-            self.existing = existing
-            self.deleted  = deleted
-            self.all      = existing + deleted
-
             // Map to UI
-            var ui = HabitMapperUI.toUI(self.all)
+            var active = HabitMapperUI.toUI(existing)
+            var removed = HabitMapperUI.toUI(deleted)
 
             // Apply preset (preselect)
             let presetIDs = Set(preset?.habitIDs ?? [])
@@ -73,27 +66,27 @@ final class SelectHabitsViewModel: ObservableObject {
 
             // reflect selection in UI models
             let selectedSet = presetIDs
-            for i in ui.indices {
-                ui[i].isSelected = selectedSet.contains(ui[i].id)
+            for i in active.indices {
+                active[i].isSelected = selectedSet.contains(active[i].id)
             }
-            habits = ui
+            for i in removed.indices {
+                removed[i].isSelected = selectedSet.contains(removed[i].id)
+            }
+
+            activeHabits = active
+            deletedHabits = removed
         } catch {
             self.error = error
         }
     }
 
     func toggle(_ habitID: Habit.ID) {
-        guard let idx = habits.firstIndex(where: { $0.id == habitID }) else { return }
-        guard habits[idx].isEnabled else { return }
-
-        // If selecting new but at limit -> ignore
-        if !habits[idx].isSelected && selectedCount >= selectionLimit { return }
-
-        habits[idx].isSelected.toggle()
-        if habits[idx].isSelected {
-            selectedHabitIDs.insert(habitID)
-        } else {
-            selectedHabitIDs.remove(habitID)
+        if let index = activeHabits.firstIndex(where: { $0.id == habitID }) {
+            toggleHabit(in: &activeHabits, at: index)
+            return
+        }
+        if let index = deletedHabits.firstIndex(where: { $0.id == habitID }) {
+            toggleHabit(in: &deletedHabits, at: index)
         }
     }
 
@@ -105,6 +98,21 @@ final class SelectHabitsViewModel: ObservableObject {
             initialPresetIDs = selectedHabitIDs // update baseline
         } catch {
             self.error = error
+        }
+    }
+
+    private func toggleHabit(in habits: inout [Habit], at index: Int) {
+        guard habits[index].isEnabled || habits[index].isSelected else { return }
+
+        // If selecting new but at limit -> ignore
+        if !habits[index].isSelected && selectedCount >= selectionLimit { return }
+
+        habits[index].isSelected.toggle()
+        let habitID = habits[index].id
+        if habits[index].isSelected {
+            selectedHabitIDs.insert(habitID)
+        } else {
+            selectedHabitIDs.remove(habitID)
         }
     }
 }

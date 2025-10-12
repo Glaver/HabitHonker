@@ -12,6 +12,11 @@ import SwiftUI
 struct SelectHabitsView: View {
     @StateObject private var viewModel: SelectHabitsViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) var colorSchema
+    
+    var sectionBackgroundColor: Color {
+        colorSchema == .dark ? Color(UIColor.secondarySystemBackground) : Color(UIColor.systemBackground)
+    }
     
     init(viewModel: SelectHabitsViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -27,28 +32,29 @@ struct SelectHabitsView: View {
                         .foregroundStyle(.secondary)
                         .padding(.top, -20)
                     
-                    // Card container
-                    VStack(spacing: 0) {
-                        ForEach(viewModel.habits) { habit in
-                            HabitRow(
-                                habit: habit,
-                                isAtLimit: viewModel.selectedCount >= viewModel.selectionLimit
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture { viewModel.toggle(habit.id) }
-                            
-                            if habit.id != viewModel.habits.last?.id {
-                                Divider().padding(.leading, 64)
-                            }
-                        }
+                    if !viewModel.activeHabits.isEmpty {
+                        HabitListCard(
+                            habits: viewModel.activeHabits,
+                            isAtLimit: viewModel.selectedCount >= viewModel.selectionLimit,
+                            onTap: { viewModel.toggle($0) },
+                            backgroundColor: sectionBackgroundColor
+                        )
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color(.systemBackground))
-                            .shadow(color: .black.opacity(0.06), radius: 16, y: 8)
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
+                    
+                    if !viewModel.deletedHabits.isEmpty {
+                        Text("Deleted habits")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 24)
+                        
+                        HabitListCard(
+                            habits: viewModel.deletedHabits,
+                            isAtLimit: viewModel.selectedCount >= viewModel.selectionLimit,
+                            onTap: { viewModel.toggle($0) },
+                            backgroundColor: sectionBackgroundColor
+                        )
+                    }
                 }
                 .padding(.top, 8)
             }
@@ -90,6 +96,37 @@ struct SelectHabitsView: View {
 }
 
 // MARK: - Row
+
+private struct HabitListCard: View {
+    let habits: [Habit]
+    let isAtLimit: Bool
+    let onTap: (UUID) -> Void
+    let backgroundColor: Color
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(habits.enumerated()), id: \.element.id) { index, habit in
+                HabitRow(
+                    habit: habit,
+                    isAtLimit: isAtLimit
+                )
+                .contentShape(Rectangle())
+                .onTapGesture { onTap(habit.id) }
+                
+                if index < habits.count - 1 {
+                    Divider().padding(.leading, 64)
+                }
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(backgroundColor)
+                .shadow(color: .black.opacity(0.06), radius: 16, y: 8)
+        )
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+    }
+}
 
 struct HabitRow: View {
     @Environment(\.colorScheme) var scheme
