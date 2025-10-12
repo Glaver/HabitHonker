@@ -107,21 +107,21 @@ struct SettingsView: View {
                 .listRowSeparator(.hidden)
                 
                 
-                Section("Support and Feedback") {
-                    VStack {
-                        VStack(alignment: .center) {
-                            PrimaryButton(title: "Share With Frined", color: Color(.systemGray4), foregroundStyle: .black) {
-                                print("Share app")
-                            }
-                            PrimaryButton(title: "Rate App support and Feedback", color: Color(.systemGray4), foregroundStyle: .black) {
-                                print("Rate App")
-                            }
-                            PrimaryButton(title: "Send fast feedback", color: .blue, foregroundStyle: .white) {
-                                print("Send fast feedback")
-                            }
-                        }
-                    }
-                }
+//                Section("Support and Feedback") {
+//                    VStack {
+//                        VStack(alignment: .center) {
+//                            PrimaryButton(title: "Share With Frined", color: Color(.systemGray4), foregroundStyle: .black) {
+//                                print("Share app")
+//                            }
+//                            PrimaryButton(title: "Rate App support and Feedback", color: Color(.systemGray4), foregroundStyle: .black) {
+//                                print("Rate App")
+//                            }
+//                            PrimaryButton(title: "Send fast feedback", color: .blue, foregroundStyle: .white) {
+//                                print("Send fast feedback")
+//                            }
+//                        }
+//                    }
+//                }
             }
             .navigationTitle("Settings")
             .listStyle(.insetGrouped)
