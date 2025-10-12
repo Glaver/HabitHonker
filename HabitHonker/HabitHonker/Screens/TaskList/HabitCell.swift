@@ -12,8 +12,10 @@ import SwiftData
 struct HabitCell: View {
     let item: HabitModel
     let pillColor: Color
-//    var pillColor: Color { priorityColor[item.priority.index] }
-    private var isCompletedToday: Bool { item.isCompletedToday }
+    
+    var isCompletedOverride: Bool? = nil
+    private var isCompletedToday: Bool { isCompletedOverride ?? item.isCompletedToday }
+    
     @Environment(\.colorScheme) var scheme
     
     var body: some View {

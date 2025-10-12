@@ -28,6 +28,7 @@ struct HabitListView: View {
                 ) { // Weekday filter is here for future improvemmts ↓
                     ForEach(todayHabits, id: \.id) { item in
                         HabitCell(item: item, pillColor: viewModel.colors[item.priority.index])
+                            .id("today-\(item.id)")
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 path.append(Route.detailHabit(item.id))
@@ -48,11 +49,12 @@ struct HabitListView: View {
                         Text("Not for today")
                             .font(.headline)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 10)
+                            .padding(.horizontal, 20)
                             .padding(.top, 8)
                         
                         ForEach(notTodayHabits, id: \.id) { item in
                             HabitCell(item: item, pillColor: viewModel.colors[item.priority.index])
+                                .id("notToday-\(item.id)")
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     path.append(Route.detailHabit(item.id))
@@ -66,6 +68,27 @@ struct HabitListView: View {
                                         }
                                     }
                                 }
+                        }
+                        .padding(.horizontal, 10)
+                    }
+                    
+                    if !completedHabits.isEmpty {
+                        Text("Completed")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
+                        
+                        ForEach(completedHabits, id: \.id) { item in
+                            HabitCell(item: item,
+                                      pillColor: viewModel.colors[item.priority.index],
+                                      isCompletedOverride: true)
+                                .id("completed-\(item.id)")
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    path.append(Route.detailHabit(item.id))
+                                }
+                                .padding(.horizontal, 10)
                         }
                         .padding(.horizontal, 10)
                     }
@@ -149,11 +172,19 @@ struct HabitListView: View {
     
     // MARK: - Derived Data
     private var todayHabits: [HabitModel] {
-        viewModel.items.filtered(by: currentDate)
+        viewModel.items
+            .filtered(by: currentDate)
+            .filter { !$0.isCompleted(on: currentDate) }
     }
     
     private var notTodayHabits: [HabitModel] {
-        viewModel.items.filteredNotForToday(by: currentDate)
+        viewModel.items
+            .filteredNotForToday(by: currentDate)
+            .filter { !$0.isCompleted(on: currentDate) }
+    }
+    
+    private var completedHabits: [HabitModel] {
+        viewModel.items.filteredCompleted(on: currentDate)
     }
     
     // MARK: - Timer Methods

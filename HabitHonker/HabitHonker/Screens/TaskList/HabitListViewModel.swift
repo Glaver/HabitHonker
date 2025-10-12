@@ -143,21 +143,11 @@ final class HabitListViewModel: ObservableObject {
         var updated = items[index]
         updated.completeHabitNow()
         
-        // Optimistic in-memory update FIRST (cheap, avoids extra fetch loops)
         upsertInMemory(updated)
-        
-        // Persist (no extra fetch before update, see #2)
+
         setEditingItem(updated)
         await saveCurrent()
-        //        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
-        //        var item = items[index]
-        //        item.completeHabitNow()
-        //        setEditingItem(item)
-        //        await saveCurrent()
     }
-    
-    //
-    
     
     func changePrirorityFor(_ id: UUID, to newPriority: PriorityEisenhower) async {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
@@ -445,6 +435,10 @@ extension [HabitModel] {
         return self.filter {
             $0.type != .repeating || $0.repeating.contains(weekday)
         }
+    }
+    
+    func filteredCompleted(on date: Date) -> [HabitModel] {
+        self.filter { $0.isCompleted(on: date) }
     }
     
     func filteredNotForToday(by date: Date) -> [HabitModel] {
