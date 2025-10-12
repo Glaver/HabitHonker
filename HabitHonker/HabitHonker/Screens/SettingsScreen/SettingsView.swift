@@ -22,18 +22,34 @@ struct SettingsView: View {
         NavigationStack(path: $path) {
             List {
                 Section("Sync") {
-                    Toggle("iCloud sync", isOn: Binding(
-                        get: { sync.isOn },
-                        set: { newVal in
-                            if newVal && !sync.iCloudAvailable {
-                                showiCloudHint = true
-                            } else {
-                                sync.isOn = newVal
+                        ZStack {
+                            Toggle("iCloud sync", isOn: Binding(
+                                get: { sync.isOn },
+                                set: { newVal in
+                                    if newVal && !sync.iCloudAvailable {
+                                        showiCloudHint = true
+                                    } else {
+                                        sync.isOn = newVal
+                                    }
+                                }
+                            ))
+                            HStack {
+                                Spacer()
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .frame(width: 42, height: 42)
+                                        .foregroundStyle(Color("cellContentColor"))
+                                        .shadow(color: .gray.opacity(0.3), radius: 6, x: 1, y: 1)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                        )
+                                    Image(systemName: sync.isOn ? "checkmark.icloud" : "icloud.slash")
+                                        .foregroundColor(sync.isOn ? .green.opacity(0.7) : .red.opacity(0.7))
+                                }
+                                .padding(.trailing, 75)
                             }
-                        }
-                    ))
-                    Text(sync.iCloudAvailable ? "iCloud: Available" : "iCloud: not available")
-                        .font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
                 
                 Section("Color schema") {
@@ -47,64 +63,62 @@ struct SettingsView: View {
                         .pickerStyle(.segmented)
                         .padding(.top, 15)
                     }
-                    VStack {
-                        Divider()
+                    NavigationLink(value: Route.priorityMatrixEditor) {
                         HStack {
                             Text("Change colors")
                             Spacer()
+//                            Image(systemName: "chevron.right")
+//                                .scaledToFill()
+//                                .frame(width: 6, height: 22)
+//                                .tint(Color.gray.opacity(0.5))
+                        }
+                        .padding(.vertical, 5)
+                    }
+                    .buttonStyle(.plain)
+                    // MARK: - Choose background
+                    
+                    PhotosPicker(
+                        selection: $viewModel.backgroundPickerItem,
+                        matching: .images
+                    ) {
+                        HStack(spacing: 12) {
+                            Text("Choose background")
+                                .tint(.primary)
+                            Spacer()
+                            if viewModel.hasCustomBackground {
+                                ZStack {
+                                    Image(systemName: "trash")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .foregroundStyle(.primary)
+                                        .frame(width: 24, height: 24)
+                                        .zIndex(2)
+                                    
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .frame(width: 42, height: 42)
+                                        .foregroundStyle(Color("cellContentColor"))
+                                        .shadow(color: .gray.opacity(0.3), radius: 6, x: 1, y: 1)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                        )
+                                        .onTapGesture {
+                                            Task { @MainActor in
+                                                viewModel.clearBackground()
+                                            }
+                                        }
+                                }
+                            }
                             Image(systemName: "chevron.right")
-                                .scaledToFill()
                                 .frame(width: 6, height: 22)
                                 .tint(Color.gray.opacity(0.5))
+                                .padding(.trailing, 5)
                         }
-                        .onTapGesture {
-                            path.append(Route.priorityMatrixEditor)
-                        }
-                        .padding(.vertical, 10)
-                        Divider()
-                        
-                        // MARK: - Choose background
-                        
-                        HStack {
-                            PhotosPicker(
-                                selection: $viewModel.backgroundPickerItem,
-                                matching: .images
-                            ) {
-                                HStack(spacing: 12) {
-                                    Text("Choose background")
-                                        .tint(.primary)
-                                    Spacer()
-                                    if viewModel.hasCustomBackground {
-                                        ZStack {
-                                            Image(systemName: "trash")
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fit)
-                                                .foregroundStyle(.primary)
-                                                .frame(width: 24, height: 24)
-                                                .zIndex(2)
-                                            
-                                            RoundedRectangle(cornerRadius: 20)
-                                                .frame(width: 42, height: 42)
-                                                .foregroundStyle(Color("cellContentColor"))
-                                                .shadow(color: .gray.opacity(0.3), radius: 6, x: 1, y: 1)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 20)
-                                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                                                )
-                                                .onTapGesture {
-                                                    viewModel.clearBackground()
-                                                }
-                                        }
-                                    }
-                                    Image(systemName: "chevron.right")
-                                        .frame(width: 6, height: 22)
-                                        .tint(.primary)
-                                }.frame(minHeight: 44)
-                            }
-                        }
+                        .padding(.vertical, 5)
+                        .contentShape(Rectangle())
                     }
                 }
-                .listRowSeparator(.hidden)
+//                .listRowSeparator(.hidden)
                 
                 
 //                Section("Support and Feedback") {
