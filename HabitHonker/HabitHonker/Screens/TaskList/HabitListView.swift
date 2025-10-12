@@ -26,7 +26,7 @@ struct HabitListView: View {
                     columns: [GridItem(.flexible(), spacing: 0)],
                     spacing: 16
                 ) { // Weekday filter is here for future improvemmts ↓
-                    ForEach(viewModel.items.filtered(by: currentDate), id: \.id) { item in
+                    ForEach(todayHabits, id: \.id) { item in
                         HabitCell(item: item, pillColor: viewModel.colors[item.priority.index])
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -43,6 +43,32 @@ struct HabitListView: View {
                             }
                     }
                     .padding(.horizontal, 10)
+                    
+                    if !notTodayHabits.isEmpty {
+                        Text("Not for today")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 10)
+                            .padding(.top, 8)
+                        
+                        ForEach(notTodayHabits, id: \.id) { item in
+                            HabitCell(item: item, pillColor: viewModel.colors[item.priority.index])
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    path.append(Route.detailHabit(item.id))
+                                }
+                                .padding(.horizontal, 10)
+                                .swipeActions {
+                                    Action(symbolImage: "checkmark", tint: .black, background: .white) { resetPosition in
+                                        resetPosition.toggle()
+                                        Task {
+                                            await viewModel.habitCompleteWith(id: item.id)
+                                        }
+                                    }
+                                }
+                        }
+                        .padding(.horizontal, 10)
+                    }
                 }
             }
             .onAppear {
@@ -119,6 +145,15 @@ struct HabitListView: View {
                 }
             )
         }
+    }
+    
+    // MARK: - Derived Data
+    private var todayHabits: [HabitModel] {
+        viewModel.items.filtered(by: currentDate)
+    }
+    
+    private var notTodayHabits: [HabitModel] {
+        viewModel.items.filteredNotForToday(by: currentDate)
     }
     
     // MARK: - Timer Methods

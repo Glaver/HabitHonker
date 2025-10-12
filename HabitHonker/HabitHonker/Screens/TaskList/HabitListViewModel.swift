@@ -446,6 +446,20 @@ extension [HabitModel] {
             $0.type != .repeating || $0.repeating.contains(weekday)
         }
     }
+    
+    func filteredNotForToday(by date: Date) -> [HabitModel] {
+        let weekday = date.currentWeekday
+        let calendar = Calendar.current
+        
+        return self.filter { habit in
+            switch habit.type {
+            case .repeating:
+                return !habit.repeating.contains(weekday)
+            case .dueDate:
+                return !calendar.isDate(habit.dueDate, inSameDayAs: date)
+            }
+        }
+    }
 }
 
 // MARK: - Theme Draft
