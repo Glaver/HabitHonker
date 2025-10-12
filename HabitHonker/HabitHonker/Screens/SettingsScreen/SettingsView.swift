@@ -22,22 +22,22 @@ struct SettingsView: View {
         NavigationStack(path: $path) {
             List {
                 Section("Sync") {
-                                    Toggle("iCloud sync", isOn: Binding(
-                                        get: { sync.isOn },
-                                        set: { newVal in
-                                            if newVal && !sync.iCloudAvailable {
-                                                showiCloudHint = true
-                                            } else {
-                                                sync.isOn = newVal
-                                            }
-                                        }
-                                    ))
-                                    Text(sync.iCloudAvailable ? "iCloud: Available" : "iCloud: not available")
-                                        .font(.footnote).foregroundStyle(.secondary)
-                                }
+                    Toggle("iCloud sync", isOn: Binding(
+                        get: { sync.isOn },
+                        set: { newVal in
+                            if newVal && !sync.iCloudAvailable {
+                                showiCloudHint = true
+                            } else {
+                                sync.isOn = newVal
+                            }
+                        }
+                    ))
+                    Text(sync.iCloudAvailable ? "iCloud: Available" : "iCloud: not available")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                
                 Section("Color schema") {
                     VStack {
-                        
                         let options: [HonkerColorSchema] = [.auto, .light, .dark]
                         Picker("", selection: $appearanceRaw) {
                             ForEach(options) { opt in

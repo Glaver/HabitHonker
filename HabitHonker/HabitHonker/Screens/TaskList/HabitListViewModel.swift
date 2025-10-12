@@ -432,8 +432,14 @@ extension HabitListViewModel {
 extension [HabitModel] {
     func filtered(by date: Date) -> [HabitModel] {
         let weekday = date.currentWeekday
-        return self.filter {
-            $0.type != .repeating || $0.repeating.contains(weekday)
+        let calendar = Calendar.current
+        return self.filter { habit in
+            switch habit.type {
+            case .repeating:
+                return habit.repeating.contains(weekday)
+            case .dueDate:
+                return calendar.isDate(habit.dueDate, inSameDayAs: date)
+            }
         }
     }
     

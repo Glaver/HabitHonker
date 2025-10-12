@@ -147,6 +147,7 @@ struct HabitDetailView: View {
                             .frame(height: 20)
                         TextField("", text: $title)
                             .textFieldStyle(.plain)
+                            .submitLabel(.done)
                             .font(.system(size: 17, weight: .medium, design: .rounded))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .frame(minHeight: 36)
@@ -165,6 +166,7 @@ struct HabitDetailView: View {
                         
                         TextField("", text: $description)
                             .textFieldStyle(.plain)
+                            .submitLabel(.done)
                             .font(.system(size: 17, weight: .medium, design: .rounded))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .frame(minHeight: 36)
