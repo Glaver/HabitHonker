@@ -31,7 +31,6 @@ struct HabitHonkerApp: App {
             }
             .preferredColorScheme(appearance.colorScheme)
             .task {
-//                await rebuildContainerIfNeeded(force: true)
 //                sync.refreshAccountStatus()
                 await sync.refreshAccountStatusAndWait()       // decide target once
                 await rebuildContainerIfNeeded(force: true)    // build ONCE
@@ -79,7 +78,13 @@ struct HabitHonkerApp: App {
 
         // Fallback so app always starts
         if container == nil {
-            container = try? ModelContainer(for: schema)
+            let cfg = ModelConfiguration(
+                "FallbackInMemory",
+                schema: schema,
+                isStoredInMemoryOnly: true,
+                allowsSave: true
+            )
+            container = try? ModelContainer(for: schema, configurations: cfg)
         }
     }
 }
