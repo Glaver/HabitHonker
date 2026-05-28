@@ -22,18 +22,21 @@ struct RootTabsView: View {
     @StateObject private var statisticsViewModel: StatisticsViewModel
     
     private let container: ModelContainer
-    private let repo: HabitsRepositorySwiftData
     
-    init(container: ModelContainer) {
+    init(container: ModelContainer, dependencies: AppDependencies? = nil) {
         self.container = container
         
         let localRepo = HabitsRepositorySwiftData(container: container)
         let defaults = UserDefaultsStore.shared
         
-        _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults, repo: localRepo))
+        if let dependencies {
+            _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults,
+                                                                          habitService: dependencies.habitService))
+        } else {
+            _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults,
+                                                                          repo: localRepo))
+        }
         _statisticsViewModel = StateObject(wrappedValue: StatisticsViewModel(repo: localRepo))
-        
-        self.repo = localRepo
     }
     
     var body: some View {
@@ -87,4 +90,3 @@ extension RootTabsView {
         static let settings = "Settings"
     }
 }
-

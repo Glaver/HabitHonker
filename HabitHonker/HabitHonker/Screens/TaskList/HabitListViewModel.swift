@@ -28,7 +28,7 @@ final class HabitListViewModel: ObservableObject {
     private var inFlightOps = Set<UUID>()
     
     private let usedDefaultsRepo: UserDefaultsStore
-    private let repo: HabitsRepositorySwiftData
+    private let habitService: HabitServiceProtocol
     private let notifier: HabitNotificationScheduling
     private var didLoadOnce = false
     private var isLoading = false
@@ -48,11 +48,24 @@ final class HabitListViewModel: ObservableObject {
     }
     
     init(usedDefaultsRepo: UserDefaultsStore,
-         repo: HabitsRepositorySwiftData,
+         habitService: HabitServiceProtocol,
          notifier: HabitNotificationScheduling = HabitNotificationService()) {
         self.usedDefaultsRepo = usedDefaultsRepo
-        self.repo = repo
+        self.habitService = habitService
         self.notifier = notifier
+    }
+
+    convenience init(usedDefaultsRepo: UserDefaultsStore,
+                     repo: HabitsRepositorySwiftData,
+                     notifier: HabitNotificationScheduling = HabitNotificationService()) {
+        // TODO Phase 3: Remove this compatibility path after all call sites use AppDependencies.
+        let habitEvents = HabitEventCenter()
+        let habitRepository = SwiftDataHabitRepository(repository: repo)
+        let habitService = HabitService(repository: habitRepository,
+                                        habitEvents: habitEvents)
+        self.init(usedDefaultsRepo: usedDefaultsRepo,
+                  habitService: habitService,
+                  notifier: notifier)
     }
     
     // MARK: - Lifecycle
@@ -83,9 +96,7 @@ final class HabitListViewModel: ObservableObject {
             log.info("✅ load end items=\(self.items.count) in \(Double(ns)/1_000_000.0, privacy: .public) ms")}
         
         do {
-            let fetchedItems: [HabitModel] = try await Task.detached(priority: .userInitiated) { [repo] in
-                        try await repo.fetchAll()
-            }.value
+            let fetchedItems = try await habitService.fetchHabits()
             
             log.debug("load fetched=\(fetchedItems.count)")
             let filteredItems: [HabitModel]
@@ -146,15 +157,32 @@ final class HabitListViewModel: ObservableObject {
         upsertInMemory(updated)
 
         setEditingItem(updated)
-        await saveCurrent()
+        do {
+            if let persisted = try await habitService.completeHabit(id: id) {
+                upsertInMemory(persisted)
+                setEditingItem(persisted)
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
     
     func changePrirorityFor(_ id: UUID, to newPriority: PriorityEisenhower) async {
+        // TODO Phase 4: Move priority matrix actions into PriorityMatrixViewModel.
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         var item = items[index]
         item.priority = newPriority
         setEditingItem(item)
-        await saveCurrent()
+        upsertInMemory(item)
+
+        do {
+            if let persisted = try await habitService.changePriority(id: id, to: newPriority) {
+                upsertInMemory(persisted)
+                setEditingItem(persisted)
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
     
     func loadIfNeeded() async {
@@ -238,7 +266,7 @@ private extension HabitListViewModel {
         do {
             let ids = offsets.map { items[$0].id }
             for id in ids {
-                try await repo.delete(id: id)
+                try await habitService.deleteHabit(id: id)
             }
             items.removeAll { ids.contains($0.id) }
         } catch {
@@ -264,7 +292,7 @@ private extension HabitListViewModel {
     
     func saveCurrent() async {
         do {
-            try await repo.upsert(item)
+            try await habitService.saveHabit(item)
             upsertInMemory(item)
         } catch {
             self.error = error.localizedDescription
@@ -273,7 +301,7 @@ private extension HabitListViewModel {
     
     func deleteCurrent() async {
         do {
-            try await repo.delete(id: item.id)
+            try await habitService.deleteHabit(id: item.id)
             items.removeAll { $0.id == item.id }
         } catch {
             self.error = error.localizedDescription
@@ -282,7 +310,7 @@ private extension HabitListViewModel {
     
     func deleteItem(withId id: UUID) async {
         do {
-            try await repo.delete(id: id)
+            try await habitService.deleteHabit(id: id)
             // Small delay to ensure swipe action is completed
             items.removeAll { $0.id == id }
             try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
@@ -294,7 +322,7 @@ private extension HabitListViewModel {
     // MARK: - Deleted Habits Methods
     func loadDeletedHabits() async {
         do {
-            deletedItems = try await repo.fetchAllDeleted()
+            deletedItems = try await habitService.fetchDeletedHabits()
             // You can add a separate @Published property for deleted habits if needed
             print("Found \(deletedItems.count) deleted habits")
         } catch {
@@ -304,7 +332,7 @@ private extension HabitListViewModel {
     
     func restoreDeletedHabit(id: UUID) async {
         do {
-            try await repo.restoreDeletedHabit(id: id)
+            try await habitService.restoreDeletedHabit(id: id)
             await load()
         } catch {
             self.error = error.localizedDescription
@@ -313,7 +341,7 @@ private extension HabitListViewModel {
     
     func permanentlyDeleteHabit(id: UUID) async {
         do {
-            try await repo.permanentlyDeleteDeleted(id: id)
+            try await habitService.permanentlyDeleteDeleted(id: id)
         } catch {
             self.error = error.localizedDescription
         }
@@ -340,6 +368,7 @@ private extension HabitListViewModel {
 
 // MARK: - UsedDefaultsRepo
 
+// TODO Phase 6: Move priority theme editing and persistence into SettingsViewModel.
 extension HabitListViewModel {
     // MARK: - Load / Reset
     func reloadTheme() async {
@@ -384,6 +413,7 @@ extension HabitListViewModel {
 
 // MARK: 
 
+// TODO Phase 6: Move background image picking and storage into SettingsViewModel.
 extension HabitListViewModel {
     /// Call this when `backgroundPickerItem` changes.
     func processPickedBackgroundIfNeeded() async {
@@ -410,6 +440,7 @@ extension HabitListViewModel {
 
 // MARK: - Helpers
 
+// TODO Phase 3: Move sorting/filtering logic into HabitSortFilterService.
 extension HabitListViewModel {
     enum HabitLoadMode {
         case all

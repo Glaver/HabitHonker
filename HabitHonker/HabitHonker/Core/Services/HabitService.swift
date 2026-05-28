@@ -49,4 +49,22 @@ final class HabitService: HabitServiceProtocol {
         habitEvents.send(.priorityChanged)
         return habit
     }
+
+    func fetchDeletedHabits() async throws -> [HabitModel] {
+        try await repository.fetchAllDeleted()
+    }
+
+    func fetchDeletedHabit(id: UUID) async throws -> HabitModel? {
+        try await repository.fetchDeleted(id: id)
+    }
+
+    func restoreDeletedHabit(id: UUID) async throws {
+        try await repository.restoreDeletedHabit(id: id)
+        habitEvents.send(.restored)
+    }
+
+    func permanentlyDeleteDeleted(id: UUID) async throws {
+        try await repository.permanentlyDeleteDeleted(id: id)
+        habitEvents.send(.deleted)
+    }
 }

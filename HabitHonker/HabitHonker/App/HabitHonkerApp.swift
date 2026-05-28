@@ -22,7 +22,7 @@ struct HabitHonkerApp: App {
             Group {
                 if let container, let appCoordinator {
                     let identity = container.configurations.first?.cloudKitContainerIdentifier ?? "local"
-                    RootTabsView(container: container)
+                    RootTabsView(container: container, dependencies: appCoordinator.dependencies)
                         .id(identity)                    // <- ensures teardown before rebuild
                         .environmentObject(appCoordinator)
                         .environmentObject(sync)
