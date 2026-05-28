@@ -156,24 +156,6 @@ final class HabitListViewModel: ObservableObject {
         }
     }
     
-    func changePrirorityFor(_ id: UUID, to newPriority: PriorityEisenhower) async {
-        // TODO Phase 4: Move priority matrix actions into PriorityMatrixViewModel.
-        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
-        var item = items[index]
-        item.priority = newPriority
-        setEditingItem(item)
-        upsertInMemory(item)
-
-        do {
-            if let persisted = try await habitService.changePriority(id: id, to: newPriority) {
-                upsertInMemory(persisted)
-                setEditingItem(persisted)
-            }
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-    
     func loadIfNeeded() async {
         guard !didLoadOnce else { return }
         didLoadOnce = true

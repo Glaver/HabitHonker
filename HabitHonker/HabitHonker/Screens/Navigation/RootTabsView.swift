@@ -19,6 +19,7 @@ enum Route: Hashable, Equatable {
 
 struct RootTabsView: View {
     @StateObject private var listViewModel: HabitListViewModel
+    @StateObject private var priorityMatrixViewModel: PriorityMatrixViewModel
     @StateObject private var statisticsViewModel: StatisticsViewModel
     
     private let container: ModelContainer
@@ -28,14 +29,24 @@ struct RootTabsView: View {
         
         let localRepo = HabitsRepositorySwiftData(container: container)
         let defaults = UserDefaultsStore.shared
+        let habitService: HabitServiceProtocol
+        let priorityThemeService: PriorityThemeServiceProtocol
         
         if let dependencies {
-            _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults,
-                                                                          habitService: dependencies.habitService))
+            habitService = dependencies.habitService
+            priorityThemeService = dependencies.priorityThemeService
         } else {
-            _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults,
-                                                                          repo: localRepo))
+            let habitEvents = HabitEventCenter()
+            let habitRepository = SwiftDataHabitRepository(repository: localRepo)
+            habitService = HabitService(repository: habitRepository,
+                                        habitEvents: habitEvents)
+            priorityThemeService = PriorityThemeService(store: defaults)
         }
+
+        _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults,
+                                                                      habitService: habitService))
+        _priorityMatrixViewModel = StateObject(wrappedValue: PriorityMatrixViewModel(habitService: habitService,
+                                                                                    themeService: priorityThemeService))
         _statisticsViewModel = StateObject(wrappedValue: StatisticsViewModel(repo: localRepo))
     }
     
@@ -47,7 +58,7 @@ struct RootTabsView: View {
                     Text(Constants.list)
                 }
             
-            PriorityMatrixView()
+            PriorityMatrixView(viewModel: priorityMatrixViewModel)
                 .tabItem {
                     Image(systemName: "square.grid.2x2.fill")
                     Text(Constants.priority)
