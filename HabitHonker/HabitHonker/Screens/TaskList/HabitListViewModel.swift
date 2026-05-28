@@ -58,7 +58,7 @@ final class HabitListViewModel: ObservableObject {
     convenience init(usedDefaultsRepo: UserDefaultsStore,
                      repo: HabitsRepositorySwiftData,
                      notifier: HabitNotificationScheduling = HabitNotificationService()) {
-        // TODO Phase 3: Remove this compatibility path after all call sites use AppDependencies.
+        // TODO: Remove this compatibility path after all call sites use AppDependencies.
         let habitEvents = HabitEventCenter()
         let habitRepository = SwiftDataHabitRepository(repository: repo)
         let habitService = HabitService(repository: habitRepository,
@@ -99,25 +99,14 @@ final class HabitListViewModel: ObservableObject {
             let fetchedItems = try await habitService.fetchHabits()
             
             log.debug("load fetched=\(fetchedItems.count)")
-            let filteredItems: [HabitModel]
-            
-            switch mode {
-            case .all:
-                filteredItems = fetchedItems
-                
-            case .filteredByWeekday(let date):
+            let filteredItems = HabitSortFilterService.filtered(fetchedItems, mode: mode)
+
+            if case .filteredByWeekday(let date) = mode {
                 let targetWeekday = date.currentWeekday
-                filteredItems = fetchedItems.filter { item in
-                    if item.type == .repeating {
-                        return item.repeating.contains(targetWeekday)
-                    } else {
-                        return true
-                    }
-                }
                 log.debug("weekday filter=\(targetWeekday.rawValue) -> \(filteredItems.count)")
             }
             
-            items = sortItems(filteredItems)
+            items = HabitSortFilterService.sorted(filteredItems)
             
         } catch {
             self.error = error.localizedDescription
@@ -284,7 +273,7 @@ private extension HabitListViewModel {
             resortWorkItem?.cancel()
             let work = DispatchWorkItem { [weak self] in
                 guard let self else { return }
-                self.items = self.sortItems(self.items)
+                self.items = HabitSortFilterService.sorted(self.items)
             }
             resortWorkItem = work
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.06, execute: work)
@@ -437,61 +426,6 @@ extension HabitListViewModel {
     }
 }
 
-
-// MARK: - Helpers
-
-// TODO Phase 3: Move sorting/filtering logic into HabitSortFilterService.
-extension HabitListViewModel {
-    enum HabitLoadMode {
-        case all
-        case filteredByWeekday(Date)
-    }
-    
-    func sortItems(_ items: [HabitModel]) -> [HabitModel] {
-        return items.sorted { item1, item2 in
-            if item1.isCompletedToday != item2.isCompletedToday {
-                return !item1.isCompletedToday
-            }
-            if item1.priority.rawValue != item2.priority.rawValue {
-                return item1.priority.rawValue < item2.priority.rawValue
-            }
-            return item1.title.localizedCaseInsensitiveCompare(item2.title) == .orderedAscending
-        }
-    }
-}
-
-extension [HabitModel] {
-    func filtered(by date: Date) -> [HabitModel] {
-        let weekday = date.currentWeekday
-        let calendar = Calendar.current
-        return self.filter { habit in
-            switch habit.type {
-            case .repeating:
-                return habit.repeating.contains(weekday)
-            case .dueDate:
-                return calendar.isDate(habit.dueDate, inSameDayAs: date)
-            }
-        }
-    }
-    
-    func filteredCompleted(on date: Date) -> [HabitModel] {
-        self.filter { $0.isCompleted(on: date) }
-    }
-    
-    func filteredNotForToday(by date: Date) -> [HabitModel] {
-        let weekday = date.currentWeekday
-        let calendar = Calendar.current
-        
-        return self.filter { habit in
-            switch habit.type {
-            case .repeating:
-                return !habit.repeating.contains(weekday)
-            case .dueDate:
-                return !calendar.isDate(habit.dueDate, inSameDayAs: date)
-            }
-        }
-    }
-}
 
 // MARK: - Theme Draft
 struct ThemeDraft {
