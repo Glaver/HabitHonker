@@ -28,23 +28,26 @@ struct RootTabsView: View {
     init(container: ModelContainer, dependencies: AppDependencies? = nil) {
         self.container = container
         
-        let localRepo = HabitsRepositorySwiftData(container: container)
         let defaults = UserDefaultsStore.shared
         let habitService: HabitServiceProtocol
+        let statisticsService: StatisticsServiceProtocol
         let priorityThemeService: PriorityThemeServiceProtocol
         let backgroundService: BackgroundServiceProtocol
         let habitEvents: HabitEventsPublishing
         
         if let dependencies {
             habitService = dependencies.habitService
+            statisticsService = dependencies.statisticsService
             priorityThemeService = dependencies.priorityThemeService
             backgroundService = dependencies.backgroundService
             habitEvents = dependencies.habitEvents
         } else {
             habitEvents = HabitEventCenter()
+            let localRepo = HabitsRepositorySwiftData(container: container)
             let habitRepository = SwiftDataHabitRepository(repository: localRepo)
             habitService = HabitService(repository: habitRepository,
                                         habitEvents: habitEvents)
+            statisticsService = StatisticsService(habitRepository: habitRepository)
             priorityThemeService = PriorityThemeService(store: defaults)
             backgroundService = BackgroundService()
         }
@@ -58,7 +61,8 @@ struct RootTabsView: View {
                                                                                     habitEvents: habitEvents))
         _settingsViewModel = StateObject(wrappedValue: SettingsViewModel(priorityThemeService: priorityThemeService,
                                                                          backgroundService: backgroundService))
-        _statisticsViewModel = StateObject(wrappedValue: StatisticsViewModel(repo: localRepo))
+        _statisticsViewModel = StateObject(wrappedValue: StatisticsViewModel(statisticsService: statisticsService,
+                                                                             habitEvents: habitEvents))
     }
     
     var body: some View {

@@ -48,4 +48,12 @@ struct SwiftDataHabitRepository: HabitRepositoryProtocol {
     func permanentlyDeleteDeleted(id: UUID) async throws {
         try await repository.permanentlyDeleteDeleted(id: id)
     }
+
+    func fetchStatisticsPresetHabitIDs() async throws -> [UUID]? {
+        try await repository.fetchStatisticsPresetHabitIDs()
+    }
+
+    func saveStatisticsPresetHabitIDs(_ habitIDs: [UUID], presetName: String?) async throws {
+        try await repository.saveStatisticsPreset(habitIDs, presetName: presetName)
+    }
 }

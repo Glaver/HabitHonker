@@ -200,24 +200,16 @@ actor HabitsRepositorySwiftData {
             throw error
         }
     }
-    private var inflightPreset: Task<StatisticsPresetSD?, Error>?
     // MARK: - Statistics Preset
-    func fetchStatisticsPreset() async throws -> StatisticsPresetSD? {
-            if let t = inflightPreset {            // reuse ongoing work
-                return try await t.value
-            }
-            let t = Task { () throws -> StatisticsPresetSD? in
-                let t0 = DispatchTime.now()
-                log.info("📊 fetchPreset start")
-                defer { log.info("✅ fetchPreset end in \(elapsedMS(from: t0)) ms") }
-                let ctx = ModelContext(container)
-                let d = FetchDescriptor<StatisticsPresetSD>(sortBy: [SortDescriptor(\.id)])
-                return try ctx.fetch(d).first
-            }
-            inflightPreset = t
-            defer { inflightPreset = nil }         // allow a new one after completion
-            return try await t.value
-        }
+    func fetchStatisticsPresetHabitIDs() throws -> [UUID]? {
+        let t0 = DispatchTime.now()
+        log.info("📊 fetchPresetHabitIDs start")
+        defer { log.info("✅ fetchPresetHabitIDs end in \(elapsedMS(from: t0)) ms") }
+
+        let ctx = makeContext()
+        let d = FetchDescriptor<StatisticsPresetSD>(sortBy: [SortDescriptor(\.id)])
+        return try ctx.fetch(d).first?.habitIDs
+    }
 
     func saveStatisticsPreset(_ habitIDs: [UUID], presetName: String? = nil) async throws {
         let t0 = DispatchTime.now()

@@ -24,15 +24,19 @@ final class StatisticsViewModel: ObservableObject {
 
     
     private let builder = CalendarBuilder()
-    let repo: HabitsRepositorySwiftData
+    private let statisticsService: StatisticsServiceProtocol
+    private let habitEvents: HabitEventsPublishing?
 
     
     private var bag = Set<AnyCancellable>()
 
     // MARK: - Init
-    init(repo: HabitsRepositorySwiftData) {
-        self.repo = repo
+    init(statisticsService: StatisticsServiceProtocol,
+         habitEvents: HabitEventsPublishing? = nil) {
+        self.statisticsService = statisticsService
+        self.habitEvents = habitEvents
         setupPipelines()
+        subscribeToHabitEvents()
     }
 
     // MARK: - Public API
@@ -42,22 +46,12 @@ final class StatisticsViewModel: ObservableObject {
     }
     
     func loadPresetHabits() async {
+        guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
 
         do {
-            guard let preset = try await repo.fetchStatisticsPreset() else {
-                self.items = []
-                self.filterItems = []
-                self.selected = []
-                return
-            }
-
-            var resolved: [HabitModel] = []
-            for id in preset.habitIDs {
-                if let habit = try await repo.fetch(id: id) { resolved.append(habit) }
-                else if let deleted = try await repo.fetchDeleted(id: id) { resolved.append(deleted) }
-            }
+            let resolved = try await statisticsService.fetchPresetHabits()
             
             await MainActor.run {
                 self.isPriming = true
@@ -71,6 +65,11 @@ final class StatisticsViewModel: ObservableObject {
         } catch {
             self.error = error
         }
+    }
+
+    func makeSelectHabitsViewModel() -> SelectHabitsViewModel {
+        SelectHabitsViewModel(statisticsService: statisticsService,
+                              selectionLimit: maxRegularSelections)
     }
 
     func toggle(_ item: HabitFilterCollectionModel) {
@@ -115,5 +114,14 @@ final class StatisticsViewModel: ObservableObject {
             .receive(on: RunLoop.main)
             .assign(to: &$months)
 
+    }
+
+    private func subscribeToHabitEvents() {
+        habitEvents?.events
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { await self?.loadPresetHabits() }
+            }
+            .store(in: &bag)
     }
 }

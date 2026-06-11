@@ -15,4 +15,7 @@ protocol HabitRepositoryProtocol {
     func fetchDeleted(id: UUID) async throws -> HabitModel?
     func restoreDeletedHabit(id: UUID) async throws
     func permanentlyDeleteDeleted(id: UUID) async throws
+
+    func fetchStatisticsPresetHabitIDs() async throws -> [UUID]?
+    func saveStatisticsPresetHabitIDs(_ habitIDs: [UUID], presetName: String?) async throws
 }
