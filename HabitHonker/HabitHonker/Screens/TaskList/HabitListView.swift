@@ -96,6 +96,9 @@ struct HabitListView: View {
             }
             .onAppear {
                 startDateTimer()
+                Task {
+                    await viewModel.reloadAppearanceForDisplay()
+                }
             }
             .onDisappear {
                 stopDateTimer()

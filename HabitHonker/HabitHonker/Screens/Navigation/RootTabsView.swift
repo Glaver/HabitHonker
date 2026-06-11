@@ -20,6 +20,7 @@ enum Route: Hashable, Equatable {
 struct RootTabsView: View {
     @StateObject private var listViewModel: HabitListViewModel
     @StateObject private var priorityMatrixViewModel: PriorityMatrixViewModel
+    @StateObject private var settingsViewModel: SettingsViewModel
     @StateObject private var statisticsViewModel: StatisticsViewModel
     
     private let container: ModelContainer
@@ -31,11 +32,13 @@ struct RootTabsView: View {
         let defaults = UserDefaultsStore.shared
         let habitService: HabitServiceProtocol
         let priorityThemeService: PriorityThemeServiceProtocol
+        let backgroundService: BackgroundServiceProtocol
         let habitEvents: HabitEventsPublishing
         
         if let dependencies {
             habitService = dependencies.habitService
             priorityThemeService = dependencies.priorityThemeService
+            backgroundService = dependencies.backgroundService
             habitEvents = dependencies.habitEvents
         } else {
             habitEvents = HabitEventCenter()
@@ -43,14 +46,18 @@ struct RootTabsView: View {
             habitService = HabitService(repository: habitRepository,
                                         habitEvents: habitEvents)
             priorityThemeService = PriorityThemeService(store: defaults)
+            backgroundService = BackgroundService()
         }
 
-        _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults,
-                                                                      habitService: habitService,
-                                                                      habitEvents: habitEvents))
+        _listViewModel = StateObject(wrappedValue: HabitListViewModel(habitService: habitService,
+                                                                      habitEvents: habitEvents,
+                                                                      priorityThemeService: priorityThemeService,
+                                                                      backgroundService: backgroundService))
         _priorityMatrixViewModel = StateObject(wrappedValue: PriorityMatrixViewModel(habitService: habitService,
                                                                                     themeService: priorityThemeService,
                                                                                     habitEvents: habitEvents))
+        _settingsViewModel = StateObject(wrappedValue: SettingsViewModel(priorityThemeService: priorityThemeService,
+                                                                         backgroundService: backgroundService))
         _statisticsViewModel = StateObject(wrappedValue: StatisticsViewModel(repo: localRepo))
     }
     
@@ -74,7 +81,7 @@ struct RootTabsView: View {
                     Text(Constants.statistic)
                 }
             
-            SettingsView()
+            SettingsView(viewModel: settingsViewModel)
                 .tabItem {
                     Image(systemName: "gearshape")
                     Text(Constants.settings)
@@ -84,12 +91,11 @@ struct RootTabsView: View {
         .task(priority: .userInitiated) {
             // Run all three in parallel
             async let auth: Void = listViewModel.onAppLaunch()
-            async let theme: Void = listViewModel.reloadTheme()
+            async let appearance: Void = listViewModel.reloadAppearanceForDisplay()
             async let load:  Void = listViewModel.loadIfNeeded()
-            _ = await (auth, theme, load)
+            _ = await (auth, appearance, load)
         }
         .onAppear {
-            listViewModel.primeBackgroundFromDisk()
             Task.detached(priority: .utility) { [statisticsViewModel] in
                 await statisticsViewModel.loadPresetHabits()
             }

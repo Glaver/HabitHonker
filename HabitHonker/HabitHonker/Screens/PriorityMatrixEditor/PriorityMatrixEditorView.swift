@@ -10,10 +10,12 @@ import SwiftUI
 // MARK: - Screen
 
 struct PriorityMatrixEditorView: View {
-    @EnvironmentObject private var viewModel: HabitListViewModel   
+    @ObservedObject private var viewModel: SettingsViewModel
     @Environment(\.dismiss) private var dismiss
-    
-    private var didLoad: Bool = false
+
+    init(viewModel: SettingsViewModel) {
+        self.viewModel = viewModel
+    }
     
     var body: some View {
         ZStack {
@@ -64,7 +66,7 @@ struct PriorityMatrixEditorView: View {
                 
                 ForEach(pillForColorButton.indices, id: \.self) { index in
                     let c = pillForColorButton[index]
-                    HabitMatrixCapsuleView.habitExample(with: viewModel.colors[index])
+                    HabitMatrixCapsuleView.habitExample(with: viewModel.priorityColors[index])
                     .position(c)
                 }
             }
@@ -95,8 +97,10 @@ struct PriorityMatrixEditorView: View {
                     .frame(width: 90, height: 90)
                     .glassEffect()
                     .onTapGesture {
-                        viewModel.commitThemeChanges()
-                        dismiss()
+                        Task {
+                            await viewModel.commitThemeChanges()
+                            dismiss()
+                        }
                     }
                 Text("Save")
                     .foregroundColor(.white)

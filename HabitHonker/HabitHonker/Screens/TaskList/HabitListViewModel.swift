@@ -8,7 +8,6 @@
 import Foundation
 import Combine
 import SwiftUI
-import PhotosUI
 
 @MainActor
 final class HabitListViewModel: ObservableObject {
@@ -20,23 +19,21 @@ final class HabitListViewModel: ObservableObject {
     @Published var error: String?
     @Published private(set) var colors: [Color] = [.red, .yellow, .blue, .green]
     @Published private(set) var titles: [String] = ["", "", "", ""]
-    @Published var themeDraft: ThemeDraft? = nil
-    @Published var backgroundImageData: Data? = nil
-    @Published var backgroundPickerItem: PhotosPickerItem? = nil
+    @Published private(set) var backgroundImageData: Data? = nil
 
     private let log = Log.habitBeastVM
     private var inFlightOps = Set<UUID>()
     
-    private let usedDefaultsRepo: UserDefaultsStore
     private let habitService: HabitServiceProtocol
     private let habitEvents: HabitEventsPublishing
+    private let priorityThemeService: PriorityThemeServiceProtocol
+    private let backgroundService: BackgroundServiceProtocol
     private let notifier: HabitNotificationScheduling
     private var cancellables = Set<AnyCancellable>()
     private var didLoadOnce = false
     private var isLoading = false
     private var isSaving = false
     private var resortWorkItem: DispatchWorkItem?
-    var hasCustomBackground: Bool { backgroundImageData != nil }
 
     var backgroundUIImage: UIImage? {
         guard let data = backgroundImageData else { return nil }
@@ -49,13 +46,15 @@ final class HabitListViewModel: ObservableObject {
         return decoded
     }
     
-    init(usedDefaultsRepo: UserDefaultsStore,
-         habitService: HabitServiceProtocol,
+    init(habitService: HabitServiceProtocol,
          habitEvents: HabitEventsPublishing,
+         priorityThemeService: PriorityThemeServiceProtocol,
+         backgroundService: BackgroundServiceProtocol,
          notifier: HabitNotificationScheduling = HabitNotificationService()) {
-        self.usedDefaultsRepo = usedDefaultsRepo
         self.habitService = habitService
         self.habitEvents = habitEvents
+        self.priorityThemeService = priorityThemeService
+        self.backgroundService = backgroundService
         self.notifier = notifier
         subscribeToHabitEvents()
     }
@@ -68,23 +67,27 @@ final class HabitListViewModel: ObservableObject {
         let habitRepository = SwiftDataHabitRepository(repository: repo)
         let habitService = HabitService(repository: habitRepository,
                                         habitEvents: habitEvents)
-        self.init(usedDefaultsRepo: usedDefaultsRepo,
-                  habitService: habitService,
+        self.init(habitService: habitService,
                   habitEvents: habitEvents,
+                  priorityThemeService: PriorityThemeService(store: usedDefaultsRepo),
+                  backgroundService: BackgroundService(),
                   notifier: notifier)
     }
     
     // MARK: - Lifecycle
     
-    func primeBackgroundFromDisk() {
-        Task.detached(priority: .utility) { [weak self] in
-            let data = BackgroundStorage.load()
-            await MainActor.run { self?.backgroundImageData = data }
-        }
-    }
-    
     func onAppLaunch() async {
         try? await notifier.requestAuthorization()
+    }
+
+    func reloadAppearanceForDisplay() async {
+        async let loadedColors = priorityThemeService.loadColors()
+        async let loadedTitles = priorityThemeService.loadTitles()
+        async let loadedBackground = backgroundService.loadBackgroundData()
+
+        colors = padOrTrim(await loadedColors, to: 4, fill: .gray)
+        titles = padOrTrim(await loadedTitles, to: 4, fill: "")
+        backgroundImageData = await loadedBackground
     }
     
     // MARK: Public methods
@@ -169,72 +172,6 @@ final class HabitListViewModel: ObservableObject {
     }
 }
 
-// MARK: - Color theme
-
-extension HabitListViewModel {
-    func startThemeEditing() {
-        themeDraft = ThemeDraft(colors: colors, titles: titles)
-    }
-    
-    func draftColorBinding(_ index: Int) -> Binding<Color> {
-        Binding(
-            get: { self.themeDraft?.colors[safe: index] ?? .clear },
-            set: { newValue in
-                guard self.themeDraft?.colors.indices.contains(index) == true else { return }
-                self.themeDraft?.colors[index] = newValue
-            }
-        )
-    }
-
-    func draftTitleBinding(_ priority: PriorityEisenhower) -> Binding<String> {
-        Binding(
-            get: { self.themeDraft?.titles[safe: priority.index] ?? priority.text },
-            set: { newValue in
-                var value = newValue
-                if value.isEmpty { value = priority.text } // Safe deafult name priority name when empty
-                guard self.themeDraft?.titles.indices.contains(priority.index) == true else { return }
-                self.themeDraft?.titles[priority.index] = value
-            }
-        )
-    }
-
-    // 3) Commit (persist once, then publish live)
-    func commitThemeChanges() {
-        guard var draft = themeDraft else { return }
-        normalize(&draft)
-
-        // Persist once
-        Task {
-            await usedDefaultsRepo.setColors(draft.colors)
-            await usedDefaultsRepo.setTitles(draft.titles)
-            // Reflect in live state for the rest of the app
-            await MainActor.run {
-                self.colors = draft.colors
-                self.titles = draft.titles
-                self.themeDraft = nil
-            }
-        }
-    }
-
-    // 4) Cancel
-    func cancelThemeChanges() {
-        themeDraft = nil
-    }
-
-    // Ensure arrays are exactly 4 elements, clamp/extend to defaults if needed
-    private func normalize(_ draft: inout ThemeDraft) {
-        draft.colors = padOrTrim(draft.colors, to: 4, fill: .gray)
-        draft.titles = padOrTrim(draft.titles, to: 4, fill: "")
-    }
-
-    private func padOrTrim<T>(_ array: [T], to len: Int, fill: @autoclosure () -> T) -> [T] {
-        if array.count == len { return array }
-        if array.count > len { return Array(array.prefix(len)) }
-        var out = array
-        out.append(contentsOf: Array(repeating: fill(), count: len - array.count))
-        return out
-    }
-}
 // MARK: Private methods
 
 // MARK: Swift Data Methods
@@ -350,89 +287,12 @@ private extension HabitListViewModel {
         
         Task { await notifier.cancel(for: id) }
     }
-}
 
-// MARK: - UsedDefaultsRepo
-
-// TODO Phase 6: Move priority theme editing and persistence into SettingsViewModel.
-extension HabitListViewModel {
-    // MARK: - Load / Reset
-    func reloadTheme() async {
-        colors = await usedDefaultsRepo.loadColors()
-        titles = await usedDefaultsRepo.loadTitles()
-    }
-    
-    func resetToDefaults() {
-        Task {
-            await usedDefaultsRepo.resetToDefaults()
-            await reloadTheme()
-        }
-    }
-    
-    // MARK: - Mutators (no computed props)
-    func setColor(_ color: Color, at index: Int) {
-        guard colors.indices.contains(index) else { return }
-        colors[index] = color                      // update stored state
-        Task { await usedDefaultsRepo.setColor(color, at: index) } // persist
-    }
-    
-    func setTitle(_ title: String, for prio: PriorityEisenhower) {
-        titles[prio.index] = title
-        Task { await usedDefaultsRepo.setTitle(title, for: prio) }
-    }
-    
-    // MARK: - Optional Bindings for SwiftUI controls
-    func colorBinding(_ index: Int) -> Binding<Color> {
-        Binding(
-            get: { self.colors[index] },
-            set: { self.setColor($0, at: index) }
-        )
-    }
-    
-    func titleBinding(_ prio: PriorityEisenhower) -> Binding<String> {
-        Binding(
-            get: { self.titles[prio.index] },
-            set: { self.setTitle($0, for: prio) }
-        )
-    }
-}
-
-// MARK: 
-
-// TODO Phase 6: Move background image picking and storage into SettingsViewModel.
-extension HabitListViewModel {
-    /// Call this when `backgroundPickerItem` changes.
-    func processPickedBackgroundIfNeeded() async {
-        guard let item = backgroundPickerItem else { return }
-        do {
-            if let raw = try await item.loadTransferable(type: Data.self) {
-                let optimized = ImageOptimizer.downscaleIfNeeded(data: raw, maxDimension: 3000)
-                backgroundImageData = optimized
-                BackgroundStorage.save(optimized)          // persist via your existing repo
-            }
-        } catch {
-            self.error = error.localizedDescription
-        }
-        // Reset selection so the same photo can be picked again if needed
-        backgroundPickerItem = nil
-    }
-
-    func clearBackground() {
-        backgroundImageData = nil
-        BackgroundStorage.clear()
-    }
-}
-
-
-// MARK: - Theme Draft
-struct ThemeDraft {
-    var colors: [Color]
-    var titles: [String]
-}
-
-
-private extension Array {
-    subscript(safe index: Int) -> Element? {
-        indices.contains(index) ? self[index] : nil
+    func padOrTrim<T>(_ array: [T], to length: Int, fill: @autoclosure () -> T) -> [T] {
+        if array.count == length { return array }
+        if array.count > length { return Array(array.prefix(length)) }
+        var output = array
+        output.append(contentsOf: Array(repeating: fill(), count: length - array.count))
+        return output
     }
 }
