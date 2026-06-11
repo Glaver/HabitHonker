@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Combine
 import SwiftUI
 
 @MainActor
@@ -21,13 +22,18 @@ final class PriorityMatrixViewModel: ObservableObject {
 
     private let habitService: HabitServiceProtocol
     private let themeService: PriorityThemeServiceProtocol?
+    private let habitEvents: HabitEventsPublishing
+    private var cancellables = Set<AnyCancellable>()
 
     init(
         habitService: HabitServiceProtocol,
-        themeService: PriorityThemeServiceProtocol? = nil
+        themeService: PriorityThemeServiceProtocol? = nil,
+        habitEvents: HabitEventsPublishing
     ) {
         self.habitService = habitService
         self.themeService = themeService
+        self.habitEvents = habitEvents
+        subscribeToHabitEvents()
     }
 
     func refresh() async {
@@ -95,6 +101,15 @@ final class PriorityMatrixViewModel: ObservableObject {
             items.append(updated)
         }
         items = HabitSortFilterService.sorted(items)
+    }
+
+    private func subscribeToHabitEvents() {
+        habitEvents.events
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { await self?.load() }
+            }
+            .store(in: &cancellables)
     }
 
     private func padOrTrim<T>(_ array: [T], to length: Int, fill: @autoclosure () -> T) -> [T] {

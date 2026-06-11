@@ -29,7 +29,9 @@ final class HabitListViewModel: ObservableObject {
     
     private let usedDefaultsRepo: UserDefaultsStore
     private let habitService: HabitServiceProtocol
+    private let habitEvents: HabitEventsPublishing
     private let notifier: HabitNotificationScheduling
+    private var cancellables = Set<AnyCancellable>()
     private var didLoadOnce = false
     private var isLoading = false
     private var isSaving = false
@@ -49,22 +51,26 @@ final class HabitListViewModel: ObservableObject {
     
     init(usedDefaultsRepo: UserDefaultsStore,
          habitService: HabitServiceProtocol,
+         habitEvents: HabitEventsPublishing,
          notifier: HabitNotificationScheduling = HabitNotificationService()) {
         self.usedDefaultsRepo = usedDefaultsRepo
         self.habitService = habitService
+        self.habitEvents = habitEvents
         self.notifier = notifier
+        subscribeToHabitEvents()
     }
 
     convenience init(usedDefaultsRepo: UserDefaultsStore,
                      repo: HabitsRepositorySwiftData,
                      notifier: HabitNotificationScheduling = HabitNotificationService()) {
-        // TODO: Remove this compatibility path after all call sites use AppDependencies.
+        // TODO: Remove this fallback-only compatibility path after all call sites use AppDependencies.
         let habitEvents = HabitEventCenter()
         let habitRepository = SwiftDataHabitRepository(repository: repo)
         let habitService = HabitService(repository: habitRepository,
                                         habitEvents: habitEvents)
         self.init(usedDefaultsRepo: usedDefaultsRepo,
                   habitService: habitService,
+                  habitEvents: habitEvents,
                   notifier: notifier)
     }
     
@@ -233,6 +239,15 @@ extension HabitListViewModel {
 
 // MARK: Swift Data Methods
 private extension HabitListViewModel {
+    func subscribeToHabitEvents() {
+        habitEvents.events
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { await self?.load() }
+            }
+            .store(in: &cancellables)
+    }
+
     func delete(at offsets: IndexSet) async {
         do {
             let ids = offsets.map { items[$0].id }

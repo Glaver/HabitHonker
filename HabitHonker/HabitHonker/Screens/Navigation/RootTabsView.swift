@@ -31,12 +31,14 @@ struct RootTabsView: View {
         let defaults = UserDefaultsStore.shared
         let habitService: HabitServiceProtocol
         let priorityThemeService: PriorityThemeServiceProtocol
+        let habitEvents: HabitEventsPublishing
         
         if let dependencies {
             habitService = dependencies.habitService
             priorityThemeService = dependencies.priorityThemeService
+            habitEvents = dependencies.habitEvents
         } else {
-            let habitEvents = HabitEventCenter()
+            habitEvents = HabitEventCenter()
             let habitRepository = SwiftDataHabitRepository(repository: localRepo)
             habitService = HabitService(repository: habitRepository,
                                         habitEvents: habitEvents)
@@ -44,9 +46,11 @@ struct RootTabsView: View {
         }
 
         _listViewModel = StateObject(wrappedValue: HabitListViewModel(usedDefaultsRepo: defaults,
-                                                                      habitService: habitService))
+                                                                      habitService: habitService,
+                                                                      habitEvents: habitEvents))
         _priorityMatrixViewModel = StateObject(wrappedValue: PriorityMatrixViewModel(habitService: habitService,
-                                                                                    themeService: priorityThemeService))
+                                                                                    themeService: priorityThemeService,
+                                                                                    habitEvents: habitEvents))
         _statisticsViewModel = StateObject(wrappedValue: StatisticsViewModel(repo: localRepo))
     }
     
