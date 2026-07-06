@@ -134,12 +134,12 @@ final class HabitListViewModel: ObservableObject {
         defer { isSaving = false
             log.info("✅ saveItem end op=\(opID.uuidString, privacy: .public)")}
         setEditingItem(item)
-        updateHabitNotification()
+        await reconcileNotification(for: item)
         await saveCurrent()
     }
     
     func deleteItem(_ item: HabitModel) async {
-        deleteNotification(for: item.id)
+        await deleteNotification(for: item)
         await deleteItem(withId: item.id)
     }
     
@@ -276,16 +276,16 @@ private extension HabitListViewModel {
     
     //MARK: - Notifications
     
-    func updateHabitNotification() {
-        guard item.isNotificationActivated else { return }
-        
-        Task { try? await notifier.reschedule(for: item) }
+    func reconcileNotification(for item: HabitModel) async {
+        if item.isNotificationActivated {
+            try? await notifier.reschedule(for: item)
+        } else {
+            await notifier.cancel(for: item.id)
+        }
     }
     
-    func deleteNotification(for id: UUID) {
-        guard item.isNotificationActivated else { return }
-        
-        Task { await notifier.cancel(for: id) }
+    func deleteNotification(for item: HabitModel) async {
+        await notifier.cancel(for: item.id)
     }
 
     func padOrTrim<T>(_ array: [T], to length: Int, fill: @autoclosure () -> T) -> [T] {

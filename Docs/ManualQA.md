@@ -155,19 +155,22 @@ Known risks:
 - [ ] Enable notification.
 - [ ] Select weekdays and reminder time.
 - [ ] Save and verify no crash.
+- [ ] If possible, inspect pending notification requests and verify one request exists per selected weekday for that habit id.
 - [ ] Create or edit a due-date habit with future date/time.
 - [ ] Enable notification.
 - [ ] Save and verify no crash.
+- [ ] If possible, inspect pending notification requests and verify one one-shot request exists for that habit id.
 - [ ] Disable notification for a previously scheduled habit.
-- [ ] Save and verify notification should no longer be pending.
+- [ ] Save and verify notification is no longer pending for that habit id.
+- [ ] Re-enable notification for the same habit and verify scheduling still works.
 - [ ] Delete a habit that had notifications enabled.
-- [ ] Verify deleted habit should no longer have pending notifications.
+- [ ] Verify deleted habit no longer has pending notification requests.
+- [ ] Delete a habit after turning notification off and verify no stale pending requests remain.
 
 Known risks:
 
-- Notification lifecycle is fragile.
-- Current cancellation logic may use stale ViewModel item state.
 - Notification scheduling errors are currently not user-visible.
+- Pending request inspection requires a debugger, log helper, or breakpoint around `UNUserNotificationCenter.current().getPendingNotificationRequests`.
 
 ## 11. iCloud Toggle
 
