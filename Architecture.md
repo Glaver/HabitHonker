@@ -113,7 +113,7 @@ Primary files:
 ### App Layer
 
 - `HabitHonkerApp` creates or rebuilds the SwiftData `ModelContainer`.
-- `AppDependencies` creates shared services, repositories, and the current event center.
+- `AppDependencies` creates shared services, repositories, feature flags, and the current event center.
 - `RootTabsView` creates the tab-level ViewModels.
 
 ### UI Layer
@@ -135,6 +135,13 @@ Primary files:
 - `StatisticsService` resolves selected statistics habits from active and deleted stores.
 - `PriorityThemeService` wraps UserDefaults-backed priority colors/titles.
 - `BackgroundService` wraps background image file storage and image optimization.
+
+### Configuration Layer
+
+- `FeatureFlags` is a local/static feature flag value injected through `AppDependencies`.
+- Flags are not remote-configured and are not persisted.
+- All future-facing flags default to `false`.
+- SwiftUI views should not reach for global flag state directly. Prefer passing flags through dependencies to ViewModels/services when a future change needs a gated branch.
 
 ### Repository Layer
 
@@ -238,7 +245,29 @@ Known stabilization risk:
 | Restore UI unknown | Unknown | Confirm whether restore is supported in UI or document unsupported state. |
 | HabitModel UI coupling | Confirmed | Document now; separate domain/UI model later. |
 
-## 9. Future Mapping
+## 9. Feature Flag Policy
+
+Current stabilization policy:
+
+- No remote config during Stabilization or early Core work.
+- No feature should become active because a flag exists; every new flag defaults off.
+- Flags should gate future layers only at clear boundaries, preferably ViewModels, services, or dependency construction.
+- Avoid scattered `FeatureFlags` checks inside SwiftUI view bodies.
+- Removing obsolete flags is part of the cleanup responsibility after a feature graduates.
+
+Current local flags:
+
+| Flag | Default | Intended future use |
+|---|---:|---|
+| `enableEventLoggingV0` | `false` | Gate first local eventization experiments. |
+| `enableBehaviorTargetShadowMapping` | `false` | Gate non-user-visible mapping from `HabitModel` toward `BehaviorTarget`. |
+| `enablePredictionCoach` | `false` | Gate future anti-slip prediction coach surfaces. |
+| `enableRescueCards` | `false` | Gate future rescue/intervention card UI. |
+| `enableAppIntents` | `false` | Gate future App Intents work. |
+| `enableWidgets` | `false` | Gate future widget work. |
+| `enableStabilizationDiagnostics` | `false` | Gate temporary diagnostics used during stabilization. |
+
+## 10. Future Mapping
 
 | Current concept | Future concept | Notes |
 |---|---|---|
@@ -251,7 +280,7 @@ Known stabilization risk:
 
 Do not implement this mapping during baseline stabilization. It is documentation for future controlled evolution.
 
-## 10. Stabilization Acceptance Checklist
+## 11. Stabilization Acceptance Checklist
 
 - All existing tabs open correctly.
 - Create habit works.

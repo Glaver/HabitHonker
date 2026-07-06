@@ -12,8 +12,10 @@ struct AppDependencies {
     let priorityThemeService: PriorityThemeServiceProtocol
     let backgroundService: BackgroundServiceProtocol
     let habitEvents: HabitEventsPublishing
+    let featureFlags: FeatureFlags
 
-    static func make(container: ModelContainer) -> AppDependencies {
+    static func make(container: ModelContainer,
+                     featureFlags: FeatureFlags = .defaults) -> AppDependencies {
         let habitEvents = HabitEventCenter()
         let swiftDataRepository = HabitsRepositorySwiftData(container: container)
         let habitRepository = SwiftDataHabitRepository(repository: swiftDataRepository)
@@ -27,7 +29,8 @@ struct AppDependencies {
             statisticsService: statisticsService,
             priorityThemeService: PriorityThemeService(),
             backgroundService: BackgroundService(),
-            habitEvents: habitEvents
+            habitEvents: habitEvents,
+            featureFlags: featureFlags
         )
     }
 }
