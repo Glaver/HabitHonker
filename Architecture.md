@@ -163,6 +163,19 @@ These types are pure Swift values for future Core phase work. They do not import
 
 `HabitModel` remains the production in-memory app model for now.
 
+### Shadow Mapping
+
+`HabitHonker/HabitHonker/Core/Mapping/HabitShadowMapper.swift` maps current app data into the pure Core domain values for tests and future migration planning only. It is intentionally one-way:
+
+- `HabitModel` -> `BehaviorTarget`
+- `PriorityEisenhower` -> `BehaviorPriority`
+- `HabitModel` schedule fields -> `BehaviorSchedule`
+- `HabitModel` notification fields -> `TargetReminderConfig`
+- `HabitModel.HabitRecord` -> completion `BehaviorEvent`
+- `DeletedHabitSD` archive rows -> archived `BehaviorEvent`
+
+This mapper is not wired into production SwiftUI screens, ViewModels, repositories, notification scheduling, or persistence writes. `HabitModel` is still the production source of truth, and `enableBehaviorTargetShadowMapping` remains documentation for the future migration path rather than a runtime behavior switch.
+
 ## 5. Data Flow
 
 ### Create Habit
@@ -292,7 +305,7 @@ Current local flags:
 | `StatisticsPresetSD` and `CalendarBuilder` inputs | `EventHistory` / snapshot input | Statistics should eventually read from event history. |
 | `HabitEvent` | `DomainEvent` | Current event bus is coarse and payload-free. |
 
-The first pure domain types for this mapping now exist under `Core/Domain`, but the mapping itself is not implemented yet. `HabitModel` remains the production model used by current screens, ViewModels, services, and persistence adapters.
+The first pure domain types and one-way shadow mapper now exist, but the mapper is not part of production behavior. `HabitModel` remains the production model used by current screens, ViewModels, services, and persistence adapters.
 
 ## 11. Stabilization Acceptance Checklist
 
