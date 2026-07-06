@@ -83,6 +83,23 @@ Primary files:
 - `HabitHonker/HabitHonker/Screens/SelectHabits/SelectHabitsViewModel.swift`
 - `HabitHonker/HabitHonker/Core/Services/StatisticsService.swift`
 
+### Prediction Core
+
+Owns the first deterministic prediction-engine contracts and value types. This is an isolated Core layer only; it is not wired into production screens, ViewModels, persistence, notifications, App Intents, widgets, AI, or ML.
+
+Primary files:
+
+- `HabitHonker/HabitHonker/Core/Prediction/PredictionValueTypes.swift`
+- `HabitHonker/HabitHonker/Core/Prediction/PredictionContracts.swift`
+
+The planned future pipeline is:
+
+```text
+BehaviorTarget + BehaviorEvent history -> UserStateSnapshot -> RiskSignal -> RiskAssessment -> InterventionDecision
+```
+
+Delivery policy evaluation is represented as a pure decision result only. It does not schedule, cancel, or send notifications.
+
 ### Settings And Appearance
 
 Owns app color scheme, custom priority theme, background image storage, and the iCloud toggle UI.
@@ -109,6 +126,10 @@ Primary files:
 - BehaviorPriority: Pure domain value type introduced under `Core/Domain` for the four current Eisenhower priority concepts.
 - BehaviorEvent: Pure domain value type introduced under `Core/Domain` for future event history. Not wired into production flow yet.
 - TargetReminderConfig: Pure domain value type introduced under `Core/Domain` for future reminder delivery configuration. Not wired into notification scheduling yet.
+- UserStateSnapshot: Pure prediction value type for a target plus recent completion/miss state at a deterministic point in time.
+- RiskSignal: Pure prediction value type for one deterministic signal contributing to risk.
+- RiskAssessment: Pure prediction value type for low, medium, or high target risk.
+- InterventionDecision: Pure prediction value type for a selected intervention and explanation codes. It does not render UI or perform side effects.
 
 ## 4. Current Module And Layer Map
 
@@ -162,6 +183,23 @@ Primary files:
 These types are pure Swift values for future Core phase work. They do not import SwiftUI, SwiftData, UserNotifications, or CloudKit. They are not yet wired into production services, repositories, ViewModels, or screens.
 
 `HabitModel` remains the production in-memory app model for now.
+
+### Core Prediction Layer
+
+- `HabitHonker/HabitHonker/Core/Prediction/PredictionValueTypes.swift`
+- `HabitHonker/HabitHonker/Core/Prediction/PredictionContracts.swift`
+
+These types are pure Swift/Foundation contracts for future prediction-engine work. They depend on `Core/Domain` values and do not import SwiftUI, SwiftData, UserNotifications, or CloudKit. The layer is deterministic and testable: inputs are explicit values such as targets, event history, snapshot dates, risk signals, and explanation codes.
+
+The first contract boundaries are:
+
+- `StateSnapshotBuilding`
+- `RiskSignalExtracting`
+- `RiskEvaluating`
+- `InterventionSelecting`
+- `DeliveryPolicyEvaluating`
+
+No production ViewModel, SwiftUI screen, SwiftData model, notification service, App Intent, widget, AI feature, or ML model uses this layer yet. `HabitModel` remains the production source of truth.
 
 ### Shadow Mapping
 
@@ -304,6 +342,9 @@ Current local flags:
 | `isNotificationActivated`, `dueDate`, `repeating` | `DeliveryPreferences` / `TargetReminderConfig` | Needs a dedicated reminder config later. |
 | `StatisticsPresetSD` and `CalendarBuilder` inputs | `EventHistory` / snapshot input | Statistics should eventually read from event history. |
 | `HabitEvent` | `DomainEvent` | Current event bus is coarse and payload-free. |
+| `BehaviorTarget` + `BehaviorEvent` history | `UserStateSnapshot` | Future deterministic snapshot input for prediction. |
+| `UserStateSnapshot` | `RiskSignal` / `RiskAssessment` | Future deterministic risk extraction and evaluation. |
+| `RiskAssessment` | `InterventionDecision` | Future intervention selection contract, still isolated from UI and notification delivery. |
 
 The first pure domain types and one-way shadow mapper now exist, but the mapper is not part of production behavior. `HabitModel` remains the production model used by current screens, ViewModels, services, and persistence adapters.
 
