@@ -104,9 +104,11 @@ Primary files:
 - HabitRecord: Current completion aggregate for a habit on a date.
 - PriorityEisenhower: Current four-quadrant priority enum.
 - StatisticsPresetSD: SwiftData model storing selected habit IDs for statistics.
-- BehaviorTarget: Future domain abstraction for a habit/task-like thing. Not implemented yet.
-- BehaviorEvent: Future event abstraction for creation, completion, skip, archive, restore, and settings changes. Not implemented yet.
-- DeliveryPreferences: Future abstraction for reminder/notification delivery settings. Not implemented yet.
+- BehaviorTarget: Pure domain value type introduced under `Core/Domain` for a habit/task-like thing. Not wired into production flow yet.
+- BehaviorSchedule: Pure domain value type introduced under `Core/Domain` for repeating weekday schedules and one-time due dates.
+- BehaviorPriority: Pure domain value type introduced under `Core/Domain` for the four current Eisenhower priority concepts.
+- BehaviorEvent: Pure domain value type introduced under `Core/Domain` for future event history. Not wired into production flow yet.
+- TargetReminderConfig: Pure domain value type introduced under `Core/Domain` for future reminder delivery configuration. Not wired into notification scheduling yet.
 
 ## 4. Current Module And Layer Map
 
@@ -148,6 +150,18 @@ Primary files:
 - `HabitRepositoryProtocol` abstracts habit persistence.
 - `SwiftDataHabitRepository` adapts `HabitsRepositorySwiftData`.
 - `HabitsRepositorySwiftData` is an actor that creates a new `ModelContext` per operation.
+
+### Core Domain Layer
+
+- `HabitHonker/HabitHonker/Core/Domain/BehaviorTarget.swift`
+- `HabitHonker/HabitHonker/Core/Domain/BehaviorSchedule.swift`
+- `HabitHonker/HabitHonker/Core/Domain/BehaviorPriority.swift`
+- `HabitHonker/HabitHonker/Core/Domain/BehaviorEvent.swift`
+- `HabitHonker/HabitHonker/Core/Domain/TargetReminderConfig.swift`
+
+These types are pure Swift values for future Core phase work. They do not import SwiftUI, SwiftData, UserNotifications, or CloudKit. They are not yet wired into production services, repositories, ViewModels, or screens.
+
+`HabitModel` remains the production in-memory app model for now.
 
 ## 5. Data Flow
 
@@ -278,7 +292,7 @@ Current local flags:
 | `StatisticsPresetSD` and `CalendarBuilder` inputs | `EventHistory` / snapshot input | Statistics should eventually read from event history. |
 | `HabitEvent` | `DomainEvent` | Current event bus is coarse and payload-free. |
 
-Do not implement this mapping during baseline stabilization. It is documentation for future controlled evolution.
+The first pure domain types for this mapping now exist under `Core/Domain`, but the mapping itself is not implemented yet. `HabitModel` remains the production model used by current screens, ViewModels, services, and persistence adapters.
 
 ## 11. Stabilization Acceptance Checklist
 
