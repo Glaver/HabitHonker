@@ -140,12 +140,13 @@ Known risks:
 - [ ] Complete a selected habit from List.
 - [ ] Return to Statistic tab.
 - [ ] Verify completion appears on the correct day.
+- [ ] Without relaunching, complete the same selected habit again and verify the same calendar day updates.
+- [ ] Change selected habits and verify the calendar refreshes for the new selection.
 - [ ] Relaunch and verify selected statistics habits persist.
 - [ ] Delete a selected habit and verify historical stats behavior remains understandable.
 
 Known risks:
 
-- Statistics can become stale because calendar generation may ignore record-only changes.
 - Deleted habits can be included for historical statistics.
 
 ## 10. Notification Schedule / Disable / Delete

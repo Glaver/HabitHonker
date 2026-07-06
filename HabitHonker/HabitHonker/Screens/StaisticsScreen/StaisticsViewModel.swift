@@ -97,11 +97,10 @@ final class StatisticsViewModel: ObservableObject {
     private func setupPipelines(anchor: Date = Date()) {
         // items + filterItems + selected + calendarAnchor  ==> months
         Publishers.CombineLatest4($items, $filterItems, $selected, $calendarAnchor)
-            .map { items, filters, selected, anchor -> [HabitModel] in
+            .map { items, _, selected, _ -> [HabitModel] in
                 let picked = Set(selected)
                 return items.filter { picked.contains($0.id) }
             }
-            .removeDuplicates(by: { $0.map(\.id) == $1.map(\.id) })
             .debounce(for: .milliseconds(150), scheduler: RunLoop.main)
             .filter { [weak self] _ in !(self?.isPriming ?? false) }
             .handleEvents(receiveOutput: { [weak self] visibles in
