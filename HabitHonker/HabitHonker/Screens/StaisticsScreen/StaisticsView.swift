@@ -103,7 +103,7 @@ struct StaisticsView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .choseHabitForStatistics:
-                    SelectHabitsView(viewModel: SelectHabitsViewModel(repo: viewModel.repo))
+                    SelectHabitsView(viewModel: viewModel.makeSelectHabitsViewModel())
                 default:
                     EmptyView()
                         .background(Color.red)

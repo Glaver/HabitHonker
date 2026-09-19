@@ -31,14 +31,14 @@ final class SelectHabitsViewModel: ObservableObject {
     var selectedCount: Int { selectedHabitIDs.count }
     let selectionLimit: Int
     
-    private let repo: HabitsRepositorySwiftData
+    private let statisticsService: StatisticsServiceProtocol
 
     // Track whether selection changed (to avoid unnecessary writes)
     private var initialPresetIDs: Set<UUID> = []
     var isSelectionChanged: Bool { selectedHabitIDs != initialPresetIDs }
     private var didLoad = false
-    init(repo: HabitsRepositorySwiftData, selectionLimit: Int = 4) {
-        self.repo = repo
+    init(statisticsService: StatisticsServiceProtocol, selectionLimit: Int = 4) {
+        self.statisticsService = statisticsService
         self.selectionLimit = selectionLimit
     }
 
@@ -49,18 +49,14 @@ final class SelectHabitsViewModel: ObservableObject {
         defer { isLoading = false; didLoad = true }
 
         do {
-            async let existingTask = repo.fetchAll()
-            async let deletedTask  = repo.fetchAllDeleted()
-            async let presetTask   = repo.fetchStatisticsPreset()
-
-            let (existing, deleted, preset) = try await (existingTask, deletedTask, presetTask)
+            let snapshot = try await statisticsService.fetchSelectionSnapshot()
 
             // Map to UI
-            var active = HabitMapperUI.toUI(existing)
-            var removed = HabitMapperUI.toUI(deleted)
+            var active = HabitMapperUI.toUI(snapshot.activeHabits)
+            var removed = HabitMapperUI.toUI(snapshot.deletedHabits)
 
             // Apply preset (preselect)
-            let presetIDs = Set(preset?.habitIDs ?? [])
+            let presetIDs = snapshot.selectedHabitIDs
             initialPresetIDs = presetIDs
             selectedHabitIDs = presetIDs
 
@@ -94,7 +90,7 @@ final class SelectHabitsViewModel: ObservableObject {
         guard selectedHabitIDs != initialPresetIDs else { return }
         
         do {
-            try await repo.saveStatisticsPreset(Array(selectedHabitIDs), presetName: presetName)
+            try await statisticsService.savePresetHabitIDs(Array(selectedHabitIDs), presetName: presetName)
             initialPresetIDs = selectedHabitIDs // update baseline
         } catch {
             self.error = error

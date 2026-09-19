@@ -21,11 +21,13 @@ struct HabitDragPayload: Identifiable, Hashable, Codable, Transferable {
 // MARK: - Priority Matrix
 struct PriorityMatrixView: View {
     @State private var path = NavigationPath()
-    @EnvironmentObject var viewModel: HabitListViewModel
+    @StateObject private var viewModel: PriorityMatrixViewModel
     
     var onMove: ((HabitModel, PriorityEisenhower) -> Void)?
     
-    init(onMove: ((HabitModel, PriorityEisenhower) -> Void)? = nil) {
+    init(viewModel: PriorityMatrixViewModel,
+         onMove: ((HabitModel, PriorityEisenhower) -> Void)? = nil) {
+        _viewModel = StateObject(wrappedValue: viewModel)
         self.onMove = onMove
     }
   
@@ -34,21 +36,21 @@ struct PriorityMatrixView: View {
         NavigationStack(path: $path) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text(viewModel.titles[PriorityEisenhower.importantAndUrgent.index])
+                    Text(viewModel.title(for: .importantAndUrgent))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                         .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(viewModel.colors[PriorityEisenhower.importantAndUrgent.index])
+                        .foregroundStyle(viewModel.color(for: .importantAndUrgent))
                     Spacer()
-                    Text(viewModel.titles[PriorityEisenhower.urgentButNotImportant.index])
+                    Text(viewModel.title(for: .urgentButNotImportant))
                         .lineLimit(2)
                         .multilineTextAlignment(.trailing)
                         .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(viewModel.colors[PriorityEisenhower.urgentButNotImportant.index])
+                        .foregroundStyle(viewModel.color(for: .urgentButNotImportant))
                 }
                 .padding(.horizontal, 8)
                 // 2x2 matrix
@@ -71,21 +73,21 @@ struct PriorityMatrixView: View {
                 .frame(minHeight: 220)
                 
                 HStack {
-                    Text(viewModel.titles[PriorityEisenhower.importantButNotUrgent.index])
+                    Text(viewModel.title(for: .importantButNotUrgent))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                         .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(viewModel.colors[PriorityEisenhower.importantButNotUrgent.index])
+                        .foregroundStyle(viewModel.color(for: .importantButNotUrgent))
                     Spacer(minLength: 12)
-                    Text(viewModel.titles[PriorityEisenhower.notUrgentAndNotImportant.index])
+                    Text(viewModel.title(for: .notUrgentAndNotImportant))
                         .lineLimit(2)
                         .multilineTextAlignment(.trailing)
                         .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(viewModel.colors[PriorityEisenhower.notUrgentAndNotImportant.index])
+                        .foregroundStyle(viewModel.color(for: .notUrgentAndNotImportant))
                 }
                 .padding(.horizontal, 8)
             }
@@ -94,6 +96,11 @@ struct PriorityMatrixView: View {
             .padding(.horizontal, 8)
             .navigationTitle("Change priority")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                Task {
+                    await viewModel.refresh()
+                }
+            }
         }
         
     }
@@ -102,7 +109,7 @@ struct PriorityMatrixView: View {
     
     private func quadrant(_ priority: PriorityEisenhower,
                           rowHeight: CGFloat) -> some View {
-        let capsule = viewModel.items.filter { $0.priority == priority }
+        let capsule = viewModel.habits(for: priority)
         
         let capsuleAlignment: Alignment = {
             // choose how chips line up horizontally
@@ -112,18 +119,7 @@ struct PriorityMatrixView: View {
             }
         }()
         
-        let pillColor: Color = {
-            switch priority {
-            case .importantAndUrgent:
-                return viewModel.colors[PriorityEisenhower.importantAndUrgent.index]
-            case .importantButNotUrgent:
-                return viewModel.colors[PriorityEisenhower.importantButNotUrgent.index]
-            case .urgentButNotImportant:
-                return viewModel.colors[PriorityEisenhower.urgentButNotImportant.index]
-            case .notUrgentAndNotImportant:
-                return viewModel.colors[PriorityEisenhower.notUrgentAndNotImportant.index]
-            }
-        }()
+        let pillColor = viewModel.color(for: priority)
         
         return VStack(alignment: .leading, spacing: 10) {
             ForEach(capsule) { habit in
@@ -197,15 +193,13 @@ struct PriorityMatrixView: View {
     
     private func moveHabitWith(_ id: UUID, to newPriority: PriorityEisenhower) {
         Task {
-            await viewModel.changePrirorityFor(id, to: newPriority)
+            await viewModel.changePriorityFor(id, to: newPriority)
         }
     }
     
     private func moveHabitWith(_ ids: [UUID], to newPriority: PriorityEisenhower) {
         Task {
-            for id in ids {
-                await viewModel.changePrirorityFor(id, to: newPriority)
-            }
+            await viewModel.changePriorityFor(ids, to: newPriority)
         }
     }
 

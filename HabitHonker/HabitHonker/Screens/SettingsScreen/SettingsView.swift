@@ -13,12 +13,17 @@ import AuthenticationServices
 struct SettingsView: View {
     @AppStorage("appearance") private var appearanceRaw: String = HonkerColorSchema.auto.rawValue
     @State private var path = NavigationPath()
+    @StateObject private var viewModel: SettingsViewModel
     @EnvironmentObject private var sync: SyncManager
     @State private var showiCloudHint = false
-    
-    @EnvironmentObject private var viewModel: HabitListViewModel
+
+    init(viewModel: SettingsViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
     
     var body: some View {
+        let hasCustomBackground = viewModel.hasCustomBackground
+
         NavigationStack(path: $path) {
             List {
                 Section("Sync") {
@@ -85,7 +90,7 @@ struct SettingsView: View {
                             Text("Choose background")
                                 .tint(.primary)
                             Spacer()
-                            if viewModel.hasCustomBackground {
+                            if hasCustomBackground {
                                 ZStack {
                                     Image(systemName: "trash")
                                         .resizable()
@@ -104,7 +109,7 @@ struct SettingsView: View {
                                         )
                                         .onTapGesture {
                                             Task { @MainActor in
-                                                viewModel.clearBackground()
+                                                await viewModel.clearBackground()
                                             }
                                         }
                                 }
@@ -150,6 +155,7 @@ struct SettingsView: View {
                             Text("To enable sync, sign in to iCloud on this device.")
                         }
             .task {
+                await viewModel.load()
                 // Fires every time backgroundPickerItem changes (regardless of identifier)
                 for await _ in viewModel.$backgroundPickerItem.values {
                     await viewModel.processPickedBackgroundIfNeeded()
@@ -166,7 +172,7 @@ struct SettingsView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .priorityMatrixEditor:
-                    PriorityMatrixEditorView()
+                    PriorityMatrixEditorView(viewModel: viewModel)
                 default:
                     EmptyView()
                 }

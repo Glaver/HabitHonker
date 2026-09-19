@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		7A1000072F00000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 15D2B5D22E3B1F2E00568AC7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 15D2B5D92E3B1F2E00568AC7;
+			remoteInfo = HabitHonker;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		15D2B5DA2E3B1F2E00568AC7 /* HabitHonker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HabitHonker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A1000012F00000000000001 /* HabitHonkerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HabitHonkerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -29,10 +40,22 @@
 			path = HabitHonker;
 			sourceTree = "<group>";
 		};
+		7A1000022F00000000000001 /* HabitHonkerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HabitHonkerTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		15D2B5D72E3B1F2E00568AC7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A1000032F00000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -46,6 +69,7 @@
 			isa = PBXGroup;
 			children = (
 				15D2B5DC2E3B1F2E00568AC7 /* HabitHonker */,
+				7A1000022F00000000000001 /* HabitHonkerTests */,
 				15D2B5DB2E3B1F2E00568AC7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				15D2B5DA2E3B1F2E00568AC7 /* HabitHonker.app */,
+				7A1000012F00000000000001 /* HabitHonkerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,6 +108,29 @@
 			productReference = 15D2B5DA2E3B1F2E00568AC7 /* HabitHonker.app */;
 			productType = "com.apple.product-type.application";
 		};
+		7A1000052F00000000000001 /* HabitHonkerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A1000082F00000000000001 /* Build configuration list for PBXNativeTarget "HabitHonkerTests" */;
+			buildPhases = (
+				7A1000042F00000000000001 /* Sources */,
+				7A1000032F00000000000001 /* Frameworks */,
+				7A10000B2F00000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7A1000062F00000000000001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				7A1000022F00000000000001 /* HabitHonkerTests */,
+			);
+			name = HabitHonkerTests;
+			packageProductDependencies = (
+			);
+			productName = HabitHonkerTests;
+			productReference = 7A1000012F00000000000001 /* HabitHonkerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -95,6 +143,10 @@
 				TargetAttributes = {
 					15D2B5D92E3B1F2E00568AC7 = {
 						CreatedOnToolsVersion = 16.1;
+					};
+					7A1000052F00000000000001 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 15D2B5D92E3B1F2E00568AC7;
 					};
 				};
 			};
@@ -113,12 +165,20 @@
 			projectRoot = "";
 			targets = (
 				15D2B5D92E3B1F2E00568AC7 /* HabitHonker */,
+				7A1000052F00000000000001 /* HabitHonkerTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		15D2B5D82E3B1F2E00568AC7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A10000B2F00000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +195,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7A1000042F00000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7A1000062F00000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 15D2B5D92E3B1F2E00568AC7 /* HabitHonker */;
+			targetProxy = 7A1000072F00000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		15D2B5E82E3B1F2F00568AC7 /* Debug */ = {
@@ -331,6 +406,54 @@
 			};
 			name = Release;
 		};
+		7A1000092F00000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3BT3VR7R3L;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flyingwhale.habithonker.HabitHonkerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HabitHonker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HabitHonker";
+			};
+			name = Debug;
+		};
+		7A10000A2F00000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3BT3VR7R3L;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flyingwhale.habithonker.HabitHonkerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HabitHonker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HabitHonker";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -348,6 +471,15 @@
 			buildConfigurations = (
 				15D2B5EB2E3B1F2F00568AC7 /* Debug */,
 				15D2B5EC2E3B1F2F00568AC7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7A1000082F00000000000001 /* Build configuration list for PBXNativeTarget "HabitHonkerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7A1000092F00000000000001 /* Debug */,
+				7A10000A2F00000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

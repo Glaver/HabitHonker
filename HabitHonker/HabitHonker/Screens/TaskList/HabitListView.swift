@@ -96,6 +96,9 @@ struct HabitListView: View {
             }
             .onAppear {
                 startDateTimer()
+                Task {
+                    await viewModel.reloadAppearanceForDisplay()
+                }
             }
             .onDisappear {
                 stopDateTimer()
@@ -172,19 +175,15 @@ struct HabitListView: View {
     
     // MARK: - Derived Data
     private var todayHabits: [HabitModel] {
-        viewModel.items
-            .filtered(by: currentDate)
-            .filter { !$0.isCompleted(on: currentDate) }
+        HabitSortFilterService.incompleteHabitsForDate(viewModel.items, date: currentDate)
     }
     
     private var notTodayHabits: [HabitModel] {
-        viewModel.items
-            .filteredNotForToday(by: currentDate)
-            .filter { !$0.isCompleted(on: currentDate) }
+        HabitSortFilterService.incompleteHabitsNotForDate(viewModel.items, date: currentDate)
     }
     
     private var completedHabits: [HabitModel] {
-        viewModel.items.filteredCompleted(on: currentDate)
+        HabitSortFilterService.completedHabits(viewModel.items, on: currentDate)
     }
     
     // MARK: - Timer Methods

@@ -10,6 +10,7 @@ struct HabitHonkerApp: App {
     @State private var isBuildingContainer = false
     @State private var didInitialBuild = false
     @State private var container: ModelContainer?
+    @State private var appCoordinator: AppCoordinator?
     
     @StateObject private var sync = SyncManager()
 
@@ -19,10 +20,11 @@ struct HabitHonkerApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if let container {
+                if let container, let appCoordinator {
                     let identity = container.configurations.first?.cloudKitContainerIdentifier ?? "local"
-                    RootTabsView(container: container)
+                    RootTabsView(container: container, dependencies: appCoordinator.dependencies)
                         .id(identity)                    // <- ensures teardown before rebuild
+                        .environmentObject(appCoordinator)
                         .environmentObject(sync)
                         .modelContainer(container)
                 } else {
@@ -54,13 +56,14 @@ struct HabitHonkerApp: App {
         let currentID = container?.configurations.first?.cloudKitContainerIdentifier
 
         // No-op if nothing actually changes (unless forced)
-        if !force {
+        if !force, appCoordinator != nil {
             if wantCloud, currentID == cloudID { return }
             if !wantCloud, currentID == nil { return }
         }
 
         // Tear down old store FIRST to avoid 134422
         container = nil
+        appCoordinator = nil
         await Task.yield() // give old store a chance to deinit & unregister
 
         if wantCloud {
@@ -85,6 +88,10 @@ struct HabitHonkerApp: App {
                 allowsSave: true
             )
             container = try? ModelContainer(for: schema, configurations: cfg)
+        }
+
+        if let container {
+            appCoordinator = AppCoordinator(dependencies: .make(container: container))
         }
     }
 }
