@@ -22,7 +22,7 @@ final class HabitListViewModel: ObservableObject {
     @Published private(set) var backgroundImageData: Data? = nil
 
     private let log = Log.habitBeastVM
-    private var inFlightOps = Set<UUID>()
+    private let mutations = HabitMutationCoordinator()
     
     private let habitService: HabitServiceProtocol
     private let habitEvents: HabitEventsPublishing
@@ -32,7 +32,6 @@ final class HabitListViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var didLoadOnce = false
     private var isLoading = false
-    private var isSaving = false
     private var resortWorkItem: DispatchWorkItem?
 
     var backgroundUIImage: UIImage? {
@@ -123,48 +122,39 @@ final class HabitListViewModel: ObservableObject {
         }
     }
     
-    func saveItem(_ item: HabitModel) async {
-        guard !isSaving else {
-            log.debug("saveItem skipped — saving in progress")
-            return
+    func saveItem(_ submittedItem: HabitModel) async {
+        await mutations.withMutation(for: submittedItem.id) {
+            let opID = UUID()
+            log.info("💾 saveItem start id=\(submittedItem.id.uuidString, privacy: .public) title=\(submittedItem.title, privacy: .public) op=\(opID.uuidString, privacy: .public)")
+            defer { log.info("✅ saveItem end op=\(opID.uuidString, privacy: .public)") }
+            setEditingItem(submittedItem)
+            await reconcileNotification(for: submittedItem)
+            await saveCurrent(submittedItem)
         }
-        isSaving = true
-        let opID = UUID() // correlation id for this save action
-        log.info("💾 saveItem start id=\(item.id.uuidString, privacy: .public) title=\(item.title, privacy: .public) op=\(opID.uuidString, privacy: .public)")
-        defer { isSaving = false
-            log.info("✅ saveItem end op=\(opID.uuidString, privacy: .public)")}
-        setEditingItem(item)
-        await reconcileNotification(for: item)
-        await saveCurrent()
     }
-    
-    func deleteItem(_ item: HabitModel) async {
-        await deleteNotification(for: item)
-        await deleteItem(withId: item.id)
-    }
-    
-    func habitCompleteWith(id: UUID) async {
-        guard !inFlightOps.contains(id),
-              let index = items.firstIndex(where: { $0.id == id }) else { return }
-        inFlightOps.insert(id)
-        defer { inFlightOps.remove(id) }
-        
-        var updated = items[index]
-        updated.completeHabitNow()
-        
-        upsertInMemory(updated)
 
-        setEditingItem(updated)
-        do {
-            if let persisted = try await habitService.completeHabit(id: id) {
-                upsertInMemory(persisted)
-                setEditingItem(persisted)
-            }
-        } catch {
-            self.error = error.localizedDescription
+    func deleteItem(_ submittedItem: HabitModel) async {
+        await mutations.withMutation(for: submittedItem.id) {
+            await deleteNotification(for: submittedItem)
+            await deleteItem(withId: submittedItem.id)
         }
     }
-    
+
+    func habitCompleteWith(id: UUID) async {
+        await mutations.withMutation(for: id) {
+            do {
+                // The service fetches and completes the latest persisted value,
+                // after earlier mutations for this UUID have finished.
+                if let persisted = try await habitService.completeHabit(id: id) {
+                    upsertInMemory(persisted)
+                    setEditingItem(persisted)
+                }
+            } catch {
+                self.error = error.localizedDescription
+            }
+        }
+    }
+
     func loadIfNeeded() async {
         guard !didLoadOnce else { return }
         didLoadOnce = true
@@ -185,18 +175,6 @@ private extension HabitListViewModel {
             .store(in: &cancellables)
     }
 
-    func delete(at offsets: IndexSet) async {
-        do {
-            let ids = offsets.map { items[$0].id }
-            for id in ids {
-                try await habitService.deleteHabit(id: id)
-            }
-            items.removeAll { ids.contains($0.id) }
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-    
     private func upsertInMemory(_ updated: HabitModel) {
         if let idx = items.firstIndex(where: { $0.id == updated.id }) {
             items[idx] = updated
@@ -213,19 +191,10 @@ private extension HabitListViewModel {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.06, execute: work)
     }
     
-    func saveCurrent() async {
+    func saveCurrent(_ habit: HabitModel) async {
         do {
-            try await habitService.saveHabit(item)
-            upsertInMemory(item)
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-    
-    func deleteCurrent() async {
-        do {
-            try await habitService.deleteHabit(id: item.id)
-            items.removeAll { $0.id == item.id }
+            try await habitService.saveHabit(habit)
+            upsertInMemory(habit)
         } catch {
             self.error = error.localizedDescription
         }
