@@ -10,7 +10,8 @@ struct RewardCalculator: RewardCalculating {
             throw GamificationCalculationError.unsupportedPolicyVersion(input.policyVersion)
         }
         guard input.streakAfterCompletion >= 0,
-              input.taskType != .repeating || input.streakAfterCompletion >= policy.minimumRepeatingStreak else {
+              input.taskType != .repeating || input.streakAfterCompletion >= policy.minimumRepeatingStreak,
+              input.taskType != .oneTime || input.streakAfterCompletion == 0 else {
             throw GamificationCalculationError.invalidStreak(input.streakAfterCompletion)
         }
         let repeating = input.taskType == .repeating

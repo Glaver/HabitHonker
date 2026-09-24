@@ -64,7 +64,7 @@ final class GamificationServiceTests: XCTestCase {
     private func frozenInput() -> GamificationRewardInput {
         GamificationRewardInput(targetID: BehaviorTargetID(UUID(uuidString: "22222222-2222-2222-2222-222222222222")!),
             taskType: .oneTime, priority: .importantAndUrgent, streakAfterCompletion: 0,
-            isOnTime: true, rewardEligibility: true, policyVersion: 1)
+            isOnTime: true, rewardEligibility: .eligible, policyVersion: 1)
     }
 }
 

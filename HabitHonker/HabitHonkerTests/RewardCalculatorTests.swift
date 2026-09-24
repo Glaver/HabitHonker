@@ -55,13 +55,18 @@ final class RewardCalculatorTests: XCTestCase {
         }
     }
 
-    func testOneTimeIgnoresStreakMultipliersAndMilestones() throws {
-        for streak in [0,1,2,3,4,6,7,13,14,29,30,59,60,99,100,101,Int.max] {
-            let result = try calculator.reward(for: input(type: .oneTime, streak: streak))
-            XCTAssertEqual(result.xp, 40)
-            XCTAssertEqual(result.honkerCoins, 5)
-            XCTAssertEqual(result.breakdown.streakMultiplier, 100)
-            XCTAssertEqual(result.breakdown.streakCoinBonus, 0)
+    func testOneTimeRequiresZeroStreakAndHasNoStreakModifiers() throws {
+        let result = try calculator.reward(for: input(type: .oneTime, streak: 0))
+        XCTAssertEqual(result.xp, 40)
+        XCTAssertEqual(result.honkerCoins, 5)
+        XCTAssertEqual(result.breakdown.streakMultiplier, 100)
+        XCTAssertEqual(result.breakdown.streakCoinBonus, 0)
+        for streak in [Int.min, -1, 1, 2, 3, 7, 14, 30, 60, 100, Int.max] {
+            for eligibility in [RewardEligibility.eligible, .ineligible] {
+                XCTAssertThrowsError(try calculator.reward(for: input(type: .oneTime, streak: streak, eligibility: eligibility))) {
+                    XCTAssertEqual($0 as? GamificationCalculationError, .invalidStreak(streak))
+                }
+            }
         }
     }
 
@@ -125,10 +130,10 @@ final class RewardCalculatorTests: XCTestCase {
 
     private func input(type: GamificationTaskType = .repeating,
                        priority: BehaviorPriority = .notUrgentAndNotImportant,
-                       streak: Int = 1, onTime: Bool = false,
+                       streak: Int? = nil, onTime: Bool = false,
                        eligibility: RewardEligibility = .eligible, version: Int = 1) -> GamificationRewardInput {
         GamificationRewardInput(targetID: BehaviorTargetID(UUID(uuidString: "11111111-1111-1111-1111-111111111111")!),
-                                taskType: type, priority: priority, streakAfterCompletion: streak,
+                                taskType: type, priority: priority, streakAfterCompletion: streak ?? (type == .repeating ? 1 : 0),
                                 isOnTime: onTime, rewardEligibility: eligibility, policyVersion: version)
     }
 }

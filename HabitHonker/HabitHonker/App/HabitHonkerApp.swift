@@ -15,7 +15,7 @@ struct HabitHonkerApp: App {
     @StateObject private var sync = SyncManager()
 
     private let cloudID = "iCloud.com.flyingwhale.habithonker"
-    private let schema = Schema([HabitSD.self, HabitRecordSD.self, DeletedHabitSD.self, StatisticsPresetSD.self])
+    private let schema = Schema(versionedSchema: HabitHonkerSchemaV2.self)
     
     var body: some Scene {
         WindowGroup {
@@ -74,9 +74,9 @@ struct HabitHonkerApp: App {
                 groupContainer: .automatic,
                 cloudKitDatabase: .private(cloudID)
             )
-            container = try? ModelContainer(for: schema, configurations: cfg)
+            container = try? ModelContainer(for: schema, migrationPlan: HabitHonkerMigrationPlan.self, configurations: cfg)
         } else {
-            container = try? ModelContainer(for: schema)
+            container = try? ModelContainer(for: schema, migrationPlan: HabitHonkerMigrationPlan.self)
         }
 
         // Fallback so app always starts
@@ -87,7 +87,7 @@ struct HabitHonkerApp: App {
                 isStoredInMemoryOnly: true,
                 allowsSave: true
             )
-            container = try? ModelContainer(for: schema, configurations: cfg)
+            container = try? ModelContainer(for: schema, migrationPlan: HabitHonkerMigrationPlan.self, configurations: cfg)
         }
 
         if let container {

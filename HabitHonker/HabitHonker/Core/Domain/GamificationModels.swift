@@ -55,12 +55,12 @@ struct LevelProgress: Equatable, Sendable {
     let totalXP: Int
     
     let xpEarnedWithinCurrentLevel: Int
-    let xpRequiredForCurrentLevel: Int
+    let xpRequiredToNextLevel: Int
     let xpRemainingToNextLevel: Int
 
     /// Presentation only: no floating-point value participates in level selection.
     var progressFraction: Double {
-        Double(xpEarnedWithinCurrentLevel) / Double(xpRequiredForCurrentLevel)
+        Double(xpEarnedWithinCurrentLevel) / Double(xpRequiredToNextLevel)
     }
 }
 
