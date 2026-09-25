@@ -167,6 +167,8 @@ final class GamificationPersistenceTests: XCTestCase {
                      "App/AppDependencies.swift", "Repository/SwiftDataRepository/HabitsRepositorySwiftData.swift"] {
             let source = try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
             for forbidden in ["GamificationService", "GamificationProfileSD", "GamificationLedgerEntrySD", "TaskOccurrenceSD", "BehaviorEventSD", "BehaviorScheduleRevisionSD"] {
+                // Phase 3 permits construction in DI, while keeping all live completion consumers unchanged.
+                if path == "App/AppDependencies.swift", forbidden == "GamificationService" { continue }
                 XCTAssertFalse(source.contains(forbidden), "\(path): \(forbidden)")
             }
         }

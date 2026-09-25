@@ -23,6 +23,44 @@ actor HabitsRepositorySwiftData {
         return ctx
     }
 
+    // MARK: - Isolated normalized completion (not called by the live HabitService)
+    func completeBehavior(_ command: BehaviorCompletionCommand,
+                          transaction: BehaviorTransactionSD) throws -> BehaviorTransactionResult {
+        try executeBehavior(command, transaction: transaction, beforeSave: { _ in })
+    }
+
+    #if DEBUG
+    /// Internal test seam, absent from release builds. The same save/rollback path is exercised.
+    func completeBehaviorForTesting(_ command: BehaviorCompletionCommand,
+                                    transaction: BehaviorTransactionSD,
+                                    beforeSave: @Sendable (ModelContext) throws -> Void) throws -> BehaviorTransactionResult {
+        try executeBehavior(command, transaction: transaction, beforeSave: beforeSave)
+    }
+    #endif
+
+    private func executeBehavior(_ command: BehaviorCompletionCommand,
+                                 transaction: BehaviorTransactionSD,
+                                 beforeSave: (ModelContext) throws -> Void) throws -> BehaviorTransactionResult {
+        let context = makeContext()
+        do {
+            let result = try transaction.apply(command, in: context)
+            if case .applied = result {
+                try beforeSave(context)
+                try context.save()
+            }
+            return result
+        } catch {
+            context.rollback()
+            if let error = error as? BehaviorTransactionError { throw error }
+            if let error = error as? GamificationCalculationError {
+                throw BehaviorTransactionError.calculationFailure(error)
+            }
+            let underlying = error as NSError
+            throw BehaviorTransactionError.persistenceFailure(domain: underlying.domain, code: underlying.code,
+                                                                message: underlying.localizedDescription)
+        }
+    }
+
     // MARK: - CRUD
     func fetchAll() throws -> [HabitModel] {
         let t0 = DispatchTime.now()

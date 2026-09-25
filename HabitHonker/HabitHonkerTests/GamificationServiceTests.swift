@@ -16,7 +16,7 @@ final class GamificationServiceTests: XCTestCase {
 
     func testLevelDelegatesRawTotalAndReturnsDependencyProgress() throws {
         let sentinel = LevelProgress(level: 42, totalXP: 99, xpEarnedWithinCurrentLevel: 2,
-                                     xpRequiredForCurrentLevel: 10, xpRemainingToNextLevel: 8)
+                                     xpRequiredToNextLevel: 10, xpRemainingToNextLevel: 8)
         let service = GamificationService(rewardCalculator: RejectingRewardStub(),
                                          levelCalculator: LevelStub(expected: -19, result: sentinel))
         XCTAssertEqual(try service.levelProgress(forTotalXP: -19), sentinel)
