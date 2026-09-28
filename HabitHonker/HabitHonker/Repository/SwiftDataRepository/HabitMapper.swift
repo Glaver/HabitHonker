@@ -87,7 +87,18 @@ enum HabitMapper {
         )
     }
     
-    // MARK: Domain -> SD (create new)
+    // MARK: Metadata -> SD (create new, no completion history)
+    /// Row for a brand-new habit. Completion records are never constructed here; they are
+    /// added only by `HabitsRepositorySwiftData.recordLegacyCompletion`.
+    static func makeSD(id: UUID, metadata: HabitMetadata) -> HabitSD {
+        let sd = HabitSD(id: id, records: [])
+        applyMetadata(metadata, to: sd)
+        return sd
+    }
+
+    // MARK: Domain -> SD (archive restore only)
+    /// Rebuilds a complete row, including its records, from an archived habit.
+    /// Used only by `restoreDeletedHabit`; never by create or metadata update.
     static func makeSD(from domain: HabitModel) -> HabitSD {
         let sdRecords: [HabitRecordSD] = domain.record.map { r in
             let rec = HabitRecordSD()
@@ -116,28 +127,20 @@ enum HabitMapper {
         return sd
     }
     
-    // MARK: Update existing SD with domain values
-    static func apply(_ domain: HabitModel, to sd: HabitSD) {
-        sd.icon = domain.icon
-        sd.iconColorHex = hex(from: domain.iconColor)
-        sd.title = domain.title
-        sd.descriptionText = domain.description
-        sd.tags = domain.tags
-        sd.priorityRaw = domain.priority.rawValue
-        sd.typeRaw = domain.type.rawValue
-        sd.repeatingWeekdays = domain.repeating.map(\.rawValue)
-        sd.dueDate = domain.dueDate
-        sd.notificationActivated = domain.isNotificationActivated
-        
-        let newRecords: [HabitRecordSD] = domain.record.map { r in
-            let rec = HabitRecordSD()
-            rec.id = r.id
-            rec.date = r.date
-            rec.count = r.count
-            return rec
-        }
-        sd.records = newRecords
-        sd.records?.forEach { $0.habit = sd }
+    // MARK: Update existing SD with metadata only
+    /// Assigns the editable fields. Never reads, assigns or recreates `records`, so a
+    /// metadata write cannot drop, replace or orphan completion history.
+    static func applyMetadata(_ metadata: HabitMetadata, to sd: HabitSD) {
+        sd.icon = metadata.icon
+        sd.iconColorHex = hex(from: metadata.iconColor)
+        sd.title = metadata.title
+        sd.descriptionText = metadata.description
+        sd.tags = metadata.tags
+        sd.priorityRaw = metadata.priority.rawValue
+        sd.typeRaw = metadata.type.rawValue
+        sd.repeatingWeekdays = metadata.repeating.map(\.rawValue)
+        sd.dueDate = metadata.dueDate
+        sd.notificationActivated = metadata.isNotificationActivated
     }
     
     // MARK: Domain -> DeletedHabitSD (archive)

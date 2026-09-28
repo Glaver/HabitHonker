@@ -122,6 +122,26 @@ final class HabitListViewModel: ObservableObject {
         }
     }
     
+    /// Creates a new habit (the "add new habit" screen).
+    func createItem(_ submittedItem: HabitModel) async {
+        await mutations.withMutation(for: submittedItem.id) {
+            let opID = UUID()
+            log.info("🆕 createItem start id=\(submittedItem.id.uuidString, privacy: .public) op=\(opID.uuidString, privacy: .public)")
+            defer { log.info("✅ createItem end op=\(opID.uuidString, privacy: .public)") }
+            setEditingItem(submittedItem)
+            await reconcileNotification(for: submittedItem)
+            do {
+                let created = try await habitService.createHabit(submittedItem)
+                upsertInMemory(created)
+            } catch {
+                self.error = error.localizedDescription
+            }
+        }
+    }
+
+    /// Saves Details edits of an existing habit. Only metadata is written: the draft's
+    /// (possibly stale) completion records are ignored, and the list keeps the fresh
+    /// persisted habit returned by the service.
     func saveItem(_ submittedItem: HabitModel) async {
         await mutations.withMutation(for: submittedItem.id) {
             let opID = UUID()
@@ -129,7 +149,19 @@ final class HabitListViewModel: ObservableObject {
             defer { log.info("✅ saveItem end op=\(opID.uuidString, privacy: .public)") }
             setEditingItem(submittedItem)
             await reconcileNotification(for: submittedItem)
-            await saveCurrent(submittedItem)
+            do {
+                let persisted = try await habitService.updateHabit(submittedItem)
+                upsertInMemory(persisted)
+            } catch let error as HabitRepositoryError {
+                if case .notFound = error {
+                    // The habit was deleted before this edit ran, so nothing was written.
+                    // Remove any alarm reconcileNotification just scheduled for it.
+                    await notifier.cancel(for: submittedItem.id)
+                }
+                self.error = error.localizedDescription
+            } catch {
+                self.error = error.localizedDescription
+            }
         }
     }
 
@@ -143,7 +175,7 @@ final class HabitListViewModel: ObservableObject {
     func habitCompleteWith(id: UUID) async {
         await mutations.withMutation(for: id) {
             do {
-                // The service fetches and completes the latest persisted value,
+                // One repository operation increments the latest persisted day record,
                 // after earlier mutations for this UUID have finished.
                 if let persisted = try await habitService.completeHabit(id: id) {
                     upsertInMemory(persisted)
@@ -189,15 +221,6 @@ private extension HabitListViewModel {
             }
             resortWorkItem = work
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.06, execute: work)
-    }
-    
-    func saveCurrent(_ habit: HabitModel) async {
-        do {
-            try await habitService.saveHabit(habit)
-            upsertInMemory(habit)
-        } catch {
-            self.error = error.localizedDescription
-        }
     }
     
     func deleteItem(withId id: UUID) async {

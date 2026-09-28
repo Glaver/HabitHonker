@@ -39,6 +39,37 @@ final class HabitListViewModelNotificationTests: XCTestCase {
         XCTAssertEqual(habitService.deletedIDs, [habit.id])
     }
 
+    func testSaveItemForHabitDeletedMeanwhileCancelsTheAlarmItJustScheduled() async {
+        let notifier = NotificationSchedulingSpy()
+        let habitService = HabitServiceSpy()
+        let habit = makeHabit(notificationActivated: true)
+        habitService.updateError = HabitRepositoryError.notFound(habit.id)
+        let viewModel = makeViewModel(habitService: habitService, notifier: notifier)
+
+        await viewModel.saveItem(habit)
+
+        // Existing order is kept (reschedule before persistence); the rejected update then
+        // removes that alarm so nothing fires for a habit that no longer exists.
+        XCTAssertEqual(notifier.rescheduledHabits.map(\.id), [habit.id])
+        XCTAssertEqual(notifier.cancelledIDs, [habit.id])
+        XCTAssertTrue(habitService.savedHabits.isEmpty)
+        XCTAssertNotNil(viewModel.error)
+        XCTAssertFalse(viewModel.items.contains { $0.id == habit.id })
+    }
+
+    func testCreateItemReschedulesAndCreatesHabit() async {
+        let notifier = NotificationSchedulingSpy()
+        let habitService = HabitServiceSpy()
+        let habit = makeHabit(notificationActivated: true)
+        let viewModel = makeViewModel(habitService: habitService, notifier: notifier)
+
+        await viewModel.createItem(habit)
+
+        XCTAssertEqual(notifier.rescheduledHabits.map(\.id), [habit.id])
+        XCTAssertEqual(habitService.savedHabits.map(\.id), [habit.id])
+        XCTAssertTrue(viewModel.items.contains { $0.id == habit.id })
+    }
+
     private func makeViewModel(
         habitService: HabitServiceSpy = HabitServiceSpy(),
         notifier: NotificationSchedulingSpy
@@ -107,8 +138,18 @@ private final class HabitServiceSpy: HabitServiceProtocol {
         habits.first { $0.id == id }
     }
 
-    func saveHabit(_ habit: HabitModel) async throws {
+    /// When set, `updateHabit` throws it instead of saving (e.g. the habit was deleted).
+    var updateError: Error?
+
+    func createHabit(_ habit: HabitModel) async throws -> HabitModel {
         savedHabits.append(habit)
+        return habit
+    }
+
+    func updateHabit(_ habit: HabitModel) async throws -> HabitModel {
+        if let updateError { throw updateError }
+        savedHabits.append(habit)
+        return habit
     }
 
     func deleteHabit(id: UUID) async throws {

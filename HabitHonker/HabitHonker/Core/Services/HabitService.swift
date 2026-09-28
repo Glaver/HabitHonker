@@ -8,11 +8,19 @@ import Foundation
 final class HabitService: HabitServiceProtocol {
     private let repository: HabitRepositoryProtocol
     private let habitEvents: HabitEventsPublishing
+    private let now: () -> Date
+    private let calendar: () -> Calendar
 
+    /// `now` and `calendar` decide the legacy completion day. The defaults keep today's live
+    /// behavior (wall clock + device calendar) at this application boundary; tests inject them.
     init(repository: HabitRepositoryProtocol,
-         habitEvents: HabitEventsPublishing) {
+         habitEvents: HabitEventsPublishing,
+         now: @escaping () -> Date = { Date() },
+         calendar: @escaping () -> Calendar = { Calendar.current }) {
         self.repository = repository
         self.habitEvents = habitEvents
+        self.now = now
+        self.calendar = calendar
     }
 
     func fetchHabits() async throws -> [HabitModel] {
@@ -23,10 +31,16 @@ final class HabitService: HabitServiceProtocol {
         try await repository.fetch(id: id)
     }
 
-    func saveHabit(_ habit: HabitModel) async throws {
-        let existing = try await repository.fetch(id: habit.id)
-        try await repository.upsert(habit)
-        habitEvents.send(existing == nil ? .created : .updated)
+    func createHabit(_ habit: HabitModel) async throws -> HabitModel {
+        let created = try await repository.createHabit(id: habit.id, metadata: HabitMetadata(habit))
+        habitEvents.send(.created)
+        return created
+    }
+
+    func updateHabit(_ habit: HabitModel) async throws -> HabitModel {
+        let updated = try await repository.updateMetadata(id: habit.id, metadata: HabitMetadata(habit))
+        habitEvents.send(.updated)
+        return updated
     }
 
     func deleteHabit(id: UUID) async throws {
@@ -34,20 +48,28 @@ final class HabitService: HabitServiceProtocol {
         habitEvents.send(.deleted)
     }
 
+    /// Legacy completion (no gamification). Returns nil when the habit no longer exists.
     func completeHabit(id: UUID) async throws -> HabitModel? {
-        guard var habit = try await repository.fetch(id: id) else { return nil }
-        habit.completeHabitNow()
-        try await repository.upsert(habit)
-        habitEvents.send(.completed)
-        return habit
+        do {
+            let habit = try await repository.recordLegacyCompletion(id: id, at: now(), calendar: calendar())
+            habitEvents.send(.completed)
+            return habit
+        } catch let error as HabitRepositoryError {
+            if case .notFound = error { return nil }
+            throw error
+        }
     }
 
+    /// Changes only the priority. Returns nil when the habit no longer exists.
     func changePriority(id: UUID, to priority: PriorityEisenhower) async throws -> HabitModel? {
-        guard var habit = try await repository.fetch(id: id) else { return nil }
-        habit.priority = priority
-        try await repository.upsert(habit)
-        habitEvents.send(.priorityChanged)
-        return habit
+        do {
+            let habit = try await repository.updatePriority(id: id, priority: priority)
+            habitEvents.send(.priorityChanged)
+            return habit
+        } catch let error as HabitRepositoryError {
+            if case .notFound = error { return nil }
+            throw error
+        }
     }
 
     func fetchDeletedHabits() async throws -> [HabitModel] {

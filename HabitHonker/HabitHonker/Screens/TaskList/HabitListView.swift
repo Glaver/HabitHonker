@@ -141,7 +141,7 @@ struct HabitListView: View {
                                                      priorityTitles: viewModel.titles,
                                                      saveAction: { habit in
                         Task {
-                            await viewModel.saveItem(habit)
+                            await viewModel.createItem(habit)
                         }
                     },
                                                      deleteAction: { habit in

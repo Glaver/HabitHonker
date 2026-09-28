@@ -95,44 +95,6 @@ actor HabitsRepositorySwiftData {
         }
     }
 
-    func save(_ item: HabitModel) throws {
-        let t0 = DispatchTime.now()
-        log.info("💾 save id=\(item.id.uuidString, privacy: .public) title=\(item.title, privacy: .public)")
-        do {
-            let ctx = makeContext()
-            let sd = HabitMapper.makeSD(from: item)
-            ctx.insert(sd)
-            try ctx.save()
-            log.info("✅ save id=\(item.id.uuidString, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
-        } catch {
-            log.error("❌ save id=\(item.id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-            throw error
-        }
-    }
-
-    func update(_ item: HabitModel) throws {
-        let t0 = DispatchTime.now()
-        log.info("✏️ update id=\(item.id.uuidString, privacy: .public) title=\(item.title, privacy: .public)")
-        do {
-            let ctx = makeContext()
-            let targetId = item.id                               // capture first
-            let pred = #Predicate<HabitSD> { $0.id == targetId }
-            var d = FetchDescriptor<HabitSD>(predicate: pred)
-            d.fetchLimit = 1
-
-            if let sd = try ctx.fetch(d).first {
-                HabitMapper.apply(item, to: sd)
-                try ctx.save()
-                log.info("✅ update id=\(item.id.uuidString, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
-            } else {
-                log.warning("⚠️ update skipped (not found) id=\(item.id.uuidString, privacy: .public)")
-            }
-        } catch {
-            log.error("❌ update id=\(item.id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-            throw error
-        }
-    }
-
     func delete(id: UUID) throws {
         let t0 = DispatchTime.now()
         log.info("🗑️ delete id=\(id.uuidString, privacy: .public)")
@@ -295,26 +257,113 @@ actor HabitsRepositorySwiftData {
     }
 }
 
+// MARK: - Metadata-safe mutations (Phase 4A)
+// Metadata writes never read, assign or recreate `records`. Completion history changes only
+// through `recordLegacyCompletion`. Each operation uses one context and one save, and runs
+// entirely inside this actor, so no other write can interleave between its read and its save.
 extension HabitsRepositorySwiftData {
-    func upsert(_ item: HabitModel) throws {
+    /// Inserts a brand-new habit with no completion history.
+    /// Throws `alreadyExists` instead of overwriting an existing row.
+    func createHabit(id: UUID, metadata: HabitMetadata) throws -> HabitModel {
         let t0 = DispatchTime.now()
-        log.info("📝 upsert id=\(item.id.uuidString, privacy: .public)")
+        log.info("🆕 createHabit id=\(id.uuidString, privacy: .public)")
         do {
             let ctx = makeContext()
-            let id = item.id
-            let pred = #Predicate<HabitSD> { $0.id == id }
-            var d = FetchDescriptor<HabitSD>(predicate: pred); d.fetchLimit = 1
-
-            if let sd = try ctx.fetch(d).first {
-                HabitMapper.apply(item, to: sd)
-            } else {
-                ctx.insert(HabitMapper.makeSD(from: item))
+            guard try activeHabitCount(id: id, in: ctx) == 0 else {
+                throw HabitRepositoryError.alreadyExists(id)
             }
+            let sd = HabitMapper.makeSD(id: id, metadata: metadata)
+            ctx.insert(sd)
             try ctx.save()
-            log.info("✅ upsert ok in \(elapsedMS(from: t0), privacy: .public) ms")
+            log.info("✅ createHabit id=\(id.uuidString, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+            return HabitMapper.toDomain(sd)
         } catch {
-            log.error("❌ upsert failed: \(error.localizedDescription, privacy: .public)")
+            log.error("❌ createHabit id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             throw error
         }
+    }
+
+    /// Replaces the editable fields of an existing habit and returns the fresh persisted model,
+    /// including its current (authoritative) records. Throws `notFound`; never inserts.
+    func updateMetadata(id: UUID, metadata: HabitMetadata) throws -> HabitModel {
+        let t0 = DispatchTime.now()
+        log.info("✏️ updateMetadata id=\(id.uuidString, privacy: .public)")
+        do {
+            let ctx = makeContext()
+            let sd = try activeHabit(id: id, in: ctx)
+            HabitMapper.applyMetadata(metadata, to: sd)
+            try ctx.save()
+            log.info("✅ updateMetadata id=\(id.uuidString, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+            return HabitMapper.toDomain(sd)
+        } catch {
+            log.error("❌ updateMetadata id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
+    }
+
+    /// Changes only the priority. Throws `notFound`; never inserts.
+    func updatePriority(id: UUID, priority: PriorityEisenhower) throws -> HabitModel {
+        let t0 = DispatchTime.now()
+        log.info("🎯 updatePriority id=\(id.uuidString, privacy: .public) priority=\(priority.rawValue, privacy: .public)")
+        do {
+            let ctx = makeContext()
+            let sd = try activeHabit(id: id, in: ctx)
+            sd.priorityRaw = priority.rawValue
+            try ctx.save()
+            log.info("✅ updatePriority id=\(id.uuidString, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+            return HabitMapper.toDomain(sd)
+        } catch {
+            log.error("❌ updatePriority id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
+    }
+
+    /// Legacy same-day completion (the former `HabitModel.completeHabitNow` semantics) in one
+    /// actor operation. The record whose date falls on the same `calendar` day as `date` is
+    /// incremented with checked arithmetic, keeping its id and original timestamp; if there is
+    /// none, a record with count 1 is inserted at `date`. Metadata is not touched.
+    ///
+    /// Several records on that one day (a legacy/sync anomaly) are not merged or deleted: the
+    /// earliest one (then smallest UUID string) is incremented, deterministically.
+    func recordLegacyCompletion(id: UUID, at date: Date, calendar: Calendar) throws -> HabitModel {
+        let t0 = DispatchTime.now()
+        log.info("✔️ recordLegacyCompletion id=\(id.uuidString, privacy: .public)")
+        do {
+            let ctx = makeContext()
+            let sd = try activeHabit(id: id, in: ctx)
+            let records = sd.records ?? []
+            let sameDay = records
+                .filter { calendar.isDate($0.date, inSameDayAs: date) }
+                .sorted { ($0.date, $0.id.uuidString) < ($1.date, $1.id.uuidString) }
+            if let record = sameDay.first {
+                let (next, overflow) = record.count.addingReportingOverflow(1)
+                guard !overflow else { throw HabitRepositoryError.completionCountOverflow(id) }
+                record.count = next
+            } else {
+                let record = HabitRecordSD(date: date, count: 1, habit: sd)
+                ctx.insert(record)
+                sd.records = records + [record]
+            }
+            try ctx.save()
+            log.info("✅ recordLegacyCompletion id=\(id.uuidString, privacy: .public) sameDay=\(sameDay.count, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+            return HabitMapper.toDomain(sd)
+        } catch {
+            log.error("❌ recordLegacyCompletion id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
+    }
+
+    private func activeHabitCount(id: UUID, in ctx: ModelContext) throws -> Int {
+        try ctx.fetchCount(FetchDescriptor<HabitSD>(predicate: #Predicate<HabitSD> { $0.id == id }))
+    }
+
+    /// Same lookup rule as `fetch(id:)`; missing rows become a typed `notFound`.
+    private func activeHabit(id: UUID, in ctx: ModelContext) throws -> HabitSD {
+        var descriptor = FetchDescriptor<HabitSD>(predicate: #Predicate<HabitSD> { $0.id == id })
+        descriptor.fetchLimit = 1
+        guard let sd = try ctx.fetch(descriptor).first else {
+            throw HabitRepositoryError.notFound(id)
+        }
+        return sd
     }
 }

@@ -12,7 +12,7 @@ final class NotificationInvestigationTests: XCTestCase {
     func testReminderConfigurationRoundTripsThroughSwiftDataInsertAndUpdate() async throws {
         let fixture = try AuditFixture()
         var habit = auditHabit()
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         let inserted = try await fixture.repository.fetch(id: habit.id)
         assertHabit(inserted, equals: habit)
 
@@ -30,8 +30,8 @@ final class NotificationInvestigationTests: XCTestCase {
     func testReproducesOrphanAlarmWhenUpsertFailsAfterScheduling() async throws {
         let fixture = try AuditFixture()
         let habit = auditHabit()
-        fixture.repository.failUpsert = true
-        await fixture.vm.saveItem(habit)
+        fixture.repository.failWrites = true
+        await fixture.vm.createItem(habit)
         let saved = try await fixture.repository.fetch(id: habit.id)
         XCTAssertNil(saved)
         XCTAssertEqual(fixture.notifier.pending[habit.id], habit)
@@ -41,10 +41,10 @@ final class NotificationInvestigationTests: XCTestCase {
     func testReproducesLostAlarmWhenDisablingFailsToPersist() async throws {
         let fixture = try AuditFixture()
         let original = auditHabit()
-        await fixture.vm.saveItem(original)
+        await fixture.vm.createItem(original)
         var disabled = original
         disabled.isNotificationActivated = false
-        fixture.repository.failUpsert = true
+        fixture.repository.failWrites = true
         await fixture.vm.saveItem(disabled)
         let saved = try await fixture.repository.fetch(id: original.id)
         assertHabit(saved, equals: original)
@@ -55,7 +55,7 @@ final class NotificationInvestigationTests: XCTestCase {
     func testReproducesLostAlarmWhenDeleteFailsToPersist() async throws {
         let fixture = try AuditFixture()
         let habit = auditHabit()
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         fixture.repository.failDelete = true
         await fixture.vm.deleteItem(habit)
         let saved = try await fixture.repository.fetch(id: habit.id)
@@ -68,7 +68,7 @@ final class NotificationInvestigationTests: XCTestCase {
         let fixture = try AuditFixture()
         let habit = auditHabit()
         fixture.notifier.failScheduling = true
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         let saved = try await fixture.repository.fetch(id: habit.id)
         assertHabit(saved, equals: habit)
         XCTAssertTrue(fixture.notifier.pending.isEmpty)
@@ -79,8 +79,8 @@ final class NotificationInvestigationTests: XCTestCase {
         let fixture = try AuditFixture()
         var edited = auditHabit(title: "Original A")
         let other = auditHabit(title: "B")
-        try await fixture.repository.upsert(edited)
-        try await fixture.repository.upsert(other)
+        try await fixture.repository.seed(edited)
+        try await fixture.repository.seed(other)
         await fixture.vm.load()
         edited.title = "Draft A"
         let gate = AuditGate()
@@ -95,7 +95,7 @@ final class NotificationInvestigationTests: XCTestCase {
         let storedB = try await fixture.repository.fetch(id: other.id)
         XCTAssertEqual(storedA?.title, "Draft A")
         XCTAssertEqual(storedB?.getTodayCount(), 1)
-        XCTAssertEqual(fixture.repository.upsertArguments.last?.id, edited.id)
+        XCTAssertEqual(fixture.repository.committedWrites.last?.habitID, edited.id)
         XCTAssertEqual(fixture.notifier.pending[edited.id]?.title, "Draft A")
     }
 
@@ -103,8 +103,8 @@ final class NotificationInvestigationTests: XCTestCase {
         let fixture = try AuditFixture()
         var edited = auditHabit(title: "Original A")
         let other = auditHabit(title: "B")
-        try await fixture.repository.upsert(edited)
-        try await fixture.repository.upsert(other)
+        try await fixture.repository.seed(edited)
+        try await fixture.repository.seed(other)
         await fixture.vm.load()
         edited.title = "Draft A"
         edited.isNotificationActivated = false
@@ -121,19 +121,19 @@ final class NotificationInvestigationTests: XCTestCase {
         let storedB = try await fixture.repository.fetch(id: other.id)
         XCTAssertEqual(storedB?.getTodayCount(), 1)
         XCTAssertNil(fixture.notifier.pending[edited.id])
-        XCTAssertEqual(fixture.repository.upsertArguments.last?.id, edited.id)
+        XCTAssertEqual(fixture.repository.committedWrites.last?.habitID, edited.id)
     }
 
     func testSaveUsesSubmittedValueForPersistenceAndMemoryAfterOtherCompletion() async throws {
         let fixture = try AuditFixture()
         var edited = auditHabit(title: "Original A")
         let other = auditHabit(title: "B")
-        try await fixture.repository.upsert(edited)
-        try await fixture.repository.upsert(other)
+        try await fixture.repository.seed(edited)
+        try await fixture.repository.seed(other)
         await fixture.vm.load()
         edited.title = "Draft A"
         let gate = AuditGate()
-        fixture.repository.nextUpsertGate = gate
+        fixture.repository.nextWriteGate = gate
         let save = Task { await fixture.vm.saveItem(edited) }
         await fulfillment(of: [gate.entered], timeout: 5)
         await fixture.vm.habitCompleteWith(id: other.id)
@@ -149,7 +149,7 @@ final class NotificationInvestigationTests: XCTestCase {
     func testDeleteWaitsForSaveThenRemovesSwiftDataRowAndSimulatedAlarm() async throws {
         let fixture = try AuditFixture()
         var habit = auditHabit(title: "Original")
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         habit.title = "Pending edit"
         let gate = AuditGate()
         fixture.notifier.nextScheduleGate = gate
@@ -180,7 +180,7 @@ final class NotificationInvestigationTests: XCTestCase {
         let id = habit.id
         defer { Task { await scheduler.cancel(for: id) } }
         try await requireScheduling(scheduler.base, habit: habit)
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         habit.title = "Resumed edit"
         let gate = AuditGate()
         scheduler.nextGate = gate
@@ -208,11 +208,11 @@ final class NotificationInvestigationTests: XCTestCase {
     func testCompletionWaitsForSaveAndPreservesEditAndCompletion() async throws {
         let fixture = try AuditFixture()
         var habit = auditHabit(title: "Original")
-        try await fixture.repository.upsert(habit)
+        try await fixture.repository.seed(habit)
         await fixture.vm.load()
         habit.title = "Edited"
         let gate = AuditGate()
-        fixture.repository.nextUpsertGate = gate
+        fixture.repository.nextWriteGate = gate
         let save = Task { await fixture.vm.saveItem(habit) }
         await fulfillment(of: [gate.entered], timeout: 5)
         let requested = expectation(description: "Completion submitted")
@@ -221,7 +221,7 @@ final class NotificationInvestigationTests: XCTestCase {
             await fixture.vm.habitCompleteWith(id: habit.id)
         }
         await fulfillment(of: [requested], timeout: 5)
-        XCTAssertEqual(fixture.repository.upsertArguments.count, 2, "Seed and suspended Save only")
+        XCTAssertEqual(fixture.repository.writeAttempts.count, 2, "Seed and suspended Save only")
         await gate.open()
         await save.value
         await complete.value
@@ -235,9 +235,9 @@ final class NotificationInvestigationTests: XCTestCase {
     func testQueuedCompletionsBothApplyToLatestState() async throws {
         let fixture = try AuditFixture()
         let habit = auditHabit()
-        try await fixture.repository.upsert(habit)
+        try await fixture.repository.seed(habit)
         let gate = AuditGate()
-        fixture.repository.nextUpsertGate = gate
+        fixture.repository.nextWriteGate = gate
         let first = Task { await fixture.vm.habitCompleteWith(id: habit.id) }
         await fulfillment(of: [gate.entered], timeout: 5)
         let requested = expectation(description: "Second completion submitted")
@@ -246,7 +246,7 @@ final class NotificationInvestigationTests: XCTestCase {
             await fixture.vm.habitCompleteWith(id: habit.id)
         }
         await fulfillment(of: [requested], timeout: 5)
-        XCTAssertEqual(fixture.repository.upsertArguments.count, 2)
+        XCTAssertEqual(fixture.repository.writeAttempts.count, 2)
         await gate.open()
         await first.value
         await second.value
@@ -258,7 +258,7 @@ final class NotificationInvestigationTests: XCTestCase {
     func testCompletionQueuedAfterDeleteDoesNotRecreateHabit() async throws {
         let fixture = try AuditFixture()
         let habit = auditHabit()
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         let gate = AuditGate()
         fixture.notifier.nextCancelGate = gate
         let delete = Task { await fixture.vm.deleteItem(habit) }
@@ -269,7 +269,7 @@ final class NotificationInvestigationTests: XCTestCase {
             await fixture.vm.habitCompleteWith(id: habit.id)
         }
         await fulfillment(of: [requested], timeout: 5)
-        XCTAssertEqual(fixture.repository.upsertArguments.count, 1)
+        XCTAssertEqual(fixture.repository.writeAttempts.count, 1)
         await gate.open()
         await delete.value
         await complete.value
@@ -277,7 +277,8 @@ final class NotificationInvestigationTests: XCTestCase {
         XCTAssertNil(stored)
         XCTAssertFalse(fixture.vm.items.contains { $0.id == habit.id })
         XCTAssertNil(fixture.notifier.pending[habit.id])
-        XCTAssertEqual(fixture.repository.upsertArguments.count, 1)
+        XCTAssertEqual(fixture.repository.committedWrites.count, 1)
+        XCTAssertEqual(fixture.repository.writeAttempts.count, 2, "Queued completion was attempted and rejected as notFound")
     }
 
     func testSameHabitSavesAreQueuedAndNewestSubmissionWins() async throws {
@@ -287,7 +288,7 @@ final class NotificationInvestigationTests: XCTestCase {
         newer.title = "Newer edit"
         let gate = AuditGate()
         fixture.notifier.nextScheduleGate = gate
-        let save = Task { await fixture.vm.saveItem(first) }
+        let save = Task { await fixture.vm.createItem(first) }
         await fulfillment(of: [gate.entered], timeout: 5)
         let requested = expectation(description: "Second save submitted")
         let second = Task {
@@ -312,11 +313,11 @@ final class NotificationInvestigationTests: XCTestCase {
         let different = auditHabit(title: "Different habit")
         let gate = AuditGate()
         fixture.notifier.nextScheduleGate = gate
-        let save = Task { await fixture.vm.saveItem(first) }
+        let save = Task { await fixture.vm.createItem(first) }
         await fulfillment(of: [gate.entered], timeout: 5)
         let finished = expectation(description: "Unrelated save finished")
         let other = Task {
-            await fixture.vm.saveItem(different)
+            await fixture.vm.createItem(different)
             finished.fulfill()
         }
         await fulfillment(of: [finished], timeout: 5)
@@ -335,7 +336,7 @@ final class NotificationInvestigationTests: XCTestCase {
         let fixture = try AuditFixture(realScheduler: true)
         var habit = auditHabit()
         habit.repeating = []
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         let saved = try await fixture.repository.fetch(id: habit.id)
         let pending = await requests(for: habit.id)
         assertHabit(saved, equals: habit)
@@ -348,7 +349,7 @@ final class NotificationInvestigationTests: XCTestCase {
         var habit = auditHabit()
         habit.type = .dueDate
         habit.dueDate = Date().addingTimeInterval(-3_600)
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         let saved = try await fixture.repository.fetch(id: habit.id)
         let pending = await requests(for: habit.id)
         assertHabit(saved, equals: habit)
@@ -364,7 +365,7 @@ final class NotificationInvestigationTests: XCTestCase {
         defer { Task { await scheduler.cancel(for: id) } }
         // Probe the actual service directly so VM's try? cannot disguise an OS refusal.
         try await requireScheduling(scheduler, habit: habit)
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         await assertRequestIDs(id, weekdays: [2, 4])
 
         habit.repeating = [.wednesday]
@@ -435,7 +436,7 @@ final class NotificationInvestigationTests: XCTestCase {
         add(attachment)
         print(observation)
         XCTAssertTrue(pending.allSatisfy { ($0.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate() == nil })
-        await fixture.vm.saveItem(habit)
+        await fixture.vm.createItem(habit)
         let saved = try await fixture.repository.fetch(id: id)
         assertHabit(saved, equals: habit)
         XCTAssertNil(fixture.vm.error)
@@ -557,26 +558,62 @@ private final class AuditNotifier: HabitNotificationScheduling {
     func cancelAll() async { pending.removeAll() }
 }
 
+/// One write reaching the repository seam. Seeding counts as a create, as before.
+private enum AuditWrite {
+    case create(UUID)
+    case updateMetadata(UUID)
+    case updatePriority(UUID)
+    case legacyCompletion(UUID)
+
+    var habitID: UUID {
+        switch self {
+        case .create(let id), .updateMetadata(let id), .updatePriority(let id), .legacyCompletion(let id):
+            return id
+        }
+    }
+}
+
 /// Injects failure/suspension at the protocol seam; every successful operation
 /// runs through the production SwiftData repository and real model mapping.
+/// `writeAttempts` records every write that reached the seam; `committedWrites`
+/// only those the production repository accepted.
 private final class AuditRepository: HabitRepositoryProtocol {
     let base: SwiftDataHabitRepository
-    var failUpsert = false
+    var failWrites = false
     var failDelete = false
-    var nextUpsertGate: AuditGate?
-    var upsertArguments: [HabitModel] = []
+    var nextWriteGate: AuditGate?
+    var writeAttempts: [AuditWrite] = []
+    var committedWrites: [AuditWrite] = []
     var deletedIDs: [UUID] = []
 
     init(_ container: ModelContainer) { base = SwiftDataHabitRepository(container: container) }
     func fetchAll() async throws -> [HabitModel] { try await base.fetchAll() }
     func fetch(id: UUID) async throws -> HabitModel? { try await base.fetch(id: id) }
-    func upsert(_ item: HabitModel) async throws {
-        upsertArguments.append(item)
-        let gate = nextUpsertGate
-        nextUpsertGate = nil
+    /// Test seeding through the explicit create operation.
+    func seed(_ habit: HabitModel) async throws {
+        _ = try await createHabit(id: habit.id, metadata: HabitMetadata(habit))
+    }
+    func createHabit(id: UUID, metadata: HabitMetadata) async throws -> HabitModel {
+        try await write(.create(id)) { try await base.createHabit(id: id, metadata: metadata) }
+    }
+    func updateMetadata(id: UUID, metadata: HabitMetadata) async throws -> HabitModel {
+        try await write(.updateMetadata(id)) { try await base.updateMetadata(id: id, metadata: metadata) }
+    }
+    func updatePriority(id: UUID, priority: PriorityEisenhower) async throws -> HabitModel {
+        try await write(.updatePriority(id)) { try await base.updatePriority(id: id, priority: priority) }
+    }
+    func recordLegacyCompletion(id: UUID, at date: Date, calendar: Calendar) async throws -> HabitModel {
+        try await write(.legacyCompletion(id)) { try await base.recordLegacyCompletion(id: id, at: date, calendar: calendar) }
+    }
+    private func write(_ entry: AuditWrite, _ operation: () async throws -> HabitModel) async throws -> HabitModel {
+        writeAttempts.append(entry)
+        let gate = nextWriteGate
+        nextWriteGate = nil
         await gate?.pause()
-        if failUpsert { throw AuditFailure.persistence }
-        try await base.upsert(item)
+        if failWrites { throw AuditFailure.persistence }
+        let result = try await operation()
+        committedWrites.append(entry)
+        return result
     }
     func delete(id: UUID) async throws {
         deletedIDs.append(id)

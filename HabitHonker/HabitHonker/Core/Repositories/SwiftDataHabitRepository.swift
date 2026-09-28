@@ -25,8 +25,20 @@ struct SwiftDataHabitRepository: HabitRepositoryProtocol {
         try await repository.fetch(id: id)
     }
 
-    func upsert(_ item: HabitModel) async throws {
-        try await repository.upsert(item)
+    func createHabit(id: UUID, metadata: HabitMetadata) async throws -> HabitModel {
+        try await repository.createHabit(id: id, metadata: metadata)
+    }
+
+    func updateMetadata(id: UUID, metadata: HabitMetadata) async throws -> HabitModel {
+        try await repository.updateMetadata(id: id, metadata: metadata)
+    }
+
+    func updatePriority(id: UUID, priority: PriorityEisenhower) async throws -> HabitModel {
+        try await repository.updatePriority(id: id, priority: priority)
+    }
+
+    func recordLegacyCompletion(id: UUID, at date: Date, calendar: Calendar) async throws -> HabitModel {
+        try await repository.recordLegacyCompletion(id: id, at: date, calendar: calendar)
     }
 
     func delete(id: UUID) async throws {
