@@ -15,6 +15,7 @@ enum Log {
     static let repoSD = Logger(subsystem: "com.habitHonker.app", category: "RepoSwiftData")
     static let repoUD = Logger(subsystem: "com.habitHonker.app", category: "RepoUserDefaults")
     static let ux = Logger(subsystem: "com.habitHonker.app", category: "UX")
+    static let storage = Logger(subsystem: "com.habitHonker.app", category: "Storage")
 }
 
 // Optional: quick timer helper for durations

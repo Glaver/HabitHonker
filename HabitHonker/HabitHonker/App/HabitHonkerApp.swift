@@ -10,20 +10,22 @@ struct HabitHonkerApp: App {
     @State private var isBuildingContainer = false
     @State private var didInitialBuild = false
     @State private var container: ModelContainer?
+    @State private var storageDurability: StorageDurabilityState?
+    /// Incremented for every newly opened container, so the whole view tree (and every view model
+    /// bound to the previous container's dependency graph) is rebuilt for the new store.
+    @State private var storeGeneration = 0
     @State private var appCoordinator: AppCoordinator?
     
     @StateObject private var sync = SyncManager()
 
-    private let cloudID = "iCloud.com.flyingwhale.habithonker"
     private let schema = Schema(versionedSchema: HabitHonkerSchemaV2.self)
     
     var body: some Scene {
         WindowGroup {
             Group {
                 if let container, let appCoordinator {
-                    let identity = container.configurations.first?.cloudKitContainerIdentifier ?? "local"
                     RootTabsView(container: container, dependencies: appCoordinator.dependencies)
-                        .id(identity)                    // <- ensures teardown before rebuild
+                        .id(storeGeneration)             // <- new container: fresh view models, no old-store services
                         .environmentObject(appCoordinator)
                         .environmentObject(sync)
                         .modelContainer(container)
@@ -33,9 +35,16 @@ struct HabitHonkerApp: App {
             }
             .preferredColorScheme(appearance.colorScheme)
             .task {
-//                sync.refreshAccountStatus()
-                await sync.refreshAccountStatusAndWait()       // decide target once
-                await rebuildContainerIfNeeded(force: true)    // build ONCE
+                if sync.isOn {
+                    // Choosing the iCloud store depends on the account state.
+                    await sync.refreshAccountStatusAndWait()
+                    await rebuildContainerIfNeeded(force: true)
+                } else {
+                    // The local store needs no iCloud account and no CloudKit: open it right away.
+                    await rebuildContainerIfNeeded(force: true)
+                    // Still refreshed, because the Settings sync toggle uses it.
+                    await sync.refreshAccountStatusAndWait()
+                }
                 didInitialBuild = true
             }
             .onChange(of: sync.isOn) { _, _ in Task { await rebuildContainerIfNeeded() } }
@@ -52,46 +61,28 @@ struct HabitHonkerApp: App {
         isBuildingContainer = true
         defer { isBuildingContainer = false }
 
-        let wantCloud = sync.isOn && sync.iCloudAvailable
-        let currentID = container?.configurations.first?.cloudKitContainerIdentifier
+        let request: PersistentStoreFactory.Request = (sync.isOn && sync.iCloudAvailable) ? .cloud : .local
 
-        // No-op if nothing actually changes (unless forced)
+        // No-op if the requested durable world is already open (unless forced). The decision uses
+        // the durability recorded when the store was opened, not a guess from its CloudKit settings.
         if !force, appCoordinator != nil {
-            if wantCloud, currentID == cloudID { return }
-            if !wantCloud, currentID == nil { return }
+            if request == .cloud, storageDurability == .durableCloud { return }
+            if request == .local, storageDurability == .durableLocal { return }
         }
 
         // Tear down old store FIRST to avoid 134422
         container = nil
+        storageDurability = nil
         appCoordinator = nil
         await Task.yield() // give old store a chance to deinit & unregister
 
-        if wantCloud {
-            let cfg = ModelConfiguration(
-                "Cloud", schema: nil,
-                isStoredInMemoryOnly: false,
-                allowsSave: true,
-                groupContainer: .automatic,
-                cloudKitDatabase: .private(cloudID)
-            )
-            container = try? ModelContainer(for: schema, migrationPlan: HabitHonkerMigrationPlan.self, configurations: cfg)
-        } else {
-            container = try? ModelContainer(for: schema, migrationPlan: HabitHonkerMigrationPlan.self)
-        }
-
-        // Fallback so app always starts
-        if container == nil {
-            let cfg = ModelConfiguration(
-                "FallbackInMemory",
-                schema: schema,
-                isStoredInMemoryOnly: true,
-                allowsSave: true
-            )
-            container = try? ModelContainer(for: schema, migrationPlan: HabitHonkerMigrationPlan.self, configurations: cfg)
-        }
-
-        if let container {
-            appCoordinator = AppCoordinator(dependencies: .make(container: container))
-        }
+        // Local: the pre-4F default store with CloudKit disabled. Cloud: unchanged.
+        // Either failing: in-memory fallback so the app still starts, classified as ephemeral.
+        guard let opened = PersistentStoreFactory.openStore(for: request, schema: schema) else { return }
+        container = opened.container
+        storageDurability = opened.durability
+        storeGeneration += 1
+        appCoordinator = AppCoordinator(dependencies: .make(container: opened.container,
+                                                           storageDurability: opened.durability))
     }
 }

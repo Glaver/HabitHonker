@@ -8,8 +8,8 @@ final class BehaviorTransactionDITests: XCTestCase {
     func testDependenciesAreScopedToEachContainerAndConstructionDoesNotEnroll() async throws {
         let first = try TxStore.memory(); let second = try TxStore.memory()
         try TxStore.seed(first); try TxStore.seed(second)
-        let a = AppDependencies.make(container: first)
-        let b = AppDependencies.make(container: second)
+        let a = AppDependencies.make(container: first, storageDurability: .durableLocal)
+        let b = AppDependencies.make(container: second, storageDurability: .durableLocal)
         let secondBefore = try TxStore.state(second)
         _ = try await a.behaviorTransactionService.complete(TxCommand.make())
         XCTAssertEqual(try TxStore.state(second), secondBefore)
@@ -18,12 +18,12 @@ final class BehaviorTransactionDITests: XCTestCase {
             XCTAssertEqual(try ModelContext(store).fetch(FetchDescriptor<GamificationProfileSD>()).first?.totalXP, 41)
         }
         let empty = try TxStore.memory()
-        _ = AppDependencies.make(container: empty)
+        _ = AppDependencies.make(container: empty, storageDurability: .durableLocal)
         try Phase2TestStore.assertNewTablesEmpty(ModelContext(empty))
     }
     func testCurrentHabitServiceViaNewDIStillWritesNoGamificationRows() async throws {
         let store = try TxStore.memory(); try TxStore.seed(store, profile: false)
-        let dependencies = AppDependencies.make(container: store)
+        let dependencies = AppDependencies.make(container: store, storageDurability: .durableLocal)
         let result = try await dependencies.habitService.completeHabit(id: TxCommand.target.rawValue)
         XCTAssertEqual(result?.record.reduce(0) { $0 + $1.count }, 1)
         try Phase2TestStore.assertNewTablesEmpty(ModelContext(store))
