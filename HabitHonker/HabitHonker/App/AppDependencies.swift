@@ -24,7 +24,11 @@ struct AppDependencies {
                      storageDurability: StorageDurabilityState,
                      featureFlags: FeatureFlags = .defaults) -> AppDependencies {
         let habitEvents = HabitEventCenter()
-        let swiftDataRepository = HabitsRepositorySwiftData(container: container)
+        // Phase 4B: schedule-revision planning and normal revision identity, injected into the
+        // one container-scoped actor that owns every SwiftData write.
+        let swiftDataRepository = HabitsRepositorySwiftData(container: container,
+                                                            scheduleRevisionPlanner: BehaviorScheduleRevisionPlanner(),
+                                                            scheduleRevisionIDs: BehaviorScheduleRevisionIDProviderV1())
         let gamification = GamificationService(rewardCalculator: RewardCalculator(), levelCalculator: LevelCalculator())
         let transactionRepository = SwiftDataBehaviorTransactionRepository(repository: swiftDataRepository,
                                                                            gamificationService: gamification)

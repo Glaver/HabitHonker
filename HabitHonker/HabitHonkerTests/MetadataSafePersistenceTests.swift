@@ -233,8 +233,8 @@ final class MetadataSafePersistenceTests: XCTestCase {
     func testSuppliedCalendarTimeZoneDecidesLegacyDayGrouping() async throws {
         let store = try TxStore.memory()
         let repository = SwiftDataHabitRepository(container: store)
-        let utcHabit = try await repository.createHabit(id: UUID(), metadata: HabitMetadata(sampleHabit(title: "UTC")))
-        let laHabit = try await repository.createHabit(id: UUID(), metadata: HabitMetadata(sampleHabit(title: "LA")))
+        let utcHabit = try await repository.createHabit(id: UUID(), metadata: HabitMetadata(sampleHabit(title: "UTC")), effectiveAt: day(0, hour: 9))
+        let laHabit = try await repository.createHabit(id: UUID(), metadata: HabitMetadata(sampleHabit(title: "LA")), effectiveAt: day(0, hour: 9))
         // 2027-01-15 07:30Z and 09:30Z: the same UTC day, but different Los Angeles days
         // (Jan 14 23:30 and Jan 15 01:30 PST).
         let early = Date(timeIntervalSince1970: 1_799_998_200)

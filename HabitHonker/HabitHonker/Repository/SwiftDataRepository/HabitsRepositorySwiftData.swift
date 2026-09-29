@@ -10,11 +10,30 @@ import os
 actor HabitsRepositorySwiftData {
     private let container: ModelContainer
     private let log = Log.repoSD
+    /// Phase 4B: pure schedule-revision planning, called synchronously inside Habit mutations.
+    let scheduleRevisionPlanner: any BehaviorScheduleRevisionPlanning
+    /// Phase 4B: mints normal revision IDs, only for revisions a mutation actually inserts.
+    let scheduleRevisionIDs: any BehaviorScheduleRevisionIDProviding
+    #if DEBUG
+    /// Test seam, absent from release builds: runs after a Habit mutation has staged its whole
+    /// write set and right before its single save. Throwing discards the context unsaved.
+    private var beforeCommitForTesting: (@Sendable (ModelContext) throws -> Void)?
+    #endif
 
-    init(container: ModelContainer) {
+    init(container: ModelContainer,
+         scheduleRevisionPlanner: any BehaviorScheduleRevisionPlanning = BehaviorScheduleRevisionPlanner(),
+         scheduleRevisionIDs: any BehaviorScheduleRevisionIDProviding = BehaviorScheduleRevisionIDProviderV1()) {
         self.container = container
+        self.scheduleRevisionPlanner = scheduleRevisionPlanner
+        self.scheduleRevisionIDs = scheduleRevisionIDs
         log.info("📦 Repo init with container: \(String(describing: container), privacy: .public)")
     }
+
+    #if DEBUG
+    func setBeforeCommitForTesting(_ hook: (@Sendable (ModelContext) throws -> Void)?) {
+        beforeCommitForTesting = hook
+    }
+    #endif
 
     // MARK: - Helpers
     private func makeContext() -> ModelContext {
@@ -95,7 +114,11 @@ actor HabitsRepositorySwiftData {
         }
     }
 
-    func delete(id: UUID) throws {
+    /// Archives and deletes the habit. After enrollment its open schedule revision is closed at
+    /// `effectiveAt` in the same save (Phase 4B); unsafe history is deferred and never blocks the
+    /// delete. Returns nil, writing nothing, when no active habit has this id.
+    @discardableResult
+    func delete(id: UUID, effectiveAt: Date) throws -> ScheduleHistoryOutcome? {
         let t0 = DispatchTime.now()
         log.info("🗑️ delete id=\(id.uuidString, privacy: .public)")
         do {
@@ -105,16 +128,20 @@ actor HabitsRepositorySwiftData {
             d.fetchLimit = 1
 
             if let sd = try ctx.fetch(d).first {
+                let history = try stageScheduleHistory(.deleted(BehaviorScheduleRevisionMapper.source(from: sd)),
+                                                       effectiveAt: effectiveAt, in: ctx)
                 // Archive before delete
                 let domain = HabitMapper.toDomain(sd)
                 let deletedHabit = HabitMapper.makeDeletedSD(from: domain)
                 ctx.insert(deletedHabit)
 
                 ctx.delete(sd)
-                try ctx.save()
-                log.info("✅ delete id=\(id.uuidString, privacy: .public) (archived) in \(elapsedMS(from: t0), privacy: .public) ms")
+                try commit(ctx)
+                log.info("✅ delete id=\(id.uuidString, privacy: .public) (archived) history=\(String(describing: history), privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+                return history
             } else {
                 log.warning("⚠️ delete skipped (not found) id=\(id.uuidString, privacy: .public)")
+                return nil
             }
         } catch {
             log.error("❌ delete id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
@@ -177,7 +204,12 @@ actor HabitsRepositorySwiftData {
         }
     }
 
-    func restoreDeletedHabit(id: UUID) throws {
+    /// Restores an archived habit. After enrollment a new normal schedule revision opens at
+    /// `effectiveAt` in the same save (Phase 4B); an old closed revision is never reopened, and
+    /// unsafe history is deferred without blocking the restore. Returns nil, writing nothing, when
+    /// no archived habit has this id.
+    @discardableResult
+    func restoreDeletedHabit(id: UUID, effectiveAt: Date) throws -> ScheduleHistoryOutcome? {
         let t0 = DispatchTime.now()
         log.info("♻️ restoreDeleted id=\(id.uuidString, privacy: .public)")
         do {
@@ -190,10 +222,14 @@ actor HabitsRepositorySwiftData {
                 let habitSD = HabitMapper.makeSD(from: restoredHabit)
                 ctx.insert(habitSD)
                 ctx.delete(deletedSD)
-                try ctx.save()
-                log.info("✅ restoreDeleted id=\(id.uuidString, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+                let history = try stageScheduleHistory(.restored(BehaviorScheduleRevisionMapper.source(from: habitSD)),
+                                                       effectiveAt: effectiveAt, in: ctx)
+                try commit(ctx)
+                log.info("✅ restoreDeleted id=\(id.uuidString, privacy: .public) history=\(String(describing: history), privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+                return history
             } else {
                 log.warning("⚠️ restoreDeleted skipped (not found) id=\(id.uuidString, privacy: .public)")
+                return nil
             }
         } catch {
             log.error("❌ restoreDeleted id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
@@ -257,14 +293,21 @@ actor HabitsRepositorySwiftData {
     }
 }
 
-// MARK: - Metadata-safe mutations (Phase 4A)
+// MARK: - Metadata-safe mutations (Phase 4A) and their schedule history (Phase 4B)
 // Metadata writes never read, assign or recreate `records`. Completion history changes only
 // through `recordLegacyCompletion`. Each operation uses one context and one save, and runs
 // entirely inside this actor, so no other write can interleave between its read and its save.
+// Phase 4B: create/metadata/priority (and delete/restore above) also stage their schedule-history
+// effect (`stageScheduleHistory`, in HabitsRepositorySwiftData+ScheduleHistory.swift) on the same
+// context, synchronously, before that single save. Before enrollment nothing is staged. Unsafe
+// history is deferred and reported, never allowed to block the Habit mutation. `effectiveAt` is
+// the mutation instant captured by the application boundary; this actor never reads a clock for it.
+// `recordLegacyCompletion` has no schedule-history effect.
 extension HabitsRepositorySwiftData {
-    /// Inserts a brand-new habit with no completion history.
+    /// Inserts a brand-new habit with no completion history and, after enrollment, its first
+    /// normal schedule revision from `effectiveAt` in the same save.
     /// Throws `alreadyExists` instead of overwriting an existing row.
-    func createHabit(id: UUID, metadata: HabitMetadata) throws -> HabitModel {
+    func createHabit(id: UUID, metadata: HabitMetadata, effectiveAt: Date) throws -> HabitMutationResult {
         let t0 = DispatchTime.now()
         log.info("🆕 createHabit id=\(id.uuidString, privacy: .public)")
         do {
@@ -274,9 +317,11 @@ extension HabitsRepositorySwiftData {
             }
             let sd = HabitMapper.makeSD(id: id, metadata: metadata)
             ctx.insert(sd)
-            try ctx.save()
-            log.info("✅ createHabit id=\(id.uuidString, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
-            return HabitMapper.toDomain(sd)
+            let history = try stageScheduleHistory(.created(BehaviorScheduleRevisionMapper.source(from: sd)),
+                                                   effectiveAt: effectiveAt, in: ctx)
+            try commit(ctx)
+            log.info("✅ createHabit id=\(id.uuidString, privacy: .public) history=\(String(describing: history), privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+            return HabitMutationResult(habit: HabitMapper.toDomain(sd), scheduleHistory: history)
         } catch {
             log.error("❌ createHabit id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             throw error
@@ -285,16 +330,21 @@ extension HabitsRepositorySwiftData {
 
     /// Replaces the editable fields of an existing habit and returns the fresh persisted model,
     /// including its current (authoritative) records. Throws `notFound`; never inserts.
-    func updateMetadata(id: UUID, metadata: HabitMetadata) throws -> HabitModel {
+    /// After enrollment a revision-relevant change closes the open schedule revision and opens the
+    /// next one at `effectiveAt` in the same save; other changes leave revision history untouched.
+    func updateMetadata(id: UUID, metadata: HabitMetadata, effectiveAt: Date) throws -> HabitMutationResult {
         let t0 = DispatchTime.now()
         log.info("✏️ updateMetadata id=\(id.uuidString, privacy: .public)")
         do {
             let ctx = makeContext()
             let sd = try activeHabit(id: id, in: ctx)
+            let before = BehaviorScheduleRevisionMapper.source(from: sd)
             HabitMapper.applyMetadata(metadata, to: sd)
-            try ctx.save()
-            log.info("✅ updateMetadata id=\(id.uuidString, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
-            return HabitMapper.toDomain(sd)
+            let history = try stageScheduleHistory(.updated(before: before, after: BehaviorScheduleRevisionMapper.source(from: sd)),
+                                                   effectiveAt: effectiveAt, in: ctx)
+            try commit(ctx)
+            log.info("✅ updateMetadata id=\(id.uuidString, privacy: .public) history=\(String(describing: history), privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+            return HabitMutationResult(habit: HabitMapper.toDomain(sd), scheduleHistory: history)
         } catch {
             log.error("❌ updateMetadata id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             throw error
@@ -302,16 +352,21 @@ extension HabitsRepositorySwiftData {
     }
 
     /// Changes only the priority. Throws `notFound`; never inserts.
-    func updatePriority(id: UUID, priority: PriorityEisenhower) throws -> HabitModel {
+    /// Priority is revision-relevant: after enrollment a real change closes/opens schedule history
+    /// at `effectiveAt` in the same save.
+    func updatePriority(id: UUID, priority: PriorityEisenhower, effectiveAt: Date) throws -> HabitMutationResult {
         let t0 = DispatchTime.now()
         log.info("🎯 updatePriority id=\(id.uuidString, privacy: .public) priority=\(priority.rawValue, privacy: .public)")
         do {
             let ctx = makeContext()
             let sd = try activeHabit(id: id, in: ctx)
+            let before = BehaviorScheduleRevisionMapper.source(from: sd)
             sd.priorityRaw = priority.rawValue
-            try ctx.save()
-            log.info("✅ updatePriority id=\(id.uuidString, privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
-            return HabitMapper.toDomain(sd)
+            let history = try stageScheduleHistory(.updated(before: before, after: BehaviorScheduleRevisionMapper.source(from: sd)),
+                                                   effectiveAt: effectiveAt, in: ctx)
+            try commit(ctx)
+            log.info("✅ updatePriority id=\(id.uuidString, privacy: .public) history=\(String(describing: history), privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+            return HabitMutationResult(habit: HabitMapper.toDomain(sd), scheduleHistory: history)
         } catch {
             log.error("❌ updatePriority id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             throw error
@@ -351,6 +406,14 @@ extension HabitsRepositorySwiftData {
             log.error("❌ recordLegacyCompletion id=\(id.uuidString, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
             throw error
         }
+    }
+
+    /// The single save of every Habit metadata/lifecycle mutation.
+    private func commit(_ ctx: ModelContext) throws {
+        #if DEBUG
+        try beforeCommitForTesting?(ctx)
+        #endif
+        try ctx.save()
     }
 
     private func activeHabitCount(id: UUID, in ctx: ModelContext) throws -> Int {

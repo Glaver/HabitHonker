@@ -13,6 +13,8 @@ final class HabitService: HabitServiceProtocol {
 
     /// `now` and `calendar` decide the legacy completion day. The defaults keep today's live
     /// behavior (wall clock + device calendar) at this application boundary; tests inject them.
+    /// `now` is also read once per create/update/priority/delete/restore as that mutation's
+    /// `effectiveAt` (Phase 4B schedule history); nothing below this boundary reads a clock for it.
     init(repository: HabitRepositoryProtocol,
          habitEvents: HabitEventsPublishing,
          now: @escaping () -> Date = { Date() },
@@ -32,19 +34,19 @@ final class HabitService: HabitServiceProtocol {
     }
 
     func createHabit(_ habit: HabitModel) async throws -> HabitModel {
-        let created = try await repository.createHabit(id: habit.id, metadata: HabitMetadata(habit))
+        let created = try await repository.createHabit(id: habit.id, metadata: HabitMetadata(habit), effectiveAt: now())
         habitEvents.send(.created)
         return created
     }
 
     func updateHabit(_ habit: HabitModel) async throws -> HabitModel {
-        let updated = try await repository.updateMetadata(id: habit.id, metadata: HabitMetadata(habit))
+        let updated = try await repository.updateMetadata(id: habit.id, metadata: HabitMetadata(habit), effectiveAt: now())
         habitEvents.send(.updated)
         return updated
     }
 
     func deleteHabit(id: UUID) async throws {
-        try await repository.delete(id: id)
+        try await repository.delete(id: id, effectiveAt: now())
         habitEvents.send(.deleted)
     }
 
@@ -63,7 +65,7 @@ final class HabitService: HabitServiceProtocol {
     /// Changes only the priority. Returns nil when the habit no longer exists.
     func changePriority(id: UUID, to priority: PriorityEisenhower) async throws -> HabitModel? {
         do {
-            let habit = try await repository.updatePriority(id: id, priority: priority)
+            let habit = try await repository.updatePriority(id: id, priority: priority, effectiveAt: now())
             habitEvents.send(.priorityChanged)
             return habit
         } catch let error as HabitRepositoryError {
@@ -81,7 +83,7 @@ final class HabitService: HabitServiceProtocol {
     }
 
     func restoreDeletedHabit(id: UUID) async throws {
-        try await repository.restoreDeletedHabit(id: id)
+        try await repository.restoreDeletedHabit(id: id, effectiveAt: now())
         habitEvents.send(.restored)
     }
 

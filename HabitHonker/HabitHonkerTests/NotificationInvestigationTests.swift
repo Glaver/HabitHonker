@@ -589,18 +589,19 @@ private final class AuditRepository: HabitRepositoryProtocol {
     init(_ container: ModelContainer) { base = SwiftDataHabitRepository(container: container) }
     func fetchAll() async throws -> [HabitModel] { try await base.fetchAll() }
     func fetch(id: UUID) async throws -> HabitModel? { try await base.fetch(id: id) }
-    /// Test seeding through the explicit create operation.
+    /// Test seeding through the explicit create operation. The fixture store has no gamification
+    /// schema, so the fixed instant never becomes schedule history.
     func seed(_ habit: HabitModel) async throws {
-        _ = try await createHabit(id: habit.id, metadata: HabitMetadata(habit))
+        _ = try await createHabit(id: habit.id, metadata: HabitMetadata(habit), effectiveAt: Date(timeIntervalSince1970: 1_800_000_000))
     }
-    func createHabit(id: UUID, metadata: HabitMetadata) async throws -> HabitModel {
-        try await write(.create(id)) { try await base.createHabit(id: id, metadata: metadata) }
+    func createHabit(id: UUID, metadata: HabitMetadata, effectiveAt: Date) async throws -> HabitModel {
+        try await write(.create(id)) { try await base.createHabit(id: id, metadata: metadata, effectiveAt: effectiveAt) }
     }
-    func updateMetadata(id: UUID, metadata: HabitMetadata) async throws -> HabitModel {
-        try await write(.updateMetadata(id)) { try await base.updateMetadata(id: id, metadata: metadata) }
+    func updateMetadata(id: UUID, metadata: HabitMetadata, effectiveAt: Date) async throws -> HabitModel {
+        try await write(.updateMetadata(id)) { try await base.updateMetadata(id: id, metadata: metadata, effectiveAt: effectiveAt) }
     }
-    func updatePriority(id: UUID, priority: PriorityEisenhower) async throws -> HabitModel {
-        try await write(.updatePriority(id)) { try await base.updatePriority(id: id, priority: priority) }
+    func updatePriority(id: UUID, priority: PriorityEisenhower, effectiveAt: Date) async throws -> HabitModel {
+        try await write(.updatePriority(id)) { try await base.updatePriority(id: id, priority: priority, effectiveAt: effectiveAt) }
     }
     func recordLegacyCompletion(id: UUID, at date: Date, calendar: Calendar) async throws -> HabitModel {
         try await write(.legacyCompletion(id)) { try await base.recordLegacyCompletion(id: id, at: date, calendar: calendar) }
@@ -615,14 +616,14 @@ private final class AuditRepository: HabitRepositoryProtocol {
         committedWrites.append(entry)
         return result
     }
-    func delete(id: UUID) async throws {
+    func delete(id: UUID, effectiveAt: Date) async throws {
         deletedIDs.append(id)
         if failDelete { throw AuditFailure.persistence }
-        try await base.delete(id: id)
+        try await base.delete(id: id, effectiveAt: effectiveAt)
     }
     func fetchAllDeleted() async throws -> [HabitModel] { try await base.fetchAllDeleted() }
     func fetchDeleted(id: UUID) async throws -> HabitModel? { try await base.fetchDeleted(id: id) }
-    func restoreDeletedHabit(id: UUID) async throws { try await base.restoreDeletedHabit(id: id) }
+    func restoreDeletedHabit(id: UUID, effectiveAt: Date) async throws { try await base.restoreDeletedHabit(id: id, effectiveAt: effectiveAt) }
     func permanentlyDeleteDeleted(id: UUID) async throws { try await base.permanentlyDeleteDeleted(id: id) }
     func fetchStatisticsPresetHabitIDs() async throws -> [UUID]? {
         try await base.fetchStatisticsPresetHabitIDs()
