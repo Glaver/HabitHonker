@@ -7,10 +7,13 @@ import SwiftData
 
 struct AppDependencies {
     /// Durability of the store behind `container`, decided by the composition root that built it.
-    /// Exposed for future durable-gamification consumers (enrollment, reconciliation, Phase 5
-    /// routing); nothing reads it yet, and constructing the graph has no gamification side effects.
+    /// The enrollment service's durability gate reads it (Phase 4E). It stays exposed for
+    /// reconciliation and Phase 5 routing, and constructing the graph has no gamification side effects.
     let storageDurability: StorageDurabilityState
     let behaviorTransactionService: any BehaviorTransactionServiceProtocol
+    /// Phase 4E: the explicit enrollment command for this container's store. It is built here and
+    /// never called here: constructing the graph creates no profile and no baseline revision.
+    let gamificationEnrollmentService: any GamificationEnrollmentServicing
     let habitRepository: HabitRepositoryProtocol
     let habitService: HabitServiceProtocol
     let statisticsService: StatisticsServiceProtocol
@@ -33,6 +36,11 @@ struct AppDependencies {
         let transactionRepository = SwiftDataBehaviorTransactionRepository(repository: swiftDataRepository,
                                                                            gamificationService: gamification)
         let transactionService = BehaviorTransactionService(repository: transactionRepository)
+        // Phase 4E: enrollment writes through the same container-scoped actor; ephemeral storage is
+        // refused by the service's durability gate.
+        let enrollmentService = GamificationEnrollmentService(
+            repository: SwiftDataGamificationEnrollmentRepository(repository: swiftDataRepository),
+            storageDurability: storageDurability)
         let habitRepository = SwiftDataHabitRepository(repository: swiftDataRepository)
         let habitService = HabitService(repository: habitRepository,
                                         habitEvents: habitEvents)
@@ -41,6 +49,7 @@ struct AppDependencies {
         return AppDependencies(
             storageDurability: storageDurability,
             behaviorTransactionService: transactionService,
+            gamificationEnrollmentService: enrollmentService,
             habitRepository: habitRepository,
             habitService: habitService,
             statisticsService: statisticsService,

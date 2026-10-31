@@ -430,3 +430,28 @@ extension HabitsRepositorySwiftData {
         return sd
     }
 }
+
+// MARK: - Gamification profile enrollment (Phase 4E)
+// Explicit, store-wide, and never automatic. One actor operation uses one context. The synchronous
+// staging lives in HabitsRepositorySwiftData+Enrollment.swift, and there is at most one save, through
+// `commit`, made only when a new enrollment was staged. Profile and baseline revisions therefore
+// persist together or not at all. An existing enrollment or a refused state saves nothing.
+// `request.enrolledAt` is the caller's instant; this actor never reads a clock or a device zone for it.
+extension HabitsRepositorySwiftData {
+    func enrollGamification(_ request: GamificationEnrollmentRequest) throws -> GamificationEnrollmentResult {
+        let t0 = DispatchTime.now()
+        log.info("🎮 enrollGamification tz=\(request.schedulingTimeZoneIdentifier, privacy: .public)")
+        do {
+            let ctx = makeContext()
+            let result = try stageGamificationEnrollment(request, in: ctx)
+            if case .enrolled = result {
+                try commit(ctx)
+            }
+            log.info("✅ enrollGamification result=\(String(describing: result), privacy: .public) in \(elapsedMS(from: t0), privacy: .public) ms")
+            return result
+        } catch {
+            log.error("❌ enrollGamification failed: \(String(describing: error), privacy: .public)")
+            throw error
+        }
+    }
+}
